@@ -2,16 +2,17 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Color x:Key="LightBlackColor">#2e2e2e</Color>
-    <Color x:Key="DarkBlackColor">#212121</Color>
-    <Color x:Key="DarkDevBlueColor">#037ffc</Color>
-    <Color x:Key="DevBlueColor">#FF569DE5</Color>
-    <Color x:Key="DevOrangeColor">#CA5100</Color>
+    <Color x:Key="LightBlack">#2e2e2e</Color>
+    <Color x:Key="DarkBlack">#212121</Color>
+    <Color x:Key="DarkDevBlue">#037ffc</Color>
+    <Color x:Key="DevBlue">#FF569DE5</Color>
+    <Color x:Key="DevOrange">#CA5100</Color>
+    <Color x:Key="WarmWhite">#CFCFCF</Color>
 
-    <SolidColorBrush x:Key="LightBlack" Color="{StaticResource LightBlackColor}"/>
-    <SolidColorBrush x:Key="DarkBlack" Color="{StaticResource DarkBlackColor}"/>
-    <SolidColorBrush x:Key="DevBlue" Color="{StaticResource DevBlueColor}"/>
-    <SolidColorBrush x:Key="DarkDevBlue" Color="{StaticResource DarkDevBlueColor}"/>
-    <SolidColorBrush x:Key="DevOrange" Color="{StaticResource DevOrangeColor}"/>
+    <SolidColorBrush x:Key="LightBlackBrush" Color="{StaticResource LightBlackColor}"/>
+    <SolidColorBrush x:Key="DarkBlackBrush" Color="{StaticResource DarkBlackColor}"/>
+    <SolidColorBrush x:Key="DevBlueBrush" Color="{StaticResource DevBlueColor}"/>
+    <SolidColorBrush x:Key="DarkDevBlueBrush" Color="{StaticResource DarkDevBlueColor}"/>
+    <SolidColorBrush x:Key="DevOrangeBrush" Color="{StaticResource DevOrangeColor}"/>
 
 </ResourceDictionary>

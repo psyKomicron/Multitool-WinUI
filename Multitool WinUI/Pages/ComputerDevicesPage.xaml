@@ -42,11 +42,10 @@
                   ItemsSource="{Binding Devices, ElementName=DevicesPage}"
                   HorizontalAlignment="Stretch"
                   Grid.Row="1">
-
             <ListView.ItemTemplate>
                 <DataTemplate>
 
-                    <Grid>
+                    <Grid Margin="5">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="2*"/>
                             <RowDefinition Height="1*"/>

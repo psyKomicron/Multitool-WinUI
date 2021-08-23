@@ -9,6 +9,7 @@
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <Configurations>Debug;Release;Release (opti)</Configurations>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <DefineConstants>TRACE</DefineConstants>
@@ -19,7 +20,8 @@
   <ItemGroup>
     <None Remove="Pages\ComputerDevicesPage.xaml" />
     <None Remove="Pages\DriveInfoView.xaml" />
-    <None Remove="Pages\ExplorerPage.xaml" />
+    <None Remove="Pages\ExplorerHomePage.xaml" />
+    <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\MainPage.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
@@ -32,13 +34,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Multitool BL\Multitool BL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Page Update="Pages\DriveInfoView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Pages\ExplorerPage.xaml">
+    <Page Update="Pages\ExplorerHomePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -57,6 +63,12 @@
 
   <ItemGroup>
     <Page Update="Pages\ComputerDevicesPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Explorer\ExplorerPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

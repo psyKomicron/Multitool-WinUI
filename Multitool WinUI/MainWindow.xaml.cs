@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 
 using MultitoolWinUI.Pages;
 
-using Windows.UI.WindowManagement;
+using System.Diagnostics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -13,7 +13,7 @@ namespace MultitoolWinUI
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainWindow : AppWindow
+    public sealed partial class MainWindow : Window
     {
         public MainWindow()
         {
@@ -23,21 +23,27 @@ namespace MultitoolWinUI
 
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
-            ContentFrame.Navigate(typeof(MainPage), this);
+            _ = ContentFrame.Navigate(typeof(MainPage), this);
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.InvokedItemContainer != null)
             {
-                var tag = args.InvokedItemContainer.Tag.ToString();
+                string tag = args.InvokedItemContainer.Tag.ToString();
                 switch (tag)
                 {
                     case "home":
-                        ContentFrame.Navigate(typeof(MainPage), this);
+                        _ = ContentFrame.Navigate(typeof(MainPage));
                         break;
                     case "devices":
-                        ContentFrame.Navigate(typeof(ComputerDevicesPage), this);
+                        _ = ContentFrame.Navigate(typeof(ComputerDevicesPage));
+                        break;
+                    case "explorer":
+                        _ = ContentFrame.Navigate(typeof(ExplorerHomePage));
+                        break;
+                    default:
+                        Trace.WriteLine("Trying to navigate to: " + tag);
                         break;
                 }
             }

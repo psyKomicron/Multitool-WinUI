@@ -14,6 +14,7 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem Tag="home" Content="Home"></NavigationViewItem>
                 <NavigationViewItem Tag="devices" Content="Windows devices"></NavigationViewItem>
+                <NavigationViewItem Tag="explorer" Content="Explorer"></NavigationViewItem>
             </NavigationView.MenuItems>
             <ScrollViewer>
                 <Frame x:Name="ContentFrame"></Frame>

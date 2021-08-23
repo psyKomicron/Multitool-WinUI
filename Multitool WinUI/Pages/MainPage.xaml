@@ -1,4 +1,5 @@
 ﻿<Page
+    x:Name="Page"
     x:Class="MultitoolWinUI.Pages.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -9,6 +10,6 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-        <TextBlock Text="ASLKDNASLKDNASLKDNASLKDNAS"/>
+        <TextBlock Text="{Binding Version, ElementName=Page}"/>
     </Grid>
 </Page>

@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 
 using Windows.Devices.Enumeration;
 
 namespace MultitoolWinUI.Models
 {
-    public class DeviceInformationViewModel
+    public class DeviceInformationViewModel : ViewModel
     {
         public DeviceInformationViewModel(DeviceInformation info)
         {
@@ -22,36 +17,19 @@ namespace MultitoolWinUI.Models
 #endif
             Properties = string.Empty;
             Kind += "Device kind: ";
-            switch (info.Kind)
+            Kind += info.Kind switch
             {
-                case DeviceInformationKind.DeviceInterface:
-                    Kind += "DeviceInterface";
-                    break;
-                case DeviceInformationKind.DeviceContainer:
-                    Kind += "DeviceContainer";
-                    break;
-                case DeviceInformationKind.Device:
-                    Kind += "Device";
-                    break;
-                case DeviceInformationKind.DeviceInterfaceClass:
-                    Kind += "DeviceInterfaceClass";
-                    break;
-                case DeviceInformationKind.AssociationEndpoint:
-                    Kind += "AssociationEndpoint";
-                    break;
-                case DeviceInformationKind.AssociationEndpointContainer:
-                    Kind += "AssociationEndpointContainer";
-                    break;
-                case DeviceInformationKind.AssociationEndpointService:
-                    Kind += "AssociationEndpointService";
-                    break;
-                case DeviceInformationKind.DevicePanel:
-                    Kind += "DevicePanel";
-                    break;
-                default:
-                    Kind += "Unknown";
-                    break;
-            }
+                DeviceInformationKind.Unknown => "Unknown",
+                DeviceInformationKind.DeviceInterface => "DeviceInterface",
+                DeviceInformationKind.DeviceContainer => "DeviceContainer",
+                DeviceInformationKind.Device => "Device",
+                DeviceInformationKind.DeviceInterfaceClass => "DeviceInterfaceClass",
+                DeviceInformationKind.AssociationEndpoint => "AssociationEndpoint",
+                DeviceInformationKind.AssociationEndpointContainer => "AssociationEndpointContainer",
+                DeviceInformationKind.AssociationEndpointService => "AssociationEndpointService",
+                DeviceInformationKind.DevicePanel => "DevicePanel",
+                _ => "Unknown",
+            };
             IsEnabled = info.IsEnabled ? "Device enabled" : "Device disabled";
             IsDefault = info.IsDefault ? "Default" : "Not default";
 
@@ -62,30 +40,17 @@ namespace MultitoolWinUI.Models
                 EnclosureLocation += info.EnclosureLocation.InDock ? "In dock\n" : string.Empty;
                 EnclosureLocation += info.EnclosureLocation.InLid ? "In lid\n" : string.Empty;
                 EnclosureLocation += info.EnclosureLocation.RotationAngleInDegreesClockwise;
-                switch (info.EnclosureLocation.Panel)
+                PanelLocation += info.EnclosureLocation.Panel switch
                 {
-                    case Panel.Front:
-                        PanelLocation += "Front";
-                        break;
-                    case Panel.Back:
-                        PanelLocation += "Back";
-                        break;
-                    case Panel.Top:
-                        PanelLocation += "Top";
-                        break;
-                    case Panel.Bottom:
-                        PanelLocation += "Bottom";
-                        break;
-                    case Panel.Left:
-                        PanelLocation += "Left";
-                        break;
-                    case Panel.Right:
-                        PanelLocation += "Right";
-                        break;
-                    default:
-                        PanelLocation += "Unknown";
-                        break;
-                }
+                    Panel.Front => "Front",
+                    Panel.Back => "Back",
+                    Panel.Top => "Top",
+                    Panel.Bottom => "Bottom",
+                    Panel.Left => "Left",
+                    Panel.Right => "Right",
+                    Panel.Unknown => "Unknown",
+                    _ => "Unknown",
+                };
             }
             else
             {
@@ -97,21 +62,13 @@ namespace MultitoolWinUI.Models
             if (info.Pairing != null)
             {
                 Pairing += "Pairing protection: ";
-                switch (info.Pairing.ProtectionLevel)
+                Pairing += info.Pairing.ProtectionLevel switch
                 {
-                    case DevicePairingProtectionLevel.None:
-                        Pairing += "None";
-                        break;
-                    case DevicePairingProtectionLevel.Encryption:
-                        Pairing += "Encryption";
-                        break;
-                    case DevicePairingProtectionLevel.EncryptionAndAuthentication:
-                        Pairing += "Encryption and authentication";
-                        break;
-                    default:
-                        Pairing += "Default";
-                        break;
-                }
+                    DevicePairingProtectionLevel.None => "None",
+                    DevicePairingProtectionLevel.Encryption => "Encryption",
+                    DevicePairingProtectionLevel.EncryptionAndAuthentication => "Encryption and authentication",
+                    _ => "Default",
+                };
                 Pairing += info.Pairing.IsPaired ? "\nIs paired\n" : string.Empty;
                 Pairing += info.Pairing.CanPair ? "Can pair" : string.Empty;
             }
