@@ -64,21 +64,21 @@ namespace Multitool.Parsers
 
         private bool IsRegexReserved(char c)
         {
-            return (c == '|' ||
-                    c == '.' ||
-                    c == '(' ||
-                    c == ')' ||
-                    c == '[' ||
-                    c == ']' ||
-                    c == '{' ||
-                    c == '}' ||
-                    c == '*' ||
-                    c == '+' ||
-                    c == '^' ||
-                    c == '$' ||
-                    c == '/' ||
-                    c == '-' ||
-                    c == '\\');
+            return c is '|' or
+                    '.' or
+                    '(' or
+                    ')' or
+                    '[' or
+                    ']' or
+                    '{' or
+                    '}' or
+                    '*' or
+                    '+' or
+                    '^' or
+                    '$' or
+                    '/' or
+                    '-' or
+                    '\\';
         }
 
         private char[] GetInvalidChars()

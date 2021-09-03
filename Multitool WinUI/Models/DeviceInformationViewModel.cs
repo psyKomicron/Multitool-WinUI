@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.UI.Dispatching;
+
+using System.Diagnostics;
 
 using Windows.Devices.Enumeration;
 
@@ -6,7 +8,7 @@ namespace MultitoolWinUI.Models
 {
     public class DeviceInformationViewModel : ViewModel
     {
-        public DeviceInformationViewModel(DeviceInformation info)
+        public DeviceInformationViewModel(DeviceInformation info, DispatcherQueue dispatcherQueue) : base(dispatcherQueue)
         {
             DeviceInformation = info;
 #if false
@@ -54,7 +56,6 @@ namespace MultitoolWinUI.Models
             }
             else
             {
-                Debug.WriteLine("info.EnclosureLocation == null");
                 EnclosureLocation += "No information";
                 PanelLocation += "No information";
             }
@@ -74,7 +75,6 @@ namespace MultitoolWinUI.Models
             }
             else
             {
-                Debug.WriteLine("info.Pairing == null");
                 Pairing = "No information";
             }
         }
@@ -84,17 +84,17 @@ namespace MultitoolWinUI.Models
         public string Name => DeviceInformation.Name;
 
         public string Properties { get; }
-        
+
         public string Kind { get; }
-        
+
         public string IsEnabled { get; }
-        
+
         public string IsDefault { get; }
 
         public string Id => DeviceInformation.Id;
-        
+
         public string EnclosureLocation { get; }
-        
+
         public string PanelLocation { get; }
 
         public string Pairing { get; }

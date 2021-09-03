@@ -19,12 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
     <Folder Include="JulieV2\" />
-    <Folder Include="Network\" />
     <Folder Include="ProcessOptions\" />
     <Folder Include="Reflection\" />
     <Folder Include="PerformanceMonitors\" />
-    <Folder Include="NTInterop\" />
   </ItemGroup>
 </Project>

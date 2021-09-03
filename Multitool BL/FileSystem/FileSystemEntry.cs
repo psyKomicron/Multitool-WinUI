@@ -3,6 +3,9 @@ using Multitool.FileSystem.Events;
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
+
+using Windows.Foundation;
 
 namespace Multitool.FileSystem
 {
@@ -11,6 +14,8 @@ namespace Multitool.FileSystem
     /// </summary>
     public abstract class FileSystemEntry : IFileSystemEntry
     {
+        private bool _partial = true;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -19,65 +24,95 @@ namespace Multitool.FileSystem
         {
             Path = info.FullName;
             Name = info.Name;
-            Partial = true;
             Info = info;
         }
 
         #region properties
+
         /// <inheritdoc/>
         public abstract long Size { get; set; }
 
         /// <inheritdoc/>
         public FileSystemInfo Info { get; protected set; }
+
         /// <inheritdoc/>
         public FileAttributes Attributes => Info.Attributes;
+
         /// <inheritdoc/>
         public bool IsHidden => (Attributes & FileAttributes.Hidden) != 0;
+
         /// <inheritdoc/>
         public bool IsSystem => (Attributes & FileAttributes.System) != 0;
+
         /// <inheritdoc/>
         public bool IsReadOnly => (Attributes & FileAttributes.ReadOnly) != 0;
+
         /// <inheritdoc/>
         public bool IsEncrypted => (Attributes & FileAttributes.Encrypted) != 0;
+
         /// <inheritdoc/>
         public bool IsCompressed => (Attributes & FileAttributes.Compressed) != 0;
+
         /// <inheritdoc/>
         public bool IsDevice => (Attributes & FileAttributes.Device) != 0;
+
         /// <inheritdoc/>
         public bool IsDirectory => (Attributes & FileAttributes.Directory) != 0;
+
         /// <inheritdoc/>
         public string Path { get; set; }
+
         /// <inheritdoc/>
         public string Name { get; set; }
+
         /// <inheritdoc/>
-        public bool Partial { get; set; }
+        public bool Partial
+        {
+            get => _partial;
+            set
+            {
+                _partial = value;
+                PartialChanged?.Invoke(this, value);
+            }
+        }
+
         #endregion
 
         #region events
 
         /// <inheritdoc/>
-        public event EntryChangedEventHandler Deleted;
+        public event TypedEventHandler<IFileSystemEntry, FileChangeEventArgs> Deleted;
+
         /// <inheritdoc/>
-        public event EntrySizeChangedEventHandler SizedChanged;
+        public event TypedEventHandler<IFileSystemEntry, long> SizedChanged;
+
         /// <inheritdoc/>
-        public event EntryAttributesChangedEventHandler AttributesChanged;
+        public event TypedEventHandler<IFileSystemEntry, FileAttributes> AttributesChanged;
+
         /// <inheritdoc/>
-        public event EntryRenamedEventHandler Renamed;
+        public event TypedEventHandler<IFileSystemEntry, string> Renamed;
+
+        /// <inheritdoc/>
+        public event TypedEventHandler<IFileSystemEntry, bool> PartialChanged;
 
         #endregion
 
         #region abstract methods
+
+        /// <inheritdoc/>
+        public abstract void Rename(string newName);
+
         public abstract void CopyTo(string newPath);
+
         /// <inheritdoc/>
         public abstract void Move(string newPath);
+
         /// <inheritdoc/>
         public abstract void RefreshInfos();
+
         #endregion
 
         #region public methods
-        /// <summary>
-        /// Refreshes the internal <see cref="FileSystemInfo"/>.
-        /// </summary>
 
         /// <inheritdoc/>
         public virtual void Delete()
@@ -89,23 +124,6 @@ namespace Multitool.FileSystem
             else
             {
                 throw CreateDeleteIOException();
-            }
-        }
-
-        /// <inheritdoc/>
-        public void Rename(string newName)
-        {
-            if (IsDevice)
-            {
-                throw new IOException("Cannot delete a file with device tag");
-            }
-            else if (IsSystem)
-            {
-                throw new IOException("Cannot delete a system file");
-            }
-            else
-            {
-                throw new NotImplementedException();
             }
         }
 
@@ -148,7 +166,7 @@ namespace Multitool.FileSystem
         /// <inheritdoc/>
         public bool Equals(IFileSystemEntry other)
         {
-            return Path.Equals(other.Path);
+            return other != null && Path.Equals(other.Path, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <inheritdoc/>
@@ -159,12 +177,12 @@ namespace Multitool.FileSystem
 
         public override bool Equals(object obj)
         {
-            return ReferenceEquals(this, obj) ? true : obj is null ? false : throw new NotImplementedException();
+            return ReferenceEquals(this, obj) || (obj is null ? false : Equals(obj as IFileSystemEntry));
         }
 
         public override int GetHashCode()
         {
-            throw new NotImplementedException();
+            return Info.GetHashCode();
         }
 
         public static bool operator ==(FileSystemEntry left, FileSystemEntry right)
@@ -227,12 +245,43 @@ namespace Multitool.FileSystem
                 else
                 {
                     res = MoveCodes.Possible;
-                    return false;
+                    return true;
                 }
             }
             else
             {
                 res = MoveCodes.PathNotFound;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if an entry can be renamed.
+        /// </summary>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        protected virtual bool CanRename(string newName)
+        {
+            if (!File.Exists(Path))
+            {
+                if (IsSystem)
+                {
+                    //res = MoveCodes.IsSystem;
+                    return false;
+                }
+                else if (Info == null)
+                {
+                    //res = MoveCodes.InfoNotSet;
+                    return false;
+                }
+                else
+                {
+                    //res = MoveCodes.Possible;
+                    return true;
+                }
+            }
+            else
+            {
                 return false;
             }
         }
@@ -290,7 +339,7 @@ namespace Multitool.FileSystem
 
         protected void RaiseSizeChangedEvent(long oldSize)
         {
-            SizedChanged?.Invoke(this, oldSize);
+            Task.Run(() => SizedChanged?.Invoke(this, oldSize));
         }
 
         protected void RaiseAttributesChangedEvent(FileAttributes attributes)

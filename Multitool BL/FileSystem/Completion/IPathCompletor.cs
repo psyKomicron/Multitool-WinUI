@@ -9,6 +9,6 @@ namespace Multitool.FileSystem.Completion
         /// </summary>
         /// <param name="input">Path input</param>
         /// <returns>A list of possible choices</returns>
-        void Complete(string input, IList<string> list);
+        string[] Complete(string input);
     }
 }

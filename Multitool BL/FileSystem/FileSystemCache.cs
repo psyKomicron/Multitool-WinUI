@@ -45,7 +45,7 @@ namespace Multitool.FileSystem
                 });
                 watcher.EnableRaisingEvents = true;
             }
-            catch (Exception) // catching exception because we are re-throwing it
+            catch (Exception) // catching Exception because we are re-throwing it
             {
                 lock (_lock)
                 {
@@ -54,8 +54,11 @@ namespace Multitool.FileSystem
                 throw;
             }
 
-            CreateTimer();
-            timer.Start();
+            if (!double.IsNaN(ttl))
+            {
+                CreateTimer();
+                timer.Start();
+            }
             CreationTime = DateTime.UtcNow;
         }
 
@@ -90,7 +93,10 @@ namespace Multitool.FileSystem
         public void UnFreeze()
         {
             Debug.WriteLine("Unfreezing cache for " + Path);
-            timer.Interval = ttl;
+            if (timer != null)
+            {
+                timer.Interval = ttl;
+            }
             Frozen = false;
         }
 
@@ -99,17 +105,18 @@ namespace Multitool.FileSystem
         public void Add(FileSystemEntry item)
         {
             IsFrozen();
-            ResetTimer();
+            if (timer != null)
+            {
+                ResetTimer();
+            }
             lock (_lock)
             {
-                if (!timer.Enabled)
+                if (timer != null && !timer.Enabled)
                 {
                     timer.Start();
                 }
-#if DEBUG
-                Debug.WriteLine("\"" + Path + "\" -> Adding \"" + item.Name + " to cache");
                 watchedItems.Add(item);
-#else
+#if RELEASE
                 if (!watchedItems.Contains(item))
                 {
                     watchedItems.Add(item);
@@ -159,7 +166,10 @@ namespace Multitool.FileSystem
                 _ = watchedPaths.Remove(Path);
             }
 
-            timer.Stop();
+            if (timer != null)
+            {
+                timer.Stop();
+            }
             watcher.EnableRaisingEvents = false;
         }
         #endregion
@@ -256,7 +266,10 @@ namespace Multitool.FileSystem
         private void OnTimerElapsed(object sender, ElapsedEventArgs e)
         {
             Frozen = true;
-            timer.Stop();
+            if (timer != null)
+            {
+                timer.Stop();
+            }
             TTLReached?.Invoke(this, new TTLReachedEventArgs(Path, this, ttl));
         }
 
@@ -266,11 +279,17 @@ namespace Multitool.FileSystem
             Debug.WriteLine("File changed: \"" + e.FullPath + "\"");
             if (!Frozen)
             {
-                ResetTimer();
+                if (timer != null)
+                {
+                    ResetTimer();
+                }
 
                 FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
                 ItemChanged?.Invoke(this, string.Empty, item, false, e.ChangeType);
-                timer.Start();
+                if (timer != null)
+                {
+                    timer.Start();
+                }
             }
         }
 
@@ -279,7 +298,10 @@ namespace Multitool.FileSystem
             Debug.WriteLine("File created: \"" + e.FullPath + "\"");
             if (!Frozen)
             {
-                ResetTimer();
+                if (timer != null)
+                {
+                    ResetTimer();
+                }
 
                 ItemChanged?.Invoke(this, e.FullPath, null, false, WatcherChangeTypes.Created);
             }
@@ -290,7 +312,10 @@ namespace Multitool.FileSystem
             Debug.WriteLine("File deleted: \"" + e.FullPath + "\"");
             if (!Frozen)
             {
-                ResetTimer();
+                if (timer != null)
+                {
+                    ResetTimer();
+                }
 
                 FileSystemEntry deletedItem = watchedItems.Find(v => v.Path.Equals(e.FullPath, StringComparison.OrdinalIgnoreCase));
                 _ = watchedItems.Remove(deletedItem);
@@ -303,7 +328,10 @@ namespace Multitool.FileSystem
             Debug.WriteLine("File renamed: \"" + e.OldFullPath + "\" to \"" + e.FullPath + "\"");
             if (!Frozen)
             {
-                ResetTimer();
+                if (timer != null)
+                {
+                    ResetTimer();
+                }
                 FileSystemEntry item = watchedItems.Find(v => v.Path.Equals(e.OldFullPath, StringComparison.OrdinalIgnoreCase));
                 if (item != null)
                 {
@@ -311,7 +339,10 @@ namespace Multitool.FileSystem
                     item.Path = e.FullPath;
                 }
                 ItemChanged?.Invoke(this, e.FullPath, item, false, WatcherChangeTypes.Renamed);
-                timer.Start();
+                if (timer != null)
+                {
+                    timer.Start();
+                }
             }
 #if DEBUG
             else

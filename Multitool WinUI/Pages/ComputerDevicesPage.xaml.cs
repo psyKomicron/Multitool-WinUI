@@ -6,7 +6,6 @@ using MultitoolWinUI.Models;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 
 using Windows.Devices.Enumeration;
 
@@ -34,7 +33,7 @@ namespace MultitoolWinUI.Pages
             {
                 for (int i = 0; i < collection.Count; i++)
                 {
-                    Devices.Add(new DeviceInformationViewModel(collection[i]));
+                    Devices.Add(new DeviceInformationViewModel(collection[i], DispatcherQueue));
                 }
             }
         }

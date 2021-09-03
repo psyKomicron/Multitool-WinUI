@@ -3,13 +3,10 @@
 using System;
 using System.IO;
 
+using Windows.Foundation;
+
 namespace Multitool.FileSystem
 {
-    public delegate void EntryChangedEventHandler(IFileSystemEntry sender, FileChangeEventArgs e);
-    public delegate void EntrySizeChangedEventHandler(IFileSystemEntry sender, long oldSize);
-    public delegate void EntryAttributesChangedEventHandler(IFileSystemEntry sender, FileAttributes attributeChanged);
-    public delegate void EntryRenamedEventHandler(IFileSystemEntry sender, string oldPath);
-
     /// <summary>
     /// Defines a <see cref="FileSystemInfo"/> decorator
     /// </summary>
@@ -81,31 +78,40 @@ namespace Multitool.FileSystem
         /// Size of the entry on the disk
         /// </summary>
         long Size { get; }
+
         #endregion
 
         #region events
+
         /// <summary>
         /// Raises when the attributes are changed (IsCompressed, IsDevice, IsDirectory, ...);
         /// </summary>
-        event EntryAttributesChangedEventHandler AttributesChanged;
+        event TypedEventHandler<IFileSystemEntry, FileAttributes> AttributesChanged;
 
         /// <summary>
         /// Raised when the entry no longer exists on the disk (has been moved or deleted)
         /// </summary>
-        event EntryChangedEventHandler Deleted;
+        event TypedEventHandler<IFileSystemEntry, FileChangeEventArgs> Deleted;
+
+        /// <summary>
+        /// Fired when <see cref="Partial"/> is changed.
+        /// </summary>
+        event TypedEventHandler<IFileSystemEntry, bool> PartialChanged;
 
         /// <summary>
         /// Raised when renamed
         /// </summary>
-        event EntryRenamedEventHandler Renamed;
+        event TypedEventHandler<IFileSystemEntry, string> Renamed;
 
         /// <summary>
         /// Raised when the size changes 
         /// </summary>
-        event EntrySizeChangedEventHandler SizedChanged;
+        event TypedEventHandler<IFileSystemEntry, long> SizedChanged;
+
         #endregion
 
         #region methods
+
         /// <summary>
         /// Deletes the file
         /// </summary>
@@ -129,6 +135,7 @@ namespace Multitool.FileSystem
         /// </summary>
         /// <param name="newPath">The path to copy the file to</param>
         void CopyTo(string newPath);
+
         #endregion
     }
 }

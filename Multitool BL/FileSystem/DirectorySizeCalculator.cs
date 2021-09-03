@@ -44,7 +44,7 @@ namespace Multitool.FileSystem
         public async Task CalculateDirectorySizeAsync(string path, Action<long> setter, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            List<Task> dirTasks = new();
+            List<Task> tasks = new();
 
             try
             {
@@ -56,19 +56,10 @@ namespace Multitool.FileSystem
                         cancellationToken.ThrowIfCancellationRequested();
                         InvokeProgressAsync(subDirs[i]);
 
-                        try
-                        {
-                            string subPath = subDirs[i];
-                            dirTasks.Add(Task.Run(() => CalculateDirectorySize(subPath, setter, cancellationToken), cancellationToken));
-                        }
-                        catch (DirectoryNotFoundException e)
-                        {
-                            InvokeExceptionAsync(e);
-                        }
-                        catch (UnauthorizedAccessException e)
-                        {
-                            InvokeExceptionAsync(e);
-                        }
+                        string subPath = subDirs[i];
+                        Task t = new(() => CalculateDirectorySize(subPath, setter, cancellationToken), cancellationToken);
+                        tasks.Add(t);
+                        t.Start();
                     }
                 }
                 catch (UnauthorizedAccessException uae)
@@ -80,9 +71,8 @@ namespace Multitool.FileSystem
                     InvokeExceptionAsync(de);
                 }
 
-                await Task.WhenAll(dirTasks);
-                Trace.WriteLine("Finished computing directory sizes '" + path + "'");
-                dirTasks.Clear();
+                await Task.WhenAll(tasks);
+                tasks.Clear();
 
                 try
                 {
@@ -92,10 +82,13 @@ namespace Multitool.FileSystem
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         InvokeProgressAsync(files[i]);
+
                         try
                         {
                             string filePath = files[i];
-                            dirTasks.Add(Task.Run(() => setter(new FileInfo(filePath).Length), cancellationToken));
+                            Task t = new(() => setter(new FileInfo(filePath).Length), cancellationToken);
+                            tasks.Add(t);
+                            t.Start();
                         }
                         catch (FileNotFoundException e)
                         {
@@ -111,14 +104,13 @@ namespace Multitool.FileSystem
                 {
                     InvokeExceptionAsync(e);
                 }
-                catch (FileNotFoundException fe)
+                catch (FileNotFoundException e)
                 {
-                    InvokeExceptionAsync(fe);
+                    InvokeExceptionAsync(e);
                 }
 
-                await Task.WhenAll(dirTasks);
-                Trace.WriteLine("Finished computing file sizes '" + path + "'");
-                dirTasks.Clear();
+                await Task.WhenAll(tasks);
+                tasks.Clear();
             }
             catch (OperationCanceledException opCanceled)
             {
@@ -149,91 +141,91 @@ namespace Multitool.FileSystem
         public async Task<long> CalculateDirectorySizeAsync(string path, CancellationToken cancellationToken)
         {
             long size = 0;
-            await Task.Run(() =>
+            cancellationToken.ThrowIfCancellationRequested();
+            List<Task<long>> tasks = new();
+
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                try
-                {
-                    List<Task<long>> dirTasks = new();
-                    string[] subDirs = Directory.GetDirectories(path);
-                    for (int i = 0; i < subDirs.Length; i++)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        InvokeProgressAsync(subDirs[i]);
-                        string subPath = subDirs[i];
-                        Task<long> t = new(() => CalculateDirectorySize(subPath, cancellationToken), cancellationToken);
-                        dirTasks.Add(t);
-                        t.Start();
-                    }
-
-                    Task<long[]> awaitable = Task.WhenAll(dirTasks);
-                    dirTasks.Clear();
-                    try
-                    {
-                        awaitable.Wait(cancellationToken);
-
-                        for (int i = 0; i < awaitable.Result.Length; i++)
-                        {
-                            size += awaitable.Result[i];
-                        }
-                    }
-                    catch (OperationCanceledException opCanceled)
-                    {
-                        opCanceled.Data.Add(GetType(), "Operation cancelled while waiting for children threads (calculating " + path +")");
-                        throw;
-                    }
-                    catch (AggregateException aggregate)
-                    {
-                        for (int i = 0; i < aggregate.InnerExceptions.Count; i++)
-                        {
-                            if (aggregate.InnerExceptions[i].GetType() == typeof(OperationCanceledException))
-                            {
-                                aggregate.InnerExceptions[i].Data.Add(GetType(), "Operation cancelled while waiting for children threads (calculating " + path + ")");
-                                throw aggregate.InnerExceptions[i];
-                            }
-                        }
-
-                        throw;
-                    }
-                }
-                catch (UnauthorizedAccessException e)
-                {
-                    InvokeExceptionAsync(e);
-                }
-                catch (DirectoryNotFoundException de)
-                {
-                    InvokeExceptionAsync(de);
-                }
-
-                try
+                string[] subDirs = Directory.GetDirectories(path);
+                for (int i = 0; i < subDirs.Length; i++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    string[] files = Directory.GetFiles(path);
+                    InvokeProgressAsync(subDirs[i]);
 
-                    for (int i = 0; i < files.Length; i++)
+                    string subPath = subDirs[i];
+                    Task<long> t = new(() => CalculateDirectorySize(subPath, cancellationToken), cancellationToken);
+                    tasks.Add(t);
+                    t.Start();
+                }
+
+                try
+                {
+                    long[] results = await Task.WhenAll(tasks);
+                    for (int i = 0; i < results.Length; i++)
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        InvokeProgressAsync(files[i]);
-                        try
-                        {
-                            size += new FileInfo(files[i]).Length;
-                        }
-                        catch (FileNotFoundException e)
-                        {
-                            InvokeExceptionAsync(e);
-                        }
+                        size += results[i];
                     }
                 }
-                catch (UnauthorizedAccessException e)
+                catch (OperationCanceledException opCanceled)
                 {
-                    InvokeExceptionAsync(e);
+                    opCanceled.Data.Add(GetType(), "Operation cancelled while waiting for children threads (calculating " + path + ")");
+                    throw;
                 }
-                catch (FileNotFoundException fe)
+                catch (AggregateException aggregate)
                 {
-                    InvokeExceptionAsync(fe);
+                    for (int i = 0; i < aggregate.InnerExceptions.Count; i++)
+                    {
+                        if (aggregate.InnerExceptions[i].GetType() == typeof(OperationCanceledException))
+                        {
+                            aggregate.InnerExceptions[i].Data.Add(GetType(), "Operation cancelled while waiting for children threads (calculating " + path + ")");
+                            throw aggregate.InnerExceptions[i];
+                        }
+                    }
+
+                    throw;
                 }
-            }, cancellationToken);
+                finally
+                {
+                    tasks.Clear();
+                }
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                InvokeExceptionAsync(e);
+            }
+            catch (DirectoryNotFoundException de)
+            {
+                InvokeExceptionAsync(de);
+            }
+
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                string[] files = Directory.GetFiles(path);
+
+                for (int i = 0; i < files.Length; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    InvokeProgressAsync(files[i]);
+                    try
+                    {
+                        size += new FileInfo(files[i]).Length;
+                    }
+                    catch (FileNotFoundException e)
+                    {
+                        InvokeExceptionAsync(e);
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                InvokeExceptionAsync(e);
+            }
+            catch (FileNotFoundException fe)
+            {
+                InvokeExceptionAsync(fe);
+            }
+
             return size;
         }
 
@@ -348,14 +340,7 @@ namespace Multitool.FileSystem
         {
             if (Notify)
             {
-                Task.Run(() => Exception?.Invoke(this, e))
-                    .ContinueWith((Task previous) =>
-                    {
-                        if (previous.IsFaulted)
-                        {
-                            Trace.WriteLine(nameof(DirectorySizeCalculator) + " -> Failed to raise Exception event. Exception " + previous.Exception.ToString());
-                        }
-                    });
+                _ = Task.Run(() => Exception?.Invoke(this, e));
             }
         }
 
@@ -363,14 +348,7 @@ namespace Multitool.FileSystem
         {
             if (Notify)
             {
-                Task.Run(() => Progress?.Invoke(this, message))
-                    .ContinueWith((Task previous) =>
-                    {
-                        if (previous.IsFaulted)
-                        {
-                            Trace.WriteLine(nameof(DirectorySizeCalculator) + " -> Failed to raise Exception event. Exception " + previous.Exception.ToString());
-                        }
-                    });
+                _ = Task.Run(() => Progress?.Invoke(this, message));
             }
         }
     }

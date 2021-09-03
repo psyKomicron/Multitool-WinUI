@@ -7,13 +7,18 @@ namespace MultitoolWinUI.Models
 {
     public class ViewModel : INotifyPropertyChanged
     {
-        public static DispatcherQueue CurrentDispatcherQueue { get; set; }
+        protected ViewModel(DispatcherQueue dispatcherQueue)
+        {
+            CurrentDispatcherQueue = dispatcherQueue;
+        }
+
+        public DispatcherQueue CurrentDispatcherQueue { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void NotifyPropertyChanged([CallerMemberName] string propName = "")
+        protected void RaiseNotifyPropertyChanged([CallerMemberName] string propName = "")
         {
-            CurrentDispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)));
+            _ = CurrentDispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)));
         }
     }
 }

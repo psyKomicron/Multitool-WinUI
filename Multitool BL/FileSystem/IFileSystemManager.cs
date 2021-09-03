@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Multitool.FileSystem
 {
@@ -30,7 +31,7 @@ namespace Multitool.FileSystem
         /// <exception cref="System.ArgumentNullException">
         /// If either <paramref name="list"/> or <paramref name="cancellationToken"/> is null/>
         /// </exception>
-        void GetFileSystemEntries<ItemType>(
+        Task GetFileSystemEntries<ItemType>(
             string path, IList<ItemType> list,
             AddDelegate<ItemType> addDelegate, CancellationToken cancellationToken) where ItemType : IFileSystemEntry;
 

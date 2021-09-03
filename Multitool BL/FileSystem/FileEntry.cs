@@ -22,6 +22,15 @@ namespace Multitool.FileSystem
         }
 
         #region public methods
+
+        public override void Rename(string newName)
+        {
+            if (CanRename(newName))
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         /// <inheritdoc/>
         public override void CopyTo(string newPath)
         {

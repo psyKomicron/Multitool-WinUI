@@ -3,13 +3,47 @@
     x:Class="MultitoolWinUI.Pages.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:MultitoolWinUI.Pages"
+    xmlns:m="using:MultitoolWinUI.Pages"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
-        <TextBlock Text="{Binding Version, ElementName=Page}"/>
-    </Grid>
+    <GridView AllowDrop="True"
+              CanReorderItems="True"
+              IsItemClickEnabled="True"
+              ItemClick="GridView_ItemClick"
+              Margin="50, 20">
+        <GridView.ItemContainerStyle>
+            <Style TargetType="GridViewItem">
+                <Setter Property="Margin" Value="5, 5, 5, 5"/>
+            </Style>
+        </GridView.ItemContainerStyle>
+        <GridView.Resources>
+            <Style TargetType="Border">
+                <Setter Property="MinWidth" Value="200"/>
+                <Setter Property="MinHeight" Value="200"/>
+                <Setter Property="Background" Value="{ThemeResource SystemAccentColorDark1}"/>
+            </Style>
+            <Style TargetType="TextBlock">
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="20"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
+        </GridView.Resources>
+
+        <Border CornerRadius="10">
+            <TextBlock x:Name="VersionTextBlock">
+                <Run Text="Version: "/>
+                <Run Text="{Binding ElementName=Page, Path=Version, Mode=OneTime}"/>
+            </TextBlock>
+        </Border>
+
+        <Border x:Name="ReadmeBorder"
+                CornerRadius="10">
+            <TextBlock x:Name="ReadmeTextBlock"
+                       Text="#README"/>
+        </Border>
+    </GridView>
 </Page>

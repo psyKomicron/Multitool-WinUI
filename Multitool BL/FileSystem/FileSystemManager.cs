@@ -16,7 +16,12 @@ namespace Multitool.FileSystem
     /// </summary>
     public class FileSystemManager : IFileSystemManager
     {
-        public const double DEFAULT_CACHE_TIMEOUT = 300_000;
+        public const double DEFAULT_CACHE_TIMEOUT =
+#if RELEASE
+        300_000;
+#else
+        double.NaN;
+#endif
         public const bool DEFAULT_NOTIFY_STATUS = false;
 
         private static Dictionary<string, FileSystemCache> cache = new();
@@ -74,6 +79,7 @@ namespace Multitool.FileSystem
         #endregion
 
         #region events
+
         /// <inheritdoc/>
         public event ItemChangedEventHandler Change;
 
@@ -103,11 +109,13 @@ namespace Multitool.FileSystem
         public event TaskProgressEventHandler Progress;
 
         private event TaskFailedEventHandler SelfException;
+
         #endregion
 
         #region public
+
         /// <inheritdoc/>
-        public void GetFileSystemEntries<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
+        public async Task GetFileSystemEntries<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
         {
             #region not null
             if (list == null)
@@ -118,7 +126,7 @@ namespace Multitool.FileSystem
             {
                 throw new ArgumentException("A path needs to be provided (path was either null, empty, or with spaces only). Provided path: " + path, nameof(path));
             }
-            #endregion
+#endregion
 
             if (ContainsKey(path))
             {
@@ -129,7 +137,7 @@ namespace Multitool.FileSystem
                     cache.Remove(fileCache.Path);
                     fileCache.Delete();
                     fileCache.Dispose();
-                    GetAll(path, list, addDelegate, new FileSystemCache(path, CacheTimeout), cancellationToken);
+                    await GetAll(path, list, addDelegate, new FileSystemCache(path, CacheTimeout), cancellationToken);
                 }
                 else
                 {
@@ -149,11 +157,11 @@ namespace Multitool.FileSystem
             {
                 try
                 {
-                    GetAll(path, list, addDelegate, new FileSystemCache(path, CacheTimeout), cancellationToken);
+                    await GetAll(path, list, addDelegate, new FileSystemCache(path, CacheTimeout), cancellationToken);
                 }
                 catch (InvalidOperationException e)
                 {
-                    Debug.WriteLine("Unable to create cache. Exception:\n" + e.ToString());
+                    Trace.WriteLine("Unable to create cache. Exception:\n" + e.ToString());
                 }
             }
         }
@@ -237,26 +245,34 @@ namespace Multitool.FileSystem
             }
             cache.Clear();
         }
+
         #endregion
 
         #region private
 
         #region file get
-        private void GetAll<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, FileSystemCache fileCache, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
+        private async Task GetAll<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, FileSystemCache fileCache, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
         {
-            Debug.WriteLine("Adding and building cache for: " + path);
             cache.Add(path, fileCache);
             fileCache.ItemChanged += OnCacheItemChanged;
             fileCache.TTLReached += OnCacheTTLReached;
             fileCache.WatcherError += OnWatcherError;
 
             GetFiles(path, fileCache, list, addDelegate, cancellationToken);
-            _ = GetDirectories(Directory.GetDirectories(path), fileCache, list, addDelegate, cancellationToken)
-                .ContinueWith((Task previous) =>
-                {
-                    fileCache.Partial = previous.Status != TaskStatus.RanToCompletion;
-                    InvokeCompletion(previous);
-                }, cancellationToken);
+            try
+            {
+                await GetDirectories(Directory.GetDirectories(path), fileCache, list, addDelegate, cancellationToken);
+                fileCache.Partial = false;
+                InvokeCompletion(TaskStatus.RanToCompletion);
+            }
+            catch (OperationCanceledException)
+            {
+                InvokeCompletion(TaskStatus.Canceled);
+            }
+            catch (Exception)
+            {
+                InvokeCompletion(TaskStatus.Faulted);
+            }
         }
 
         private void GetPartial<T>(string path, FileSystemCache cacheItems, IList<T> list, AddDelegate<T> addDelegate, CancellationToken cancellationToken) where T : IFileSystemEntry
@@ -368,6 +384,7 @@ namespace Multitool.FileSystem
                 for (int i = 0; i < dirPaths.Length; i++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+                    Console.WriteLine(dirPaths[i]);
                     InvokeProgress(dirPaths[i]);
 
                     string currentPath = dirPaths[i];
@@ -390,15 +407,18 @@ namespace Multitool.FileSystem
             addDelegate(list, item);
             try
             {
-                await new DirectorySizeCalculator().CalculateDirectorySizeAsync(currentPath, (long newValue) => item.Size += newValue, cancellationToken);
+                await new DirectorySizeCalculator().CalculateDirectorySizeAsync(currentPath, (long newSize) => item.Size += newSize, cancellationToken);
                 item.Partial = false;
+
             }
             catch (AggregateException e)
             {
                 e.Data.Add(GetType(), "Uncommon aggregate exception (from calculating dir size). Path :" + currentPath);
+                Trace.WriteLine(e.ToString());
                 InvokeException(e);
             }
         }
+
         #endregion
 
         private static FileSystemCache GetFileSystemCache(string key)
@@ -535,15 +555,16 @@ namespace Multitool.FileSystem
                 }
             }
         }
-        
-        #endregion
+
+#endregion
 
         #region event invoke
+
         private void InvokeException(Exception e)
         {
             if (Notify)
             {
-                SelfException?.Invoke(this, e);
+                _ = Task.Run(() => SelfException?.Invoke(this, e));
             }
         }
 
@@ -551,15 +572,7 @@ namespace Multitool.FileSystem
         {
             if (Notify)
             {
-                Progress?.Invoke(this, message);
-            }
-        }
-
-        private void InvokeCompletion(Task task)
-        {
-            if (Notify)
-            {
-                Completed?.Invoke(task.Status, task);
+                _ = Task.Run(() => Progress?.Invoke(this, message));
             }
         }
 

@@ -1,26 +1,25 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.FileSystem;
+using Multitool.FileSystem.Completion;
+using Multitool.FileSystem.Events;
+using Multitool.Parsers;
+using Multitool.Sorting;
 
 using MultitoolWinUI.Models;
 
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using Multitool.FileSystem.Completion;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI;
-using Multitool.Parsers;
-using Multitool.Sorting;
-using Microsoft.UI.Xaml.Navigation;
 using System.Threading.Tasks;
-using Multitool.FileSystem.Events;
-using Windows.UI.Core;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -38,18 +37,17 @@ namespace MultitoolWinUI.Pages.Explorer
         // tri-state: [ignored, home, explorer, editor]
         private byte loaded;
         private CancellationTokenSource fsCancellationTokenSource;
-        private IPathCompletor pathCompletor;
-        private FileSystemManager fileSystemManager = new();
+        private IPathCompletor pathCompletor = new PathCompletor();
+        private FileSystemManager fileSystemManager = new() { Notify = false };
         private Stopwatch eventStopwatch = new();
         private Stopwatch taskStopwatch = new();
         private Stack<string> previousStackPath = new(10);
         private Stack<string> nextPathStack = new(10);
-        private UriCleaner cleaner = new();
+        //private UriCleaner cleaner = new();
 
         public ExplorerPage()
         {
             InitializeComponent();
-            ViewModel.CurrentDispatcherQueue = DispatcherQueue;
             fileSystemManager.Progress += FileSystemManager_Progress;
             fileSystemManager.Exception += FileSystemManager_Exception;
             fileSystemManager.Completed += FileSystemManager_Completed;
@@ -60,8 +58,6 @@ namespace MultitoolWinUI.Pages.Explorer
 
         public ObservableCollection<FileSystemEntryViewModel> CurrentFiles { get; } = new();
 
-        public ObservableCollection<string> PathAutoCompletion { get; } = new();
-
         public ObservableCollection<string> History { get; } = new();
 
         public string CurrentPath { get; set; }
@@ -70,7 +66,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         #region private methods
 
-        private void DisplayFiles(string path)
+        private async void DisplayFiles(string path)
         {
             loaded |= 0b10;
 
@@ -95,7 +91,6 @@ namespace MultitoolWinUI.Pages.Explorer
                     Data.History.Add(string.Format("{0, 10}", realPath));
                 }
 #endif
-                PathAutoCompletion.Clear();
                 CurrentFiles.Clear();
                 Progress_TextBox.Text = string.Empty;
                 fileSystemManager.Notify = Files_ProgressBar.IsIndeterminate = CancelAction_Button.IsEnabled = true;
@@ -105,17 +100,35 @@ namespace MultitoolWinUI.Pages.Explorer
                 taskStopwatch.Restart();
                 try
                 {
-                    fileSystemManager.GetFileSystemEntries(realPath, CurrentFiles, AddDelegate, fsCancellationTokenSource.Token);
-                    Trace.WriteLine(nameof(ExplorerPage) + " -> Waiting for filesystem manager to complete...");
+                    await fileSystemManager.GetFileSystemEntries(realPath, CurrentFiles, AddDelegate, fsCancellationTokenSource.Token);
+
+                    taskStopwatch.Stop();
+                    if (fsCancellationTokenSource != null)
+                    {
+                        fsCancellationTokenSource.Dispose();
+                    }
+                    fsCancellationTokenSource = null;
+                    eventStopwatch.Reset();
+
+                    CancelAction_Button.IsEnabled = false;
+                    SortList();
+                    Files_ProgressBar.IsIndeterminate = false;
+
+                    Progress_TextBox.Foreground = new SolidColorBrush(Colors.White);
+                    string message = "Task successfully completed";
+
+                    Progress_TextBox.Text = taskStopwatch.Elapsed.TotalSeconds >= 1
+                        ? message + " (in " + taskStopwatch.Elapsed.TotalSeconds.ToString() + "s)"
+                        : message + " (in " + taskStopwatch.ElapsedMilliseconds.ToString() + "ms)";
                 }
-                catch (ArgumentException argExcep)
+                catch (Exception ex) // we catch everything, and display it to the trace and UI
                 {
                     eventStopwatch.Reset();
                     CancelAction_Button.IsEnabled = false;
                     Files_ProgressBar.IsIndeterminate = false;
 
-                    Trace.WriteLine(argExcep);
-                    Progress_TextBox.Text = argExcep.ToString();
+                    Trace.WriteLine(ex.ToString());
+                    Progress_TextBox.Text = ex.ToString();
                 }
             }
             catch (DirectoryNotFoundException)
@@ -143,8 +156,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void AddDelegate(IList<FileSystemEntryViewModel> items, IFileSystemEntry item)
         {
-            DispatcherQueue.TryEnqueue(() => items.Add(new FileSystemEntryViewModel(item)));
-            //SortList();
+            _ = DispatcherQueue.TryEnqueue(() => items.Add(new FileSystemEntryViewModel(item, DispatcherQueue)));
         }
 
         private void SortList()
@@ -178,11 +190,39 @@ namespace MultitoolWinUI.Pages.Explorer
               });
         }
 
+        private void Next()
+        {
+            if (nextPathStack.Count > 0)
+            {
+                previousStackPath.Push(CurrentPath);
+                DisplayFiles(nextPathStack.Pop());
+            }
+        }
+
+        private void Back()
+        {
+            if (previousStackPath.Count > 0)
+            {
+                nextPathStack.Push(CurrentPath);
+                DisplayFiles(previousStackPath.Pop());
+            }
+            else
+            {
+                DirectoryInfo info = Directory.GetParent(CurrentPath);
+                if (info != null)
+                {
+                    nextPathStack.Push(CurrentPath);
+                    DisplayFiles(info.FullName);
+                }
+            }
+        }
+
         #endregion
 
         #region events
 
         #region navigation events
+
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             string path = e.Parameter as string;
@@ -192,43 +232,86 @@ namespace MultitoolWinUI.Pages.Explorer
             }
             base.OnNavigatedTo(e);
         }
+
         #endregion
 
         #region window events
 
-        private void MainListView_ItemClick(object sender, ItemClickEventArgs e)
+        private void MainListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
+            if (MainListView.SelectedItem is FileSystemEntryViewModel item)
+            {
+                DisplayFiles(item.Path);
+            }
+            e.Handled = true;
+        }
 
+        private void Page_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (e.GetCurrentPoint(null).Properties.IsXButton1Pressed)
+            {
+                Back();
+            }
+            else if (e.GetCurrentPoint(null).Properties.IsXButton2Pressed)
+            {
+                Next();
+            }
         }
 
         private void HistoryListView_ItemClick(object sender, ItemClickEventArgs e)
         {
-
+            // TODO
         }
 
         private void RefreshFileList_Click(object sender, RoutedEventArgs e)
         {
-
+            DisplayFiles(CurrentPath);
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-
+            if (fsCancellationTokenSource != null)
+            {
+                fsCancellationTokenSource.Cancel();
+            }
         }
 
         private void Previous_Click(object sender, RoutedEventArgs e)
         {
-
+            Back();
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
         {
-
+            Next();
         }
 
-        private void PathInput_KeyUp(object sender, KeyRoutedEventArgs e)
+        private void PathInput_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
+#if DEBUG
+            string path = PathInput.Text;
+            try
+            {
+                PathInput.ItemsSource = pathCompletor.Complete(path);
+            }
+            catch (UnauthorizedAccessException) { }
+#endif
+        }
 
+        private void PathInput_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+#if DEBUG
+            Debug.WriteLine("PathInput_SuggestionChosen -> " + args.SelectedItem.ToString() + " | " + args.GetType().ToString());
+#endif
+        }
+
+        private void PathInput_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            string text = args.QueryText;
+            if (!string.IsNullOrEmpty(text))
+            {
+                DisplayFiles(text);
+            }
         }
 
         private void Page_Unloaded(object sender, RoutedEventArgs e)

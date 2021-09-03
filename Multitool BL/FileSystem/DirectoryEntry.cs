@@ -26,21 +26,18 @@ namespace Multitool.FileSystem
             get => _size;
             set
             {
-#if !DEBUG
                 if (!Partial)
                 {
                     throw new InvalidOperationException("Item is not partial");
                 }
-#endif
                 long old = _size;
                 _size = value;
-#if !DEBUG
                 RaiseSizeChangedEvent(old);
-#endif
             }
         }
 
-#region public methods
+        #region public methods
+
         /// <inheritdoc/>
         public override void Delete()
         {
@@ -51,6 +48,14 @@ namespace Multitool.FileSystem
             else
             {
                 throw CreateDeleteIOException();
+            }
+        }
+
+        public override void Rename(string newName)
+        {
+            if (CanRename(newName))
+            {
+                throw new NotImplementedException();
             }
         }
 
@@ -107,9 +112,10 @@ namespace Multitool.FileSystem
             }
             SetInfos(dirInfo);
         }
-#endregion
 
-#region private methods
+        #endregion
+
+        #region private methods
         private void DirectoryCopy(DirectoryInfo info, string newPath)
         {
             DirectoryInfo[] dirs = info.GetDirectories();
@@ -156,7 +162,7 @@ namespace Multitool.FileSystem
                 }
             }
 
-            DirectoryInfo directoryInfo = new DirectoryInfo(dirPath);
+            DirectoryInfo directoryInfo = new(dirPath);
             if (CanDelete(directoryInfo))
             {
                 directoryInfo.Delete();
@@ -166,6 +172,7 @@ namespace Multitool.FileSystem
                 throw CreateDeleteIOException(directoryInfo);
             }
         }
-#endregion
+
+        #endregion
     }
 }

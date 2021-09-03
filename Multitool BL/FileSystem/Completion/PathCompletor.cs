@@ -7,15 +7,17 @@ namespace Multitool.FileSystem.Completion
 {
     public class PathCompletor : IPathCompletor
     {
-        public void Complete(string input, IList<string> list)
+        public string[] Complete(string input)
         {
             string fileName = GetFileName(input, out int i);
             string directory = GetDirName(input, i);
             string[] entries = GetEntries(directory);
+            List<string> list = new();
             if (entries != null)
             {
                 PutEntries(fileName, list, entries);
             }
+            return list.ToArray();
         }
 
         private void PutEntries(string fileName, IList<string> list, string[] joins)
@@ -118,7 +120,7 @@ namespace Multitool.FileSystem.Completion
             return directory;
         }
 
-        private string[] GetEntries(string path)
+        private static string[] GetEntries(string path)
         {
             if (Directory.Exists(path))
             {
@@ -147,7 +149,7 @@ namespace Multitool.FileSystem.Completion
         {
             if (input.Length > 100)
             {
-                StringBuilder builder = new StringBuilder();
+                StringBuilder builder = new();
                 for (int i = input.Length - 1; i >= 0; i--)
                 {
                     builder.Append(input[i]);
