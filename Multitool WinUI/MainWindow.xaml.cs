@@ -2,6 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 
 using MultitoolWinUI.Pages;
+using MultitoolWinUI.Pages.ControlPanels;
 using MultitoolWinUI.Pages.Power;
 
 using System;
@@ -71,6 +72,9 @@ namespace MultitoolWinUI
                         break;
                     case "power":
                         _ = ContentFrame.Navigate(typeof(PowerPage));
+                        break;
+                    case "controlpanels":
+                        _ = ContentFrame.Navigate(typeof(ControlPanelsPage));
                         break;
                     default:
                         Trace.WriteLine("Trying to navigate to: " + tag);

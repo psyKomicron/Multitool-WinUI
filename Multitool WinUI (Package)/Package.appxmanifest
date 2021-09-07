@@ -5,12 +5,13 @@
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:iot="http://schemas.microsoft.com/appx/manifest/iot/windows10"
-  IgnorableNamespaces="uap rescap iot">
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  IgnorableNamespaces="uap rescap iot uap3">
 
   <Identity
     Name="a34c0c86-c628-4f8e-9e06-1af20315e557"
     Publisher="CN=MonsieurJ"
-    Version="1.0.7.0" />
+    Version="1.0.8.0" />
 
   <Properties>
     <DisplayName>Multitool WinUI (Package)</DisplayName>
@@ -46,6 +47,10 @@
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
     <iot:Capability Name="systemManagement"/>
+    <iot:Capability Name="lowLevelDevices"/>
+    <uap:Capability Name="userAccountInformation"/>
+    <uap3:Capability Name="remoteSystem"/>
+    <uap:Capability Name="removableStorage"/>
     <DeviceCapability Name="lowLevel"/>
   </Capabilities>
 </Package>

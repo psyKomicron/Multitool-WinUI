@@ -23,11 +23,13 @@
   <ItemGroup>
     <None Remove="Controls\TimerPicker.xaml" />
     <None Remove="Pages\ComputerDevicesPage.xaml" />
+    <None Remove="Pages\ControlPanels\ControlPanelsPage.xaml" />
     <None Remove="Pages\DriveInfoView.xaml" />
     <None Remove="Pages\ExplorerHomePage.xaml" />
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\MainPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
+    <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
 
@@ -55,6 +57,12 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Themes\Animations.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>
@@ -101,6 +109,12 @@
 
   <ItemGroup>
     <Page Update="Pages\Power\PowerPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\ControlPanels\ControlPanelsPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

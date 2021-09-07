@@ -2,7 +2,7 @@
 
 namespace Multitool.FileSystem
 {
-    internal class WatcherDelegates
+    public class WatcherDelegates
     {
         public FileSystemEventHandler DeletedHandler { get; set; }
         public FileSystemEventHandler CreatedHandler { get; set; }

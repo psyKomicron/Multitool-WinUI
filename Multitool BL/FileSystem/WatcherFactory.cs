@@ -2,7 +2,7 @@
 
 namespace Multitool.FileSystem
 {
-    internal static class WatcherFactory
+    public static class WatcherFactory
     {
         /// <summary>
         /// Creates an instance of <see cref="FileSystemWatcher"/> with the specified path and notify filters.
