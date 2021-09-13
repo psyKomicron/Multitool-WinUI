@@ -10,7 +10,7 @@ using System.Threading;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
-namespace MultitoolWinUI.Pages
+namespace MultitoolWinUI.Pages.Explorer
 {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
@@ -22,8 +22,7 @@ namespace MultitoolWinUI.Pages
         public ExplorerHomePage()
         {
             InitializeComponent();
-            Loaded += ExplorerHomePage_Loaded;
-#if RELEASE
+
             DriveInfo[] drives = DriveInfo.GetDrives();
             foreach (DriveInfo item in drives)
             {
@@ -34,17 +33,12 @@ namespace MultitoolWinUI.Pages
                     Height = 230,
                 });
             }
-#endif
-        }
-
-        private void ExplorerHomePage_Loaded(object sender, RoutedEventArgs e)
-        {
-            _ = Frame.Navigate(typeof(ExplorerPage), @"C:\");
         }
 
         private void DisksGrid_ItemClick(object sender, ItemClickEventArgs e)
         {
             _ = Frame.Navigate(typeof(ExplorerPage), (e.ClickedItem as DriveInfoView).DriveInfo.Name);
+            token.Cancel();
         }
 
         private void Page_Unloaded(object sender, RoutedEventArgs e)

@@ -288,14 +288,12 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void PathInput_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-#if DEBUG
             string path = PathInput.Text;
             try
             {
                 PathInput.ItemsSource = pathCompletor.Complete(path);
             }
             catch (UnauthorizedAccessException) { }
-#endif
         }
 
         private void PathInput_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
