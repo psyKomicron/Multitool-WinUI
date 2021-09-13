@@ -93,52 +93,43 @@ namespace MultitoolWinUI.Controls
 
         private void HoursTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (int.TryParse(HoursTextBox.Text, out int res))
+            if (int.TryParse(HoursTextBox.Text, out int res) && res > 0)
             {
-                if (res > 0)
-                {
-                    Hours = res;
-                }
-                else
-                {
-                    Hours = 0;
-                    HoursTextBox.SelectionStart = HoursTextBox.Text.Length;
-                    HoursTextBox.SelectionLength = 0;
-                }
+                Hours = res;
+            }
+            else
+            {
+                Hours = 0;
+                HoursTextBox.SelectionStart = HoursTextBox.Text.Length;
+                HoursTextBox.SelectionLength = 0;
             }
         }
 
         private void MinutesTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (int.TryParse(MinutesTextBox.Text, out int res))
+            if (int.TryParse(MinutesTextBox.Text, out int res) && res > 0)
             {
-                if (res > 0)
-                {
-                    Minutes = res;
-                }
-                else
-                {
-                    Minutes = 0;
-                    MinutesTextBox.SelectionStart = MinutesTextBox.Text.Length;
-                    MinutesTextBox.SelectionLength = 0;
-                }
+                Minutes = res;
+            }
+            else
+            {
+                Minutes = 0;
+                MinutesTextBox.SelectionStart = MinutesTextBox.Text.Length;
+                MinutesTextBox.SelectionLength = 0;
             }
         }
 
         private void SecondsTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (int.TryParse(SecondsTextBox.Text, out int res))
+            if (int.TryParse(SecondsTextBox.Text, out int res) && res > 0)
             {
-                if (res > 0)
-                {
-                    Seconds = res;
-                }
-                else
-                {
-                    Seconds = 0;
-                    SecondsTextBox.SelectionStart = SecondsTextBox.Text.Length;
-                    SecondsTextBox.SelectionLength = 0;
-                }
+                Seconds = res;
+            }
+            else
+            {
+                Seconds = 0;
+                SecondsTextBox.SelectionStart = SecondsTextBox.Text.Length;
+                SecondsTextBox.SelectionLength = 0;
             }
         }
 
@@ -157,7 +148,15 @@ namespace MultitoolWinUI.Controls
 
         private void MinutesUpButton_Click(object sender, RoutedEventArgs e)
         {
-            Minutes++;
+            if (Minutes + 1 > 59)
+            {
+                Hours++;
+                Minutes = 0;
+            }
+            else
+            {
+                Minutes++;
+            }
         }
 
         private void MinutesDownButton_Click(object sender, RoutedEventArgs e)
@@ -166,11 +165,24 @@ namespace MultitoolWinUI.Controls
             {
                 Minutes--;
             }
+            else if (Hours > 0)
+            {
+                Hours--;
+                Minutes = 59;
+            }
         }
 
         private void SecondsUpButton_Click(object sender, RoutedEventArgs e)
         {
-            Seconds++;
+            if (Seconds + 1 > 59)
+            {
+                Minutes++;
+                Seconds = 0;
+            }
+            else
+            {
+                Seconds++;
+            }
         }
 
         private void SecondsDownButton_Click(object sender, RoutedEventArgs e)
@@ -178,6 +190,11 @@ namespace MultitoolWinUI.Controls
             if (Seconds > 0)
             {
                 Seconds--;
+            }
+            else if (Minutes > 0)
+            {
+                Minutes--;
+                Seconds = 59;
             }
         }
 

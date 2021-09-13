@@ -406,7 +406,15 @@ namespace MultitoolWinUI.Pages.Power
 
         private void MinutesUpButton_Click(object sender, RoutedEventArgs e)
         {
-            Minutes++;
+            if (Minutes + 1 > 59)
+            {
+                Hours++;
+                Minutes = 0;
+            }
+            else
+            {
+                Minutes++;
+            }
         }
 
         private void MinutesDownButton_Click(object sender, RoutedEventArgs e)
@@ -415,11 +423,24 @@ namespace MultitoolWinUI.Pages.Power
             {
                 Minutes--;
             }
+            else if (Hours > 0)
+            {
+                Hours--;
+                Minutes = 59;
+            }
         }
 
         private void SecondsUpButton_Click(object sender, RoutedEventArgs e)
         {
-            Seconds++;
+            if (Seconds + 1 > 59)
+            {
+                Minutes++;
+                Seconds = 0;
+            }
+            else
+            {
+                Seconds++;
+            }
         }
 
         private void SecondsDownButton_Click(object sender, RoutedEventArgs e)
@@ -427,6 +448,11 @@ namespace MultitoolWinUI.Pages.Power
             if (Seconds > 0)
             {
                 Seconds--;
+            }
+            else if (Minutes > 0)
+            {
+                Minutes--;
+                Seconds = 59;
             }
         }
 
