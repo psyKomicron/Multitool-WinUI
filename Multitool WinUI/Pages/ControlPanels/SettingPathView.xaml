@@ -1,0 +1,45 @@
+﻿<UserControl
+    x:Name="Control"
+    x:Class="MultitoolWinUI.Pages.ControlPanels.SettingPathView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MultitoolWinUI.Pages.ControlPanels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="TextWrapping" Value="WrapWholeWords"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Margin" Value="7"/>
+            <Setter Property="Background" Value="{ThemeResource SystemAccentColorDark1}"/>
+        </Style>
+        
+    </UserControl.Resources>
+
+    <Button x:Name="ControlButton"
+            Click="ControlButton_Click">
+        <Button.Content>
+            <TextBlock x:Name="ButtonNameTextBlock"
+                       Text="{Binding ElementName=Control, Path=ButtonName}"/>
+        </Button.Content>
+
+        <Button.ContextFlyout>
+            <MenuFlyout>
+                <MenuFlyoutItem x:Name="DeleteButton" 
+                                Text="Delete" 
+                                Click="DeleteButton_Click"/>
+                <MenuFlyoutItem x:Name="PinButton" 
+                                Text="Pin" 
+                                Click="PinButton_Click"/>
+            </MenuFlyout>
+        </Button.ContextFlyout>
+    </Button>
+    
+</UserControl>
