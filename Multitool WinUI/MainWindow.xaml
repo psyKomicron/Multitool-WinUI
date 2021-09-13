@@ -17,29 +17,49 @@
                                     Icon="Home" 
                                     Content="Home">
                 </NavigationViewItem>
+
+                <NavigationViewItemHeader Content="Explorer"/>
+                <NavigationViewItem Tag="explorer" Content="File view">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE838;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Disks overview" Tag="explorerhome">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEDA2;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItemHeader Content="Utilities"/>
+
                 <NavigationViewItem Tag="devices" 
                                     Content="Windows devices">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE950;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Tag="explorer" 
-                                    Content="Explorer">
+
+                <NavigationViewItem Tag="power" Content="Power">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE838;"/>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE7E8;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Tag="power" 
-                                    Icon="Clock" 
-                                    Content="Power">
-                </NavigationViewItem>
+
                 <NavigationViewItem Tag="controlpanels"
                                      Content="Control panels">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE770;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
+                <NavigationViewItem Tag="hashgenerator"
+                                     Content="Hash generator">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEA18;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
+            
             <ScrollViewer>
                 <Frame x:Name="ContentFrame"></Frame>
             </ScrollViewer>

@@ -3,6 +3,8 @@ using Microsoft.UI.Xaml.Controls;
 
 using MultitoolWinUI.Pages;
 using MultitoolWinUI.Pages.ControlPanels;
+using MultitoolWinUI.Pages.Explorer;
+using MultitoolWinUI.Pages.HashGenerator;
 using MultitoolWinUI.Pages.Power;
 
 using System;
@@ -68,6 +70,9 @@ namespace MultitoolWinUI
                         _ = ContentFrame.Navigate(typeof(ComputerDevicesPage));
                         break;
                     case "explorer":
+                        _ = ContentFrame.Navigate(typeof(ExplorerPage));
+                        break;
+                    case "explorerhome":
                         _ = ContentFrame.Navigate(typeof(ExplorerHomePage));
                         break;
                     case "power":
@@ -75,6 +80,9 @@ namespace MultitoolWinUI
                         break;
                     case "controlpanels":
                         _ = ContentFrame.Navigate(typeof(ControlPanelsPage));
+                        break;
+                    case "hashgenerator":
+                        _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
                     default:
                         Trace.WriteLine("Trying to navigate to: " + tag);
