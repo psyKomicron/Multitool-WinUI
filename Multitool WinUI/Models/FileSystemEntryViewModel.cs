@@ -18,7 +18,7 @@ namespace MultitoolWinUI.Models
 {
     public class FileSystemEntryViewModel : ViewModel, IFileSystemEntry
     {
-        private const ushort uiUpdateMs = 50;
+        private const ushort uiUpdateMs = 120;
         private const string DirectoryIcon = "📁";
         private const string FileIcon = "📄";
         private const string HiddenIcon = "👁";
