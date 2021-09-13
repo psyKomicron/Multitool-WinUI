@@ -1,0 +1,98 @@
+﻿<Page
+    x:Class="MultitoolWinUI.Pages.HashGenerator.HashGeneratorPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MultitoolWinUI.Pages.HashGenerator"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    
+    <Grid Margin="20, 0, 20, 0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.Resources>
+            <Style TargetType="TextBox">
+                <Setter Property="HorizontalTextAlignment" Value="Center"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="20"/>
+            </Style>
+            <Style TargetType="Button">
+                <Setter Property="FontSize" Value="20"/>
+                <Setter Property="Width" Value="150"/>
+                <Setter Property="Height" Value="60"/>
+                <Setter Property="CornerRadius" Value="2"/>
+            </Style>
+        </Grid.Resources>
+
+        <Grid Grid.Row="0"
+              Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="10*"/>
+                <ColumnDefinition Width="70"/>
+            </Grid.ColumnDefinitions>
+
+            <Slider x:Name="LengthSlider"
+                    Minimum="1"
+                    Maximum="512"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    MaxHeight="50"/>
+            <TextBox x:Name="LengthTextBox"
+                     Text="{Binding ElementName=LengthSlider, Path=Value, Mode=TwoWay}"
+                     BeforeTextChanging="LengthTextBox_BeforeTextChanging"
+                     InputScope="Number"
+                     BorderThickness="0"
+                     VerticalAlignment="Center"
+                     Grid.Column="1"/>
+        </Grid>
+
+        <ComboBox x:Name="HashTypeComboBox"
+                  MinWidth="300"
+                  MinHeight="50"
+                  Grid.Column="0"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Center"
+                  Grid.Row="1">
+            <ComboBoxItem TabIndex="0" 
+                          Content="Alphanumeric (A-z 0-9)"/>
+            <ComboBoxItem TabIndex="1" 
+                          Content="Number only (0-9)"/>
+            <ComboBoxItem TabIndex="2" 
+                          Content="Chars only (A-z)"/>
+            <ComboBoxItem TabIndex="3"
+                          Content="Chars only (a-z)"/>
+        </ComboBox>
+
+        <Button x:Name="GenerateButton"
+                Content="Generate"
+                Click="GenerateButton_Click"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Grid.Row="1"
+                Grid.Column="1"/>
+
+        <Border BorderBrush="{ThemeResource SystemAccentColor}"
+                BorderThickness="1"
+                Grid.Row="2"
+                Grid.ColumnSpan="2">
+            <TextBlock x:Name="ResultTextBlock"
+                       FontSize="22"
+                       HorizontalTextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap"
+                       IsTextSelectionEnabled="True"
+                       Grid.Row="3"
+                       Grid.ColumnSpan="2"/>
+        </Border>
+
+    </Grid>
+</Page>
