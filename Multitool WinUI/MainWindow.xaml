@@ -5,10 +5,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Closed="Window_Closed">
     <Grid>
         <NavigationView Loaded="NavigationView_Loaded"
-                        IsPaneOpen="False"
+                        IsPaneOpen="{Binding ElementName=Window, Path=IsPaneOpen, Mode=TwoWay}"
                         ItemInvoked="NavigationView_ItemInvoked" 
                         BackRequested="NavigationView_BackRequested"
                         IsBackEnabled="{Binding ElementName=ContentFrame, Path=CanGoBack}">
@@ -59,7 +60,6 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
-            
             <ScrollViewer>
                 <Frame x:Name="ContentFrame"></Frame>
             </ScrollViewer>

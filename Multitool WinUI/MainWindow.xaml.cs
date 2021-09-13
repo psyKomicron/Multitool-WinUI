@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
+using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Pages;
 using MultitoolWinUI.Pages.ControlPanels;
 using MultitoolWinUI.Pages.Explorer;
@@ -20,12 +21,73 @@ namespace MultitoolWinUI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private Type lastPage;
+
         public MainWindow()
         {
             InitializeComponent();
             Title = "Multitool";
+
             Application.Current.UnhandledException += OnUnhandledException;
+
+            try
+            {
+                IsPaneOpen = Tool.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
+            }
+            catch (SettingNotFoundException)
+            {
+                IsPaneOpen = true;
+            }
+
+            try
+            {
+                string lastPageName = Tool.GetSetting<string>(nameof(MainWindow), nameof(lastPage));
+                switch (lastPageName)
+                {
+                    case nameof(MainPage):
+                        lastPage = typeof(MainPage);
+                        break;
+                    case nameof(ComputerDevicesPage):
+                        lastPage = typeof(ComputerDevicesPage);
+                        break;
+                    case nameof(ExplorerPage):
+                        lastPage = typeof(ExplorerPage);
+                        break;
+                    case nameof(ExplorerHomePage):
+                        lastPage = typeof(ExplorerHomePage);
+                        break;
+                    case nameof(PowerPage):
+                        lastPage = typeof(PowerPage);
+                        break;
+                    case nameof(ControlPanelsPage):
+                        lastPage = typeof(ControlPanelsPage);
+                        break;
+                    case nameof(HashGeneratorPage):
+                        lastPage = typeof(HashGeneratorPage);
+                        break;
+                    default:
+                        Trace.WriteLine("Unknown page");
+                        break;
+                }
+            }
+            catch (SettingNotFoundException) { }
         }
+
+        public bool IsPaneOpen { get; set; }
+
+        public void DisplayMessage(string message)
+        {
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                _ = DispatcherQueue.TryEnqueue(() =>
+                {
+                    ExceptionTextBlock.Text = message;
+                    ExceptionPopup.IsOpen = true;
+                });
+            }
+        }
+
+        #region exception
 
         private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
         {
@@ -39,21 +101,21 @@ namespace MultitoolWinUI
             DisplayMessage(e.Exception.Message);
         }
 
-        public void DisplayMessage(string message)
-        {
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    ExceptionTextBlock.Text = message;
-                    ExceptionPopup.IsOpen = true;
-                });
-            }
-        }
+        #endregion
+
+        #region navigation events
 
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
-            _ = ContentFrame.Navigate(typeof(MainPage), this);
+            if (lastPage != null)
+            {
+                _ = ContentFrame.Navigate(lastPage);
+            }
+            else
+            {
+                lastPage = typeof(MainPage);
+                _ = ContentFrame.Navigate(typeof(MainPage));
+            }
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -64,24 +126,31 @@ namespace MultitoolWinUI
                 switch (tag)
                 {
                     case "home":
+                        lastPage = typeof(MainPage);
                         _ = ContentFrame.Navigate(typeof(MainPage));
                         break;
                     case "devices":
+                        lastPage = typeof(ComputerDevicesPage);
                         _ = ContentFrame.Navigate(typeof(ComputerDevicesPage));
                         break;
                     case "explorer":
+                        lastPage = typeof(ExplorerPage);
                         _ = ContentFrame.Navigate(typeof(ExplorerPage));
                         break;
                     case "explorerhome":
+                        lastPage = typeof(ExplorerHomePage);
                         _ = ContentFrame.Navigate(typeof(ExplorerHomePage));
                         break;
                     case "power":
+                        lastPage = typeof(PowerPage);
                         _ = ContentFrame.Navigate(typeof(PowerPage));
                         break;
                     case "controlpanels":
+                        lastPage = typeof(ControlPanelsPage);
                         _ = ContentFrame.Navigate(typeof(ControlPanelsPage));
                         break;
                     case "hashgenerator":
+                        lastPage = typeof(HashGeneratorPage);
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
                     default:
@@ -98,5 +167,19 @@ namespace MultitoolWinUI
                 ContentFrame.GoBack();
             }
         }
+
+        #endregion
+
+        #region window events
+
+        private void Window_Closed(object sender, WindowEventArgs args)
+        {
+            // save settings
+            if (lastPage != null)
+            Tool.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
+            Tool.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
+        }
+
+        #endregion
     }
 }

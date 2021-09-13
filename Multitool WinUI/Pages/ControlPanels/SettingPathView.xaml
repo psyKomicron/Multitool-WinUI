@@ -18,12 +18,12 @@
             <Setter Property="VerticalAlignment" Value="Stretch"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Margin" Value="7"/>
-            <Setter Property="Background" Value="{ThemeResource SystemAccentColorDark1}"/>
         </Style>
         
     </UserControl.Resources>
 
     <Button x:Name="ControlButton"
+            Background="{Binding ElementName=Control, Path=Background}"
             Click="ControlButton_Click">
         <Button.Content>
             <TextBlock x:Name="ButtonNameTextBlock"

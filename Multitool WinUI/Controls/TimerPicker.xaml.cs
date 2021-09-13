@@ -1,28 +1,65 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Timers;
+
+using Windows.Foundation;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace MultitoolWinUI.Controls
 {
-    public sealed partial class TimerPicker : UserControl, INotifyPropertyChanged
+    public sealed partial class TimerPicker : UserControl, INotifyPropertyChanged, IDisposable
     {
+        private TimeSpan remainingTimeSpan;
+        private TimeSpan originalTimeSpan;
+        private TimeSpan timeSpan;
+        private DispatcherQueueTimer animationTimer;
+        private Timer timer = new() { AutoReset = false };
+
+        private bool _buttonsEnabled = true;
+        private bool _isReadOnly;
         private int _hours;
         private int _minutes;
         private int _seconds;
-        private TimeSpan timeSpan;
 
         public TimerPicker()
         {
             InitializeComponent();
+            animationTimer = DispatcherQueue.CreateTimer();
+            animationTimer.Interval = new TimeSpan(1 * TimeSpan.TicksPerSecond); // 1s
+            animationTimer.IsRepeating = true;
+            animationTimer.Tick += AnimationTimer_Tick;
+            timer.Elapsed += Timer_Elapsed;
         }
 
         #region properties
+
+        public bool IsReadOnly
+        {
+            get => _isReadOnly;
+            set
+            {
+                _isReadOnly = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        public bool ButtonsEnabled
+        {
+            get => _buttonsEnabled;
+            set
+            {
+                _buttonsEnabled = value;
+                NotifyPropertyChanged();
+            }
+        }
 
         public int Hours
         {
@@ -67,7 +104,18 @@ namespace MultitoolWinUI.Controls
 
         #region events
 
+        /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Occurs when the timer status has changed (started: True, stopped: False).
+        /// </summary>
+        public event TypedEventHandler<TimerPicker, bool> StatusChanged;
+
+        /// <summary>
+        /// Routed elapsed event.
+        /// </summary>
+        public event ElapsedEventHandler Elapsed;
 
         #endregion
 
@@ -80,6 +128,11 @@ namespace MultitoolWinUI.Controls
             return timeSpan;
         }
 
+        public void Dispose()
+        {
+            timer.Dispose();
+        }
+
         #region private methods
 
         private void NotifyPropertyChanged([CallerMemberName] string name = null)
@@ -87,9 +140,23 @@ namespace MultitoolWinUI.Controls
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
+        private void UpdateTimer(TimeSpan span)
+        {
+            if (IsLoaded)
+            {
+                Hours = span.Hours;
+                Minutes = span.Minutes;
+                Seconds = span.Seconds;
+            }
+        }
+
         #endregion
 
         #region event handlers
+
+        #region timer control
+
+        #region textboxs
 
         private void HoursTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -132,6 +199,34 @@ namespace MultitoolWinUI.Controls
                 SecondsTextBox.SelectionLength = 0;
             }
         }
+
+        private void HoursTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(HoursTextBox.Text) || HoursTextBox.Text == "0")
+            {
+                HoursTextBox.Text = string.Empty;
+            }
+        }
+
+        private void MinutesTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(MinutesTextBox.Text) || MinutesTextBox.Text == "0")
+            {
+                MinutesTextBox.Text = string.Empty;
+            }
+        }
+
+        private void SecondsTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(SecondsTextBox.Text) || SecondsTextBox.Text == "0")
+            {
+                SecondsTextBox.Text = string.Empty;
+            }
+        }
+
+        #endregion
+
+        #region up/down buttons
 
         private void HoursUpButton_Click(object sender, RoutedEventArgs e)
         {
@@ -198,28 +293,87 @@ namespace MultitoolWinUI.Controls
             }
         }
 
-        private void HoursTextBox_GotFocus(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region timer buttons
+
+        private void StopTimerButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(HoursTextBox.Text) || HoursTextBox.Text == "0")
+            timer.Stop();
+            animationTimer.Stop();
+
+            ButtonsEnabled = true;
+            IsReadOnly = false;
+            UpdateTimer(originalTimeSpan);
+
+            StatusChanged?.Invoke(this, false);
+
+            Debug.WriteLine(nameof(StopTimerButton_Click) + ": status changed, timer stopped");
+        }
+
+        private void RestartTimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            timer.Stop();
+            timer.Start();
+
+            Debug.WriteLine(nameof(StopTimerButton_Click) + ": status changed, timer restarted");
+        }
+
+        private void StartTimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            ButtonsEnabled = false;
+            IsReadOnly = true;
+
+            remainingTimeSpan = GetValue();
+
+            if (remainingTimeSpan.TotalSeconds == 0)
             {
-                HoursTextBox.Text = string.Empty;
+                throw new FormatException("Input for power action cannot be empty");
+            }
+
+            originalTimeSpan = remainingTimeSpan;
+            timer.Interval = remainingTimeSpan.TotalMilliseconds;
+
+            timer.Start();
+            animationTimer.Start();
+            StatusChanged?.Invoke(this, true);
+
+            Debug.WriteLine(nameof(StopTimerButton_Click) + ": status changed, timer started");
+        }
+
+        private void PauseTimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (timer != null)
+            {
+                timer.Stop();
+                animationTimer.Stop();
+
+                ButtonsEnabled = true;
+                IsReadOnly = false;
             }
         }
 
-        private void MinutesTextBox_GotFocus(object sender, RoutedEventArgs e)
+        #endregion
+
+        #endregion
+
+        private void AnimationTimer_Tick(DispatcherQueueTimer sender, object args)
         {
-            if (string.IsNullOrWhiteSpace(MinutesTextBox.Text) || MinutesTextBox.Text == "0")
-            {
-                MinutesTextBox.Text = string.Empty;
-            }
+            TimeSpan span = remainingTimeSpan.Subtract(new TimeSpan(1 * TimeSpan.TicksPerSecond));
+            UpdateTimer(span);
+            remainingTimeSpan = span;
         }
 
-        private void SecondsTextBox_GotFocus(object sender, RoutedEventArgs e)
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(SecondsTextBox.Text) || SecondsTextBox.Text == "0")
+            _ = DispatcherQueue.TryEnqueue(() =>
             {
-                SecondsTextBox.Text = string.Empty;
-            }
+                ButtonsEnabled = true;
+                UpdateTimer(originalTimeSpan);
+            });
+            animationTimer.Stop();
+            Elapsed?.Invoke(this, e);
+            Debug.WriteLine("Elapsed");
         }
 
         #endregion

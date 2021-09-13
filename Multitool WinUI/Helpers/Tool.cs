@@ -1,21 +1,40 @@
-﻿using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
+using Windows.Foundation.Collections;
 using Windows.Storage;
 
 namespace MultitoolWinUI.Helpers
 {
     internal static class Tool
     {
-        public static T GetSetting<T>(string key)
+        public static T GetSetting<T>(string callerName, string key)
         {
-            return GetValueFromDictionary<T, string>(ApplicationData.Current.LocalSettings.Values, key);
+            IPropertySet set = ApplicationData.Current.LocalSettings.Values;
+            if (set.TryGetValue(callerName + "/" + key, out object value))
+            {
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            else
+            {
+                throw new SettingNotFoundException(key);
+            }
+        }
+
+        public static void SaveSetting<T>(string callerName, string key, T value)
+        {
+            string actualKey = callerName + "/" + key;
+            IPropertySet set = ApplicationData.Current.LocalSettings.Values;
+            if (set.ContainsKey(actualKey))
+            {
+                set[actualKey] = value;
+            }
+            else
+            {
+                set.Add(actualKey, value);
+            }
         }
 
         public static T GetAppRessource<T>(string name)
@@ -73,18 +92,6 @@ namespace MultitoolWinUI.Helpers
             }
         }
 
-        public static void TryEnqueue(DispatcherQueue queue, PropertyChangedEventHandler callback, object sender, [CallerMemberName] string name = null)
-        {
-            if (callback != null)
-            {
-                _ = queue.TryEnqueue(() => callback?.Invoke(sender, new PropertyChangedEventArgs(name)));
-            }
-            else
-            {
-                Trace.WriteLine("Not enqueueing callback to dispacher (callback null)");
-            }
-        }
-
         private static T GetValueFromDictionary<T, K>(IDictionary<K, object> dic, K key)
         {
             if (dic.ContainsKey(key))
@@ -108,9 +115,9 @@ namespace MultitoolWinUI.Helpers
 
     internal enum Sizes : long
     {
-        TERA = 1000000000000,
-        GIGA = 1000000000,
-        MEGA = 1000000,
-        KILO = 1000
+        TERA = 0x10000000000,
+        GIGA = 0x40000000,
+        MEGA = 0x100000,
+        KILO = 0x400
     }
 }
