@@ -9,41 +9,54 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <GridView AllowDrop="True"
-              CanReorderItems="True"
-              IsItemClickEnabled="True"
-              ItemClick="GridView_ItemClick"
-              Margin="50, 20">
-        <GridView.ItemContainerStyle>
-            <Style TargetType="GridViewItem">
-                <Setter Property="Margin" Value="5, 5, 5, 5"/>
-            </Style>
-        </GridView.ItemContainerStyle>
-        <GridView.Resources>
+    <VariableSizedWrapGrid Margin="50, 50"
+                           ItemHeight="200" 
+                           ItemWidth="200"
+                           MaximumRowsOrColumns="4"
+                           Grid.Row="1"
+                           Orientation="Horizontal">
+        <VariableSizedWrapGrid.Resources>
             <Style TargetType="Border">
                 <Setter Property="MinWidth" Value="200"/>
                 <Setter Property="MinHeight" Value="200"/>
-                <Setter Property="Background" Value="{ThemeResource SystemAccentColorDark1}"/>
+                <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
             </Style>
             <Style TargetType="TextBlock">
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="HorizontalAlignment" Value="Center"/>
-                <Setter Property="FontSize" Value="20"/>
+                <Setter Property="FontSize" Value="24"/>
                 <Setter Property="TextWrapping" Value="Wrap"/>
             </Style>
-        </GridView.Resources>
+            <Style TargetType="Button">
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="VerticalAlignment" Value="Stretch"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Margin" Value="7"/>
+                <Setter Property="Background" Value="{ThemeResource SystemChromeHighColor}"/>
+                <Setter Property="FontSize" Value="24"/>
+            </Style>
+        </VariableSizedWrapGrid.Resources>
 
-        <Border CornerRadius="10">
+        <Button x:Name="VersionButton"
+                Click="VersionButton_Click">
             <TextBlock x:Name="VersionTextBlock">
                 <Run Text="Version: "/>
                 <Run Text="{Binding ElementName=Page, Path=Version, Mode=OneTime}"/>
             </TextBlock>
-        </Border>
+        </Button>
 
-        <Border x:Name="ReadmeBorder"
+        <Button x:Name="ReadmeButton"
+                Click="ReadmeButton_Click"
                 CornerRadius="10">
             <TextBlock x:Name="ReadmeTextBlock"
                        Text="#README"/>
-        </Border>
-    </GridView>
+        </Button>
+
+        <Button x:Name="BuildTypeButton"
+                Click="BuildTypeButton_Click"
+                CornerRadius="10">
+            <TextBlock x:Name="BuildTypeBlock"/>
+        </Button>
+        
+    </VariableSizedWrapGrid>
 </Page>

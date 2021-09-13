@@ -2,7 +2,9 @@
 
 using System;
 using System.Reflection;
+using System.Text;
 
+using Windows.ApplicationModel;
 using Windows.System;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -20,19 +22,47 @@ namespace MultitoolWinUI.Pages
         public MainPage()
         {
             InitializeComponent();
+#if DEBUG
+            BuildTypeBlock.Text = "Debug";
+#else
+            BuildTypeBlock.Text = "Release";
+#endif
         }
 
-        public string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+#if DEBUG
+        public static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+#else
+        public static string Version => GetPackageVersion();
+#endif
 
-        private void GridView_ItemClick(object sender, ItemClickEventArgs e)
+#if !DEBUG
+        private static string GetPackageVersion()
         {
-            if (e.ClickedItem is Border border)
-            {
-                if (border.Name == nameof(ReadmeBorder))
-                {
-                    _ = Launcher.LaunchUriAsync(GithubUri);
-                }
-            }
+            StringBuilder builder = new();
+            builder.Append(Package.Current.Id.Version.Major)
+                   .Append('.')
+                   .Append(Package.Current.Id.Version.Minor)
+                   .Append('.')
+                   .Append(Package.Current.Id.Version.Build)
+                   .Append('.')
+                   .Append(Package.Current.Id.Version.Revision);
+            return builder.ToString();
+        }
+#endif
+
+        private void VersionButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+
+        }
+
+        private void ReadmeButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+
+        }
+
+        private void BuildTypeButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+
         }
     }
 }
