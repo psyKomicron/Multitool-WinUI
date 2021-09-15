@@ -3,6 +3,7 @@
 using Multitool.NTInterop;
 using Multitool.NTInterop.Power;
 
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -121,29 +122,34 @@ namespace MultitoolWinUI.Pages.Power
 
         private void TimerPicker_Elapsed(object sender, ElapsedEventArgs e)
         {
-#if DEBUG
             _ = DispatcherQueue.TryEnqueue(() =>
             {
-                switch ((SelectionComboBox.SelectedItem as ComboBoxItem).Tag)
+                if (SelectionComboBox.SelectedItem is ComboBoxItem item)
+                { 
+                    switch (item.Tag)
+                    {
+                        case "lock":
+                            Lock();
+                            break;
+                        case "sleep":
+                            Sleep();
+                            break;
+                        case "hiber":
+                            Hibernate();
+                            break;
+                        case "shut":
+                            Shutdown();
+                            break;
+                        case "restart":
+                            Restart();
+                            break;
+                    }
+                }
+                else
                 {
-                    case "lock":
-                        Lock();
-                        break;
-                    case "sleep":
-                        Sleep();
-                        break;
-                    case "hiber":
-                        Hibernate();
-                        break;
-                    case "shut":
-                        Shutdown();
-                        break;
-                    case "restart":
-                        Restart();
-                        break;
+                    throw new FormatException("You need to set an action");
                 }
             });
-#endif
         }
 
         private void TimerPicker_StatusChanged(Controls.TimerPicker sender, bool args)

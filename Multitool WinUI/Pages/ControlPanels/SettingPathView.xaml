@@ -16,28 +16,32 @@
         <Style TargetType="Button">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CornerRadius" Value="5"/>
             <Setter Property="Margin" Value="7"/>
         </Style>
         
     </UserControl.Resources>
 
-    <Button x:Name="ControlButton"
-            Background="{Binding ElementName=Control, Path=Background}"
-            Click="ControlButton_Click">
+    <Button 
+        x:Name="ControlButton"
+        Background="{Binding ElementName=Control, Path=Background}"
+        Click="ControlButton_Click">
         <Button.Content>
-            <TextBlock x:Name="ButtonNameTextBlock"
-                       Text="{Binding ElementName=Control, Path=ButtonName}"/>
+            <TextBlock 
+                x:Name="ButtonNameTextBlock"
+                Text="{Binding ElementName=Control, Path=ButtonName}"/>
         </Button.Content>
 
         <Button.ContextFlyout>
             <MenuFlyout>
-                <MenuFlyoutItem x:Name="DeleteButton" 
-                                Text="Delete" 
-                                Click="DeleteButton_Click"/>
-                <MenuFlyoutItem x:Name="PinButton" 
-                                Text="Pin" 
-                                Click="PinButton_Click"/>
+                <MenuFlyoutItem 
+                    x:Name="DeleteButton" 
+                    Text="Delete" 
+                    Click="DeleteButton_Click"/>
+                <MenuFlyoutItem 
+                    x:Name="PinButton" 
+                    Text="Pin" 
+                    Click="PinButton_Click"/>
             </MenuFlyout>
         </Button.ContextFlyout>
     </Button>

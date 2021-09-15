@@ -2,7 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 
-using Multitool.FileSystem;
+using Multitool.DAL;
 
 using System;
 using System.Collections.Generic;
@@ -37,7 +37,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
         public ControlPanelsPage()
         {
             InitializeComponent();
-            Task.Run(() => LoadCustoms());
+            _ = Task.Run(() => LoadCustoms());
         }
 
         #region private methods
@@ -173,7 +173,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
                             }
                             else
                             {
-                                Debug.WriteLine("Adding '" + name + "'. " + (pinned ? "Pinned" : "Not pinned"));
                                 pathes.Add(name, new(newUri, pinned));
                                 if (pinned)
                                 {
@@ -374,14 +373,12 @@ namespace MultitoolWinUI.Pages.ControlPanels
             {
                 try
                 {
-                    Debug.WriteLine("Parsing xml");
                     XmlDocument doc = new();
                     doc.Load(e.FullPath);
                     XmlElement root = doc.DocumentElement;
 
                     LoadNewElements(root);
                     RemoveOldElements(root);
-                    Debug.WriteLine("Parsed xml");
                 }
                 catch (XmlException ex)
                 {

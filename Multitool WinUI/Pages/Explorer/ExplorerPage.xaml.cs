@@ -5,9 +5,9 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.FileSystem;
-using Multitool.FileSystem.Completion;
-using Multitool.FileSystem.Events;
+using Multitool.DAL;
+using Multitool.DAL.Completion;
+using Multitool.DAL.Events;
 using Multitool.Parsers;
 using Multitool.Sorting;
 

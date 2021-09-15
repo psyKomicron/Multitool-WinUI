@@ -17,6 +17,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="5*"/>
+            <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
 
         <ComboBox x:Name="SelectionComboBox"
@@ -30,7 +31,7 @@
             <ComboBoxItem Tag="shut" Content="Shutdown"/>
             <ComboBoxItem Tag="hiber" Content="Hibernate"/>
         </ComboBox>
-        
+
         <controls:TimerPicker
             Elapsed="TimerPicker_Elapsed"
             Height="400"
@@ -38,111 +39,9 @@
             StatusChanged="TimerPicker_StatusChanged"
             Grid.Row="1"/>
 
-        <!--<Grid x:Name="ControlButtonsGrid"
-              Grid.Column="1"
-              Grid.Row="0">
-            <Grid.Resources>
-                <Style TargetType="Button">
-                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                    <Setter Property="VerticalAlignment" Value="Stretch"/>
-                </Style>
-                <Style TargetType="TextBlock">
-                    <Setter Property="IsHitTestVisible" Value="False"/>
-                    <Setter Property="VerticalAlignment" Value="Center"/>
-                    <Setter Property="Margin" Value="4, 0, 0, 0"/>
-                </Style>
-            </Grid.Resources>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="30px"/>
-                <ColumnDefinition Width="50px"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-
-            <RadioButton x:Name="LockButton"
-                         Grid.Column="0"
-                         Grid.Row="0"
-                         ToolTipService.ToolTip="Lock"/>
-            <TextBlock Grid.Column="1" 
-                       Grid.Row="0"
-                       Text="🔒" 
-                       FontSize="30" 
+        <controls:HostCustomControl Grid.Row="2" Background="Aquamarine">
+            <TextBlock Text="Is this working"
                        Foreground="White"/>
-            <TextBlock Grid.Column="2"
-                       Grid.Row="0" 
-                       Text="🔒 Lock"/>
-
-            <RadioButton x:Name="SleepButton" 
-                         Grid.Column="0"
-                         Grid.Row="1"
-                         ToolTipService.ToolTip="Sleep"/>
-            <TextBlock Grid.Column="1"
-                       Grid.Row="1" 
-                       Text="🌙" 
-                       FontSize="30" 
-                       Foreground="White"/>
-            <TextBlock Grid.Column="2"
-                       Grid.Row="1"
-                       Text="Sleep"/>
-
-            <RadioButton x:Name="RestartButton" 
-                         Grid.Column="0"
-                         Grid.Row="2"
-                         ToolTipService.ToolTip="Restart"/>
-            <TextBlock Grid.Column="1"
-                       Grid.Row="2"
-                       Text="⭯" 
-                       FontSize="30" 
-                       Foreground="White"/>
-            <TextBlock Grid.Column="2"
-                       Grid.Row="2"
-                       Text="Restart"/>
-
-            <RadioButton x:Name="ShutdownButton" 
-                         Grid.Column="0"
-                         Grid.Row="3"
-                         ToolTipService.ToolTip="Shutdown"/>
-            <TextBlock Grid.Column="1"
-                       Grid.Row="3"
-                       Text="⚡" 
-                       FontSize="30" 
-                       Foreground="White"/>
-            <TextBlock Grid.Column="2"
-                       Grid.Row="3"
-                       Text="Shutdown"/>
-
-            <RadioButton x:Name="HibernateButton" 
-                         Grid.Column="0"
-                         Grid.Row="4"/>
-            <TextBlock Grid.Column="1"
-                       Grid.Row="4"
-                       Text="❄" 
-                       FontSize="30" 
-                       Foreground="White"/>
-            <TextBlock Grid.Column="2"
-                       Grid.Row="4"
-                       Text="Hibernate"/>
-        </Grid>-->
-
-        <!--<muxc:RadioButtons x:Name="SelectionRadioButtons" 
-                           Header="Action"
-                           FontSize="30"
-                           SelectedIndex="0"
-                           VerticalAlignment="Stretch"
-                           Grid.Column="1"
-                           Grid.Row="0">
-            <RadioButton Content="Lock" FontSize="18"/>
-            <RadioButton Content="Sleep" FontSize="18"/>
-            <RadioButton Content="Restart" FontSize="18"/>
-            <RadioButton Content="Shutdown" FontSize="18"/>
-            <RadioButton Content="Hibernate" FontSize="18"/>
-        </muxc:RadioButtons>-->
-        
+        </controls:HostCustomControl>
     </Grid>
 </Page>

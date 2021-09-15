@@ -2,7 +2,6 @@
 using Microsoft.UI.Xaml.Controls;
 
 using MultitoolWinUI.Controls;
-using MultitoolWinUI.Pages.Explorer;
 
 using System.IO;
 using System.Threading;

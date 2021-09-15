@@ -28,8 +28,6 @@ namespace MultitoolWinUI
             InitializeComponent();
             Title = "Multitool";
 
-            Application.Current.UnhandledException += OnUnhandledException;
-
             try
             {
                 IsPaneOpen = Tool.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
@@ -86,22 +84,6 @@ namespace MultitoolWinUI
                 });
             }
         }
-
-        #region exception
-
-        private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
-        {
-            Debug.WriteLine("Unhandled exception event fired");
-            DisplayMessage((e.ExceptionObject as Exception)?.Message);
-        }
-
-        private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
-        {
-            Debug.WriteLine("Unhandled exception event fired");
-            DisplayMessage(e.Exception.Message);
-        }
-
-        #endregion
 
         #region navigation events
 

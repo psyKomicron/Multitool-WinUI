@@ -1,6 +1,6 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
-using Multitool.FileSystem;
+using Multitool.DAL;
 
 using MultitoolWinUI.Helpers;
 
@@ -20,7 +20,7 @@ namespace MultitoolWinUI.Controls
 {
     public sealed partial class DriveInfoView : UserControl, INotifyPropertyChanged
     {
-        static string[] sysFiles = new string[] { "pagefile.sys", "hiberfil.sys", "swapfile.sys" };
+        private static string[] sysFiles = new string[] { "pagefile.sys", "hiberfil.sys", "swapfile.sys" };
         private string _recycleBinSize = string.Empty;
         private double _recycleBinPercentage;
         private double _sysFilesPercentage;

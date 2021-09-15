@@ -1,5 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 
+using System.Diagnostics;
+
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -16,6 +18,7 @@ namespace MultitoolWinUI
         /// </summary>
         public App()
         {
+            UnhandledException += OnUnhandledException;
             InitializeComponent();
         }
 
@@ -30,6 +33,15 @@ namespace MultitoolWinUI
         {
             MainWindow = new MainWindow();
             MainWindow.Activate();
+        }
+
+        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Trace.WriteLine("Unhandled exception: " + e.Exception.ToString());
+            if (MainWindow != null)
+            {
+                MainWindow.DisplayMessage(e.Exception.Message);
+            }
         }
     }
 }

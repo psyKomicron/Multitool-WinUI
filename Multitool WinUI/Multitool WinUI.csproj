@@ -20,6 +20,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NoWarn />
+    <DefineConstants></DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <None Remove="Controls\TimerPicker.xaml" />
     <None Remove="Pages\ComputerDevicesPage.xaml" />
@@ -33,6 +37,7 @@
     <None Remove="Pages\Power\PowerPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
+    <None Remove="Themes\Generic.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,7 +48,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Multitool BL\Multitool BL.csproj" />
+    <ProjectReference Include="..\MultitoolDAL\Multitool.DAL.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,6 +69,12 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>
