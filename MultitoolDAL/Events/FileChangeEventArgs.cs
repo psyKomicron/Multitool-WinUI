@@ -3,7 +3,7 @@
 using System;
 using System.IO;
 
-namespace Multitool.FileSystem.Events
+namespace Multitool.DAL.Events
 {
     /// <summary>
     /// Provides data for file system changes events.

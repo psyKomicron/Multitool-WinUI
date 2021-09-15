@@ -1,11 +1,11 @@
-﻿using Multitool.FileSystem.Events;
+﻿using Multitool.DAL.Events;
 
 using System;
 using System.IO;
 
 using Windows.Foundation;
 
-namespace Multitool.FileSystem
+namespace Multitool.DAL
 {
     /// <summary>
     /// Defines a <see cref="FileSystemInfo"/> decorator

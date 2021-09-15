@@ -1,4 +1,4 @@
-﻿namespace Multitool.FileSystem.Events
+﻿namespace Multitool.DAL.Events
 {
     internal enum WatcherErrorTypes
     {

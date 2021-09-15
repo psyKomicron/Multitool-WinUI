@@ -1,4 +1,4 @@
-﻿using Multitool.FileSystem.Events;
+﻿using Multitool.DAL.Events;
 using Multitool.Optimisation;
 
 using System;
@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Multitool.FileSystem
+namespace Multitool.DAL
 {
     /// <summary>
     /// Class to manage <see cref="IFileSystemEntry"/> with cache and async methods.

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Multitool.FileSystem.Completion
+namespace Multitool.DAL.Completion
 {
     public class PathCompletor : IPathCompletor
     {
@@ -95,7 +95,7 @@ namespace Multitool.FileSystem.Completion
             return Reverse(fileName);
         }
 
-        private string GetDirName(string input, int i)
+        private static string GetDirName(string input, int i)
         {
             string directory = null;
             if (input.Length < 4)

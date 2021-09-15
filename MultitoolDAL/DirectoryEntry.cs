@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 
-namespace Multitool.FileSystem
+namespace Multitool.DAL
 {
     internal class DirectoryEntry : FileSystemEntry
     {

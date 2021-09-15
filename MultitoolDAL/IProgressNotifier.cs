@@ -1,4 +1,4 @@
-﻿namespace Multitool
+﻿namespace Multitool.DAL
 {
     public interface IProgressNotifier
     {

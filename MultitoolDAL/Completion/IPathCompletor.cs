@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Multitool.FileSystem.Completion
+﻿namespace Multitool.DAL.Completion
 {
     public interface IPathCompletor
     {

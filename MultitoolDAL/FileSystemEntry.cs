@@ -1,5 +1,4 @@
-﻿
-using Multitool.FileSystem.Events;
+﻿using Multitool.DAL.Events;
 
 using System;
 using System.IO;
@@ -7,7 +6,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.FileSystem
+namespace Multitool.DAL
 {
     /// <summary>
     /// Base class for directory and file entries

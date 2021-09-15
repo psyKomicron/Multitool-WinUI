@@ -1,4 +1,4 @@
-﻿using Multitool.FileSystem.Events;
+﻿using Multitool.DAL.Events;
 
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Timers;
 
-namespace Multitool.FileSystem
+namespace Multitool.DAL
 {
     /// <summary>
     /// Provides logic to watch a directory for changes, and to signal the changes.

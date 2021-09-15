@@ -1,10 +1,10 @@
-﻿using Multitool.FileSystem.Events;
+﻿using Multitool.DAL.Events;
 
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Multitool.FileSystem
+namespace Multitool.DAL
 {
     public interface IFileSystemManager : IProgressNotifier
     {
