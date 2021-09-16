@@ -55,12 +55,12 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 _ = await ApplicationData.Current.LocalFolder.CreateFileAsync(customSettingsPathFileName, CreationCollisionOption.ReplaceExisting);
                 xmlDocument.AppendChild(xmlDocument.CreateElement("pathes"));
                 xmlDocument.Save(path);
-                App.MainWindow.DisplayMessage("Custom settings file created (since none was found)");
+                App.MainWindow.DisplayMessage("Information", "Control panels", "Custom settings file created (since none was found)");
             }
             catch (XmlException e)
             {
                 Trace.WriteLine(e);
-                App.MainWindow.DisplayMessage("Unable to load custom settings pathes. " + e.Message);
+                App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to load custom settings pathes. " + e.Message);
                 return;
             }
 
@@ -187,7 +187,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                         catch (UriFormatException ex)
                         {
                             Trace.WriteLine(ex);
-                            App.MainWindow.DisplayMessage("Unable to parse changes from the .XML settings file.");
+                            App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
                         }
                     }
                 }
@@ -315,7 +315,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                     PinnedItemsWrapGrid.Children.Remove(sender);
                     ItemsWrapGrid.Children.Add(sender);
                 }
-                App.MainWindow.DisplayMessage("Failed to save the element state (pinned/unpinned).");
+                App.MainWindow.DisplayMessage("Error", "Control panels", "Failed to save the element state (pinned/unpinned).");
             }
         }
 
@@ -383,7 +383,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 catch (XmlException ex)
                 {
                     Trace.WriteLine("XmlException: Unable to parse changes from the .XML settings file.\n" + ex);
-                    App.MainWindow.DisplayMessage("Unable to parse changes from the .XML settings file.");
+                    App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
                 }
                 catch (IOException ex)
                 {
@@ -391,7 +391,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                     
                     if (ex.HResult != -2147024864)
                     {
-                        App.MainWindow.DisplayMessage("Unable to parse changes from the .XML settings file.");
+                        App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
                     }
                 }
             }

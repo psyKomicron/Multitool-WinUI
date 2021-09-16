@@ -40,7 +40,7 @@ namespace MultitoolWinUI
             Trace.WriteLine("Unhandled exception: " + e.Exception.ToString());
             if (MainWindow != null)
             {
-                MainWindow.DisplayMessage(e.Exception.Message);
+                MainWindow.DisplayMessage("Error", "Unhandled exception", e.Exception.Message);
             }
         }
     }

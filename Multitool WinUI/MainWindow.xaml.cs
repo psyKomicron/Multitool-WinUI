@@ -73,15 +73,21 @@ namespace MultitoolWinUI
 
         public bool IsPaneOpen { get; set; }
 
-        public void DisplayMessage(string message)
+        public void DisplayMessage(string title, string header, object content)
         {
-            if (!string.IsNullOrWhiteSpace(message))
+            if (!DispatcherQueue.TryEnqueue(() =>
             {
-                _ = DispatcherQueue.TryEnqueue(() =>
-                {
-                    ExceptionTextBlock.Text = message;
-                    ExceptionPopup.IsOpen = true;
-                });
+                MessageDisplay.Title = title;
+                MessageDisplay.Header = header;
+                MessageDisplay.Content = content;
+                ExceptionPopup.IsOpen = true;
+            }))
+            {
+                Trace.WriteLine("Unabled to display message (DispatcherQueue.TryEnqueue returned false)");
+            }
+            else
+            {
+                Trace.WriteLine("Queue message to the dispatcher queue");
             }
         }
 
@@ -158,8 +164,15 @@ namespace MultitoolWinUI
         {
             // save settings
             if (lastPage != null)
-            Tool.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
+            {
+                Tool.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
+            }
             Tool.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
+        }
+
+        private void MessageDisplay_Dismiss(Controls.WindowMessageControl sender, RoutedEventArgs args)
+        {
+            ExceptionPopup.IsOpen = false;
         }
 
         #endregion

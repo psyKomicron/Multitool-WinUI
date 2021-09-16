@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Multitool BL</name>
+    </assembly>
+    <members>
+        <member name="F:Multitool.NTInterop.SYSTEM_POWER_CAPABILITIES.ProcessorMaxThrottle">
+            <summary>
+            Also known as ProcessorThrottleScale before Windows XP.
+            </summary>
+        </member>
+        <member name="F:Multitool.NTInterop.SYSTEM_POWER_CAPABILITIES.HiberFileType">
+            <summary>
+            Ignore if earlier than Windows 10 (10.0.10240.0).
+            </summary>
+        </member>
+        <member name="F:Multitool.NTInterop.SYSTEM_POWER_CAPABILITIES.AoAcConnectivitySupported">
+            <summary>
+            Ignore if earlier than Windows 10 (10.0.10240.0).
+            </summary>
+        </member>
+        <member name="T:Multitool.NTInterop.OperationFailedException">
+            <summary>
+            Indicates that a given operation has failed.
+            </summary>
+        </member>
+        <member name="F:Multitool.NTInterop.Power.CpuPowerStates.S4Supported">
+            <summary>
+            Hibernation
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.Power.PowerController.Lock">
+            <summary>
+            Locks the local computer.
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.Power.PowerController.Suspend">
+            <summary>
+            Suspends (puts in sleep mode) the local computer.
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.Power.PowerController.Hibernate">
+            <summary>
+            Put the local computer in hibernation state (S4).
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.Power.PowerController.Shutdown">
+            <summary>
+            Shuts down the local computer.
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.Power.PowerController.Restart">
+            <summary>
+            Restarts the local computer.
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.Power.PowerOptions.GetActivePowerPlan">
+            <summary>
+            Get this computer current power plan.
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.Power.PowerOptions.EnumeratePowerPlans">
+            <summary>
+            Get this computer available power plans.
+            </summary>
+            <returns><see cref="T:System.Collections.Generic.List`1"/> of power plans names.</returns>
+        </member>
+        <member name="T:Multitool.Optimisation.IPoolableObject">
+            <summary>
+            Allows for objects to be reused when they are not longer used.
+            Mainly used for event data.
+            </summary>
+        </member>
+        <member name="P:Multitool.Optimisation.IPoolableObject.InUse">
+            <summary>
+            Tells if the <see cref="T:Multitool.Optimisation.IPoolableObject"/> is in use and thus cannot be used by the pool.
+            </summary>
+        </member>
+        <member name="E:Multitool.Optimisation.IPoolableObject.Free">
+            <summary>
+            Fired when the object is free to be reused by the <see cref="T:Multitool.Optimisation.ObjectPool`1"/>.
+            </summary>
+        </member>
+        <member name="M:Multitool.Optimisation.ObjectPool`1.#ctor">
+            <summary>Initialise the pool with the <see cref="F:Multitool.Optimisation.ObjectPool`1.DEFAULT_CAPACITY"/> capacity</summary>
+        </member>
+        <member name="M:Multitool.Optimisation.ObjectPool`1.#ctor(System.Int32)">
+            <summary>Initialise the pool with the <paramref name="capacity"/></summary>
+            <param name="capacity">Internal list initial capacity</param>
+        </member>
+        <member name="M:Multitool.Optimisation.ObjectPool`1.#ctor(System.Object[])">
+            <summary>
+            Initialise the pool with the <see cref="F:Multitool.Optimisation.ObjectPool`1.DEFAULT_CAPACITY"/>, initialising the <typeparamref name="T"/>
+            objects with the <paramref name="constructorParameters"/> parameters
+            </summary>
+            <param name="constructorParameters">Parameters to initialise the <typeparamref name="T"/> objects with</param>
+        </member>
+        <member name="M:Multitool.Optimisation.ObjectPool`1.#ctor(System.Int32,System.Object[])">
+            <summary>
+            Initialise the pool with the specified <paramref name="capacity"/>, initialising the <typeparamref name="T"/>
+            objects with the <paramref name="constructorParameters"/> parameters
+            </summary>
+            <param name="capacity">Internal list initial capacity</param>
+            <param name="constructorParameters">Parameters to initialise the <typeparamref name="T"/> objects with</param>
+        </member>
+        <member name="M:Multitool.Optimisation.ObjectPool`1.GetObject(System.Object[])">
+            <summary>
+            Gets an object from the pool.
+            <para>
+            <paramref name="ctorParams"/> represents the parameters of the class constructor 
+            (if the constructor is parameter-less put null). It needs to be indexed as the 
+            actual constructor parameter. See <seealso cref="M:System.Type.GetConstructor(System.Type[])"/>
+            </para>
+            </summary>
+            <param name="ctorParams">Parameters to feed to the class constructor of the object.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Multitool.Parsers.UriCleaner.RemoveChariotReturns(System.String@)">
+            <summary>
+            Removes control chars generated when pressing [RETURN] key.
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

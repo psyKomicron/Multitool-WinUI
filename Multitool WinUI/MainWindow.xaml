@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:controls="using:MultitoolWinUI.Controls"
     mc:Ignorable="d"
     Closed="Window_Closed">
     <Grid>
@@ -68,29 +68,14 @@
         <Popup x:Name="ExceptionPopup"
                IsLightDismissEnabled="True"
                HorizontalAlignment="Stretch">
-
-            <Grid ColumnSpacing="5"
-                  Background="{ThemeResource DevOrange}"
-                  MinHeight="40"
-                  HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" 
-                          Glyph="&#xe783;"
-                          Grid.Column="0"
-                          VerticalAlignment="Center"/>
-                <TextBlock x:Name="ExceptionTextBlock"
-                           Foreground="White"
-                           FontSize="15"
-                           MaxLines="5"
-                           TextWrapping="Wrap"
-                           VerticalAlignment="Center"
-                           Grid.Column="1"/>
-            </Grid>
-
+            
+            <controls:WindowMessageControl
+                x:Name="MessageDisplay"
+                Width="{x:Bind Window.Bounds.Width}"
+                HorizontalAlignment="Stretch"
+                Background="{StaticResource DevOrange}"
+                Dismiss="MessageDisplay_Dismiss"/>
+            
         </Popup>
     </Grid>
 </Window>

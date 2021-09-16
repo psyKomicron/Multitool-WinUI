@@ -3,16 +3,33 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:MultitoolWinUI.Controls">
 
-    <Style TargetType="controls:HostCustomControl">
+    <Style TargetType="controls:WindowMessageControl">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="controls:HostCustomControl">
-                    <Border
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}">
-                        <ContentPresenter Content="{TemplateBinding Content}"/>
-                    </Border>
+                <ControlTemplate TargetType="controls:WindowMessageControl">
+                    <Grid Background="{TemplateBinding Background}" Padding="10" Margin="5" RowSpacing="10" CornerRadius="5" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="30px"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="5*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="{TemplateBinding TitleGlyph}" Grid.Column="0" Grid.RowSpan="4" Height="30px" Width="30px"/>
+
+                        <TextBlock Text="{TemplateBinding Title}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="30" Grid.Column="1" Grid.RowSpan="4"/>
+
+                        <TextBlock Name="HeaderTextBlock" FontSize="20" FontWeight="Bold" Text="{TemplateBinding Header}" Grid.Row="1" Grid.Column="2"/>
+
+                        <ContentPresenter  Grid.Row="2" Content="{TemplateBinding Content}" Grid.Column="2"/>
+
+                        <Button Name="DismissButton" Content="Click to dismiss" FontSize="12" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Right"/>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

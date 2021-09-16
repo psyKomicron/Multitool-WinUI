@@ -4,7 +4,6 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       xmlns:controls="using:MultitoolWinUI.Controls"
       mc:Ignorable="d"
       NavigationCacheMode="Required"
@@ -17,7 +16,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="5*"/>
-            <RowDefinition Height="1*"/>
+            <RowDefinition Height="5*"/>
         </Grid.RowDefinitions>
 
         <ComboBox x:Name="SelectionComboBox"
@@ -36,12 +35,7 @@
             Elapsed="TimerPicker_Elapsed"
             Height="400"
             Width="600"
-            StatusChanged="TimerPicker_StatusChanged"
             Grid.Row="1"/>
 
-        <controls:HostCustomControl Grid.Row="2" Background="Aquamarine">
-            <TextBlock Text="Is this working"
-                       Foreground="White"/>
-        </controls:HostCustomControl>
     </Grid>
 </Page>
