@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Multitool.NTInterop
+namespace Multitool.NTInterop.Structs
 {
     struct SYSTEM_POWER_CAPABILITIES
     {
