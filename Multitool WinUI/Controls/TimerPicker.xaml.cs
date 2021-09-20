@@ -307,16 +307,12 @@ namespace MultitoolWinUI.Controls
             UpdateTimer(originalTimeSpan);
 
             StatusChanged?.Invoke(this, false);
-
-            Debug.WriteLine(nameof(StopTimerButton_Click) + ": status changed, timer stopped");
         }
 
         private void RestartTimerButton_Click(object sender, RoutedEventArgs e)
         {
             timer.Stop();
             timer.Start();
-
-            Debug.WriteLine(nameof(StopTimerButton_Click) + ": status changed, timer restarted");
         }
 
         private void StartTimerButton_Click(object sender, RoutedEventArgs e)
@@ -337,8 +333,6 @@ namespace MultitoolWinUI.Controls
             timer.Start();
             animationTimer.Start();
             StatusChanged?.Invoke(this, true);
-
-            Debug.WriteLine(nameof(StopTimerButton_Click) + ": status changed, timer started");
         }
 
         private void PauseTimerButton_Click(object sender, RoutedEventArgs e)
