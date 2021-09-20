@@ -10,6 +10,7 @@ using MultitoolWinUI.Pages.Power;
 
 using System;
 using System.Diagnostics;
+using System.Timers;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -64,30 +65,22 @@ namespace MultitoolWinUI
                         lastPage = typeof(HashGeneratorPage);
                         break;
                     default:
-                        Trace.WriteLine("Unknown page");
+                        Trace.TraceWarning("MainWindow:ctor: Unknown page");
                         break;
                 }
             }
             catch (SettingNotFoundException) { }
+
+            Trace.Listeners.Add(new WindowTrace(this));
         }
 
         public bool IsPaneOpen { get; set; }
 
-        public void DisplayMessage(string title, string header, object content)
+        public void ClosePopup()
         {
-            if (!DispatcherQueue.TryEnqueue(() =>
+            if (!DispatcherQueue.TryEnqueue(() => ExceptionPopup.IsOpen = false))
             {
-                MessageDisplay.Title = title;
-                MessageDisplay.Header = header;
-                MessageDisplay.Content = content;
-                ExceptionPopup.IsOpen = true;
-            }))
-            {
-                Trace.WriteLine("Unabled to display message (DispatcherQueue.TryEnqueue returned false)");
-            }
-            else
-            {
-                Trace.WriteLine("Queue message to the dispatcher queue");
+                Trace.TraceWarning("Unable to queue action on the dispatcher queue");
             }
         }
 
@@ -142,7 +135,7 @@ namespace MultitoolWinUI
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
                     default:
-                        Trace.WriteLine("Trying to navigate to: " + tag);
+                        Trace.TraceWarning("Trying to navigate to: " + tag);
                         break;
                 }
             }

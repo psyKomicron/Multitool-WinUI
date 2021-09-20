@@ -37,11 +37,7 @@ namespace MultitoolWinUI
 
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Trace.WriteLine("Unhandled exception: " + e.Exception.ToString());
-            if (MainWindow != null)
-            {
-                MainWindow.DisplayMessage("Error", "Unhandled exception", e.Exception.Message);
-            }
+            Trace.TraceError("Unhandled exception: " + e.Exception.ToString());
         }
     }
 }
