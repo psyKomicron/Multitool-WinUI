@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using Multitool.NTInterop.Structs;
+
+using System.Runtime.InteropServices;
 
 namespace Multitool.NTInterop.Power
 {

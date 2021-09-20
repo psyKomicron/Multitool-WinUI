@@ -1,4 +1,6 @@
-﻿namespace Multitool.NTInterop
+﻿using Multitool.NTInterop.Structs;
+
+namespace Multitool.NTInterop
 {
     public class SystemPowerState
     {
