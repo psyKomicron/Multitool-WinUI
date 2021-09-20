@@ -4,21 +4,6 @@
         <name>Multitool BL</name>
     </assembly>
     <members>
-        <member name="F:Multitool.NTInterop.SYSTEM_POWER_CAPABILITIES.ProcessorMaxThrottle">
-            <summary>
-            Also known as ProcessorThrottleScale before Windows XP.
-            </summary>
-        </member>
-        <member name="F:Multitool.NTInterop.SYSTEM_POWER_CAPABILITIES.HiberFileType">
-            <summary>
-            Ignore if earlier than Windows 10 (10.0.10240.0).
-            </summary>
-        </member>
-        <member name="F:Multitool.NTInterop.SYSTEM_POWER_CAPABILITIES.AoAcConnectivitySupported">
-            <summary>
-            Ignore if earlier than Windows 10 (10.0.10240.0).
-            </summary>
-        </member>
         <member name="T:Multitool.NTInterop.OperationFailedException">
             <summary>
             Indicates that a given operation has failed.
@@ -64,6 +49,21 @@
             Get this computer available power plans.
             </summary>
             <returns><see cref="T:System.Collections.Generic.List`1"/> of power plans names.</returns>
+        </member>
+        <member name="F:Multitool.NTInterop.Structs.SYSTEM_POWER_CAPABILITIES.ProcessorMaxThrottle">
+            <summary>
+            Also known as ProcessorThrottleScale before Windows XP.
+            </summary>
+        </member>
+        <member name="F:Multitool.NTInterop.Structs.SYSTEM_POWER_CAPABILITIES.HiberFileType">
+            <summary>
+            Ignore if earlier than Windows 10 (10.0.10240.0).
+            </summary>
+        </member>
+        <member name="F:Multitool.NTInterop.Structs.SYSTEM_POWER_CAPABILITIES.AoAcConnectivitySupported">
+            <summary>
+            Ignore if earlier than Windows 10 (10.0.10240.0).
+            </summary>
         </member>
         <member name="T:Multitool.Optimisation.IPoolableObject">
             <summary>
@@ -121,6 +121,81 @@
             </summary>
             <param name="s"></param>
             <returns></returns>
+        </member>
+        <member name="T:Windows.Win32.Foundation.RECT">
+            <summary>The RECT structure defines a rectangle by the coordinates of its upper-left and lower-right corners.</summary>
+            <remarks>
+            <para>The RECT structure is identical to the <a href="https://docs.microsoft.com/windows/desktop/api/windef/ns-windef-rectl">RECTL</a> structure.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//windef/ns-windef-rect#">Read more on docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="F:Windows.Win32.Foundation.RECT.left">
+            <summary>Specifies the <i>x</i>-coordinate of the upper-left corner of the rectangle.</summary>
+        </member>
+        <member name="F:Windows.Win32.Foundation.RECT.top">
+            <summary>Specifies the <i>y</i>-coordinate of the upper-left corner of the rectangle.</summary>
+        </member>
+        <member name="F:Windows.Win32.Foundation.RECT.right">
+            <summary>Specifies the <i>x</i>-coordinate of the lower-right corner of the rectangle.</summary>
+        </member>
+        <member name="F:Windows.Win32.Foundation.RECT.bottom">
+            <summary>Specifies the <i>y</i>-coordinate of the lower-right corner of the rectangle.</summary>
+        </member>
+        <member name="T:Windows.Win32.PInvoke">
+            <content>
+            Contains extern methods from "User32.dll".
+            </content>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.SetWindowPos(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.HWND,System.Int32,System.Int32,System.Int32,System.Int32,Windows.Win32.UI.WindowsAndMessaging.SET_WINDOW_POS_FLAGS)">
+            <summary>Changes the size, position, and Z order of a child, pop-up, or top-level window. These windows are ordered according to their appearance on the screen. The topmost window receives the highest rank and is the first window in the Z order.</summary>
+            <param name="hWnd">
+            <para>Type: <b>HWND</b> A handle to the window.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-setwindowpos#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="hWndInsertAfter">Type: <b>HWND</b></param>
+            <param name="X">
+            <para>Type: <b>int</b> The new position of the left side of the window, in client coordinates.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-setwindowpos#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="Y">
+            <para>Type: <b>int</b> The new position of the top of the window, in client coordinates.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-setwindowpos#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="cx">
+            <para>Type: <b>int</b> The new width of the window, in pixels.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-setwindowpos#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="cy">
+            <para>Type: <b>int</b> The new height of the window, in pixels.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-setwindowpos#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="uFlags">Type: <b>UINT</b></param>
+            <returns>
+            <para>Type: <b>BOOL</b> If the function succeeds, the return value is nonzero. If the function fails, the return value is zero. To get extended error information, call <a href="/windows/desktop/api/errhandlingapi/nf-errhandlingapi-getlasterror">GetLastError</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-setwindowpos">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.GetWindowRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.GetWindowRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT*)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.GetWindowRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT*)">
+            <summary>Retrieves the dimensions of the bounding rectangle of the specified window. The dimensions are given in screen coordinates that are relative to the upper-left corner of the screen.</summary>
+            <param name="hWnd">
+            <para>Type: <b>HWND</b> A handle to the window.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getwindowrect#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="lpRect">
+            <para>Type: <b>LPRECT</b> A pointer to a  <a href="https://docs.microsoft.com/windows/desktop/api/windef/ns-windef-rect">RECT</a> structure that receives the screen coordinates of the upper-left and lower-right corners of the window.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getwindowrect#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b>BOOL</b> If the function succeeds, the return value is nonzero. If the function fails, the return value is zero. To get extended error information, call <a href="/windows/desktop/api/errhandlingapi/nf-errhandlingapi-getlasterror">GetLastError</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getwindowrect">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
         </member>
     </members>
 </doc>
