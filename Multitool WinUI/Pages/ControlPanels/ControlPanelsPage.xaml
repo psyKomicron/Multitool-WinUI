@@ -16,10 +16,11 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <VariableSizedWrapGrid ItemHeight="150" 
-                               ItemWidth="250"
-                               HorizontalAlignment="Center"
-                               Orientation="Horizontal">
+        <VariableSizedWrapGrid 
+            ItemHeight="150" 
+            ItemWidth="250"
+            HorizontalAlignment="Center"
+            Orientation="Horizontal">
             <VariableSizedWrapGrid.Resources>
                 <Style TargetType="Button">
                     <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -31,33 +32,37 @@
                 </Style>
             </VariableSizedWrapGrid.Resources>
 
-            <Button x:Name="OpenSettingsFile"
-                    Content="Open settings file location"
-                    VariableSizedWrapGrid.ColumnSpan="2"
-                    Click="LoadSettingsButton_Click"/>
+            <Button 
+                x:Name="OpenSettingsFile"
+                Content="Open settings file location"
+                VariableSizedWrapGrid.ColumnSpan="2"
+                Click="LoadSettingsButton_Click"/>
             
-            <Button x:Name="AddSettingsButton"
-                    Content="Add settings"
-                    VariableSizedWrapGrid.ColumnSpan="2"
-                    Click="AddSettingsButton_Click"/>
+            <Button 
+                x:Name="AddSettingsButton"
+                Content="Add settings"
+                VariableSizedWrapGrid.ColumnSpan="2"
+                Click="AddSettingsButton_Click"/>
 
         </VariableSizedWrapGrid>
 
-        <AutoSuggestBox x:Name="SettingsSearchBox"
-                        TextChanged="SettingsSearchBox_TextChanged"
-                        QuerySubmitted="SettingsSearchBox_QuerySubmitted"
-                        Grid.Row="1"
-                        QueryIcon="Zoom"
-                        MinHeight="40"
-                        MinWidth="300"
-                        HorizontalAlignment="Center"/>
+        <AutoSuggestBox 
+            x:Name="SettingsSearchBox"
+            TextChanged="SettingsSearchBox_TextChanged"
+            QuerySubmitted="SettingsSearchBox_QuerySubmitted"
+            Grid.Row="1"
+            QueryIcon="Zoom"
+            MinHeight="40"
+            MinWidth="300"
+            HorizontalAlignment="Center"/>
 
-        <VariableSizedWrapGrid x:Name="PinnedItemsWrapGrid"
-                               ItemHeight="170" 
-                               ItemWidth="260"
-                               MaximumRowsOrColumns="4"
-                               Grid.Row="2"
-                               Orientation="Horizontal">
+        <VariableSizedWrapGrid 
+            x:Name="PinnedItemsWrapGrid"
+            ItemHeight="170" 
+            ItemWidth="260"
+            MaximumRowsOrColumns="4"
+            Grid.Row="2"
+            Orientation="Horizontal">
             <VariableSizedWrapGrid.Resources>
                 <Style TargetType="controlpanels:SettingPathView">
                     <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
@@ -65,12 +70,13 @@
             </VariableSizedWrapGrid.Resources>
         </VariableSizedWrapGrid>
 
-        <VariableSizedWrapGrid x:Name="ItemsWrapGrid"
-                               ItemHeight="140" 
-                               ItemWidth="260"
-                               MaximumRowsOrColumns="4"
-                               Grid.Row="3"
-                               Orientation="Horizontal">
+        <VariableSizedWrapGrid 
+            x:Name="ItemsWrapGrid"
+            ItemHeight="140" 
+            ItemWidth="260"
+            MaximumRowsOrColumns="4"
+            Grid.Row="3"
+            Orientation="Horizontal">
             <VariableSizedWrapGrid.Resources>
                 <Style TargetType="controlpanels:SettingPathView">
                     <Setter Property="Background" Value="{ThemeResource SystemBaseLowColor}"/>

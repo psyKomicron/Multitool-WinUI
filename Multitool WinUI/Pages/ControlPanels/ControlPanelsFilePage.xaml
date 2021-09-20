@@ -1,0 +1,27 @@
+﻿<Page
+    x:Class="MultitoolWinUI.Pages.ControlPanels.ControlPanelsFilePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MultitoolWinUI.Pages.ControlPanels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid
+        ColumnSpacing="5"
+        VerticalAlignment="Center">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <TextBox
+            Text="{x:Bind Path, Mode=TwoWay}"
+            PlaceholderText="Path to the file"
+            Grid.Column="0"/>
+        <Button
+            Content="Validate"
+            Click="Button_Click"
+            Grid.Column="1"/>
+    </Grid>
+</Page>
