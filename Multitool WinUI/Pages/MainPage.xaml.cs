@@ -1,10 +1,14 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Xml;
 
 using Windows.ApplicationModel;
+using Windows.Storage;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -16,11 +20,12 @@ namespace MultitoolWinUI.Pages
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        private readonly Uri GithubUri = new(@"https://github.com/psyKomicron/multitool/tree/main");
+        private const string settingPath = "main-page-settings.xml";
 
         public MainPage()
         {
             InitializeComponent();
+            InitializeWindow();
 #if DEBUG
             BuildTypeBlock.Text = "Debug";
 #else
@@ -28,11 +33,33 @@ namespace MultitoolWinUI.Pages
 #endif
         }
 
+        #region properties
+
 #if DEBUG
         public static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 #else
         public static string Version => GetPackageVersion();
 #endif
+
+        #endregion
+
+        private void InitializeWindow()
+        {
+            XmlDocument doc = new();
+            try
+            {
+                doc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, settingPath));
+                Trace.TraceInformation("Loading main page shortcuts");
+            }
+            catch (XmlException e)
+            {
+                Trace.TraceError(e.ToString());
+            }
+            catch (IOException e)
+            {
+                Trace.TraceError(e.ToString());
+            }
+        }
 
 #if !DEBUG
         private static string GetPackageVersion()
@@ -48,20 +75,5 @@ namespace MultitoolWinUI.Pages
             return builder.ToString();
         }
 #endif
-
-        private void VersionButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        {
-
-        }
-
-        private void ReadmeButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        {
-
-        }
-
-        private void BuildTypeButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        {
-
-        }
     }
 }
