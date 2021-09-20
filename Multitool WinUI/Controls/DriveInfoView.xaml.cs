@@ -20,20 +20,29 @@ namespace MultitoolWinUI.Controls
 {
     public sealed partial class DriveInfoView : UserControl, INotifyPropertyChanged
     {
-        private static string[] sysFiles = new string[] { "pagefile.sys", "hiberfil.sys", "swapfile.sys" };
+        private static readonly string[] sysFiles = new string[] { "pagefile.sys", "hiberfil.sys", "swapfile.sys" };
+        private readonly Stopwatch stopwatch = new();
+
         private string _recycleBinSize = string.Empty;
         private double _recycleBinPercentage;
         private double _sysFilesPercentage;
         private long _sysFilesSize;
-        private Stopwatch stopwatch = new();
 
         public DriveInfoView(DriveInfo driveInfo, CancellationTokenSource cancelToken)
         {
             InitializeComponent();
             DriveInfo = driveInfo;
             SetGradients(false);
-            cancelToken.Token.ThrowIfCancellationRequested();
-            _ = LoadComponents(cancelToken);
+            if (DriveInfo.IsReady)
+            {
+                cancelToken.Token.ThrowIfCancellationRequested();
+                _ = LoadComponents(cancelToken);
+            }
+            else
+            {
+                Trace.TraceError("Drive could not be loaded. '" + driveInfo.Name + "' was not ready");
+                //App.DisplayMessage("Error", "The drive could not be loaded", "Drive name: " + driveInfo.Name);
+            }
         }
 
         #region properties
@@ -100,6 +109,7 @@ namespace MultitoolWinUI.Controls
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region methods
+
         private async Task LoadComponents(CancellationTokenSource cancelTokenSource)
         {
             if (DriveInfo == null)
@@ -237,6 +247,7 @@ namespace MultitoolWinUI.Controls
         {
             GradientStopThree.Color = value;
         }
+
         #endregion
 
     }
