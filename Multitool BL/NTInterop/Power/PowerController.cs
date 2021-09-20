@@ -23,7 +23,7 @@ namespace Multitool.NTInterop.Power
             }
             else
             {
-                Trace.WriteLine("Successfully locked the local computer");
+                Trace.TraceInformation("Successfully locked the local computer");
             }
         }
 
@@ -38,7 +38,7 @@ namespace Multitool.NTInterop.Power
             }
             else
             {
-                Trace.WriteLine("Successfully put the local computer to sleep");
+                Trace.TraceInformation("Successfully put the local computer to sleep");
             }
         }
 
@@ -55,7 +55,7 @@ namespace Multitool.NTInterop.Power
                 }
                 else
                 {
-                    Trace.WriteLine("Successfully put the local computer into hibernation");
+                    Trace.TraceInformation("Successfully put the local computer into hibernation");
                 }
             }
             else

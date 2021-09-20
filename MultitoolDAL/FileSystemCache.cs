@@ -15,10 +15,10 @@ namespace Multitool.DAL
     /// </summary>
     internal class FileSystemCache : IDisposable
     {
-        private static List<string> watchedPaths = new();
-        private static object _lock = new();
-        private List<FileSystemEntry> watchedItems;
-        private FileSystemWatcher watcher;
+        private static readonly List<string> watchedPaths = new();
+        private static readonly object _lock = new();
+        private readonly List<FileSystemEntry> watchedItems;
+        private readonly FileSystemWatcher watcher;
         private Timer timer;
         private double ttl;
 
@@ -356,7 +356,7 @@ namespace Multitool.DAL
         {
             if (e.GetException() != null)
             {
-                Trace.WriteLine("Watcher error.\nDump -> " + DumpWatcher() + "\n" + e.GetException().ToString());
+                Trace.TraceError("Watcher error.\nDump -> " + DumpWatcher() + "\n" + e.GetException().ToString());
                 if (e.GetException().InnerException == null)
                 {
                     WatcherError?.Invoke(this, e.GetException(), WatcherErrorTypes.PathDeleted);
@@ -368,7 +368,7 @@ namespace Multitool.DAL
             }
             else
             {
-                Trace.WriteLine("Watcher error.\nDump -> " + DumpWatcher());
+                Trace.TraceError("Watcher error.\nDump -> " + DumpWatcher());
                 throw new Win32Exception("Watcher error.\n" + DumpWatcher());
             }
         }

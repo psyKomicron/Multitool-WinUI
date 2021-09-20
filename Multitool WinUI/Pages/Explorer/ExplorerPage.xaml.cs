@@ -31,18 +31,16 @@ namespace MultitoolWinUI.Pages.Explorer
     /// </summary>
     public sealed partial class ExplorerPage : Page
     {
-        private static SolidColorBrush RED = new(Colors.Red);
-        private static SolidColorBrush WHITE = new(Colors.White);
+        private static readonly SolidColorBrush RED = new(Colors.Red);
+        private static readonly SolidColorBrush WHITE = new(Colors.White);
 
-        // tri-state: [ignored, home, explorer, editor]
-        private byte loaded;
+        private readonly IPathCompletor pathCompletor = new PathCompletor();
+        private readonly FileSystemManager fileSystemManager = new() { Notify = false };
+        private readonly Stopwatch eventStopwatch = new();
+        private readonly Stack<string> previousStackPath = new(10);
+        private readonly Stack<string> nextPathStack = new(10);
+        private readonly Stopwatch taskStopwatch = new();
         private CancellationTokenSource fsCancellationTokenSource;
-        private IPathCompletor pathCompletor = new PathCompletor();
-        private FileSystemManager fileSystemManager = new() { Notify = false };
-        private Stopwatch eventStopwatch = new();
-        private Stopwatch taskStopwatch = new();
-        private Stack<string> previousStackPath = new(10);
-        private Stack<string> nextPathStack = new(10);
         //private UriCleaner cleaner = new();
 
         public ExplorerPage()
@@ -68,8 +66,6 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private async void DisplayFiles(string path)
         {
-            loaded |= 0b10;
-
             if (fsCancellationTokenSource != null)
             {
                 fsCancellationTokenSource.Cancel();
@@ -127,7 +123,7 @@ namespace MultitoolWinUI.Pages.Explorer
                     CancelAction_Button.IsEnabled = false;
                     Files_ProgressBar.IsIndeterminate = false;
 
-                    Trace.WriteLine(ex.ToString());
+                    Trace.TraceError(ex.ToString());
                     Progress_TextBox.Text = ex.ToString();
                 }
             }
@@ -352,13 +348,13 @@ namespace MultitoolWinUI.Pages.Explorer
                     break;
 #if TRACE
                 case WatcherChangeTypes.Changed:
-                    Trace.WriteLine(data.Entry.Path + " changed");
+                    Trace.TraceInformation(data.Entry.Path + " changed");
                     break;
                 case WatcherChangeTypes.Renamed:
-                    Trace.WriteLine(data.Entry.Path + " renamed");
+                    Trace.TraceInformation(data.Entry.Path + " renamed");
                     break;
                 case WatcherChangeTypes.All:
-                    Trace.WriteLine(data.Entry.Path + " : all changes");
+                    Trace.TraceInformation(data.Entry.Path + " : all changes");
                     break;
 #endif
             }
@@ -395,7 +391,7 @@ namespace MultitoolWinUI.Pages.Explorer
                       case TaskStatus.Faulted:
                           Progress_TextBox.Foreground = new SolidColorBrush(Colors.Red);
                           message = "Task failed";
-                          Trace.WriteLine(task.Exception.ToString());
+                          Trace.TraceError(task.Exception.ToString());
                           break;
                   }
 

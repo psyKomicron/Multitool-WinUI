@@ -19,7 +19,7 @@ namespace MultitoolWinUI.Pages.Power
     /// </summary>
     public sealed partial class PowerPage : Page, INotifyPropertyChanged
     {
-        private PowerController controller = new();
+        private readonly PowerController controller = new();
         private bool _buttonsEnabled;
 
         public PowerPage()
@@ -53,8 +53,8 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.WriteLine(ex.ToString());
-                App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to shutdown the system. The operation failed.");
+                Trace.TraceError(ex.ToString());
+                //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to shutdown the system. The operation failed.");
             }
         }
 
@@ -66,8 +66,8 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.WriteLine(ex.ToString());
-                App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to restart the system. The operation failed");
+                Trace.TraceError(ex.ToString());
+                //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to restart the system. The operation failed");
             }
         }
 
@@ -79,8 +79,8 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.WriteLine(ex.ToString());
-                App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to lock the system. The operation failed");
+                Trace.TraceError(ex.ToString());
+                //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to lock the system. The operation failed");
             }
         }
 
@@ -92,8 +92,8 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.WriteLine(ex.ToString());
-                App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to suspend the system. The operation failed");
+                Trace.TraceError(ex.ToString());
+                //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to suspend the system. The operation failed");
             }
         }
 
@@ -105,8 +105,8 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.WriteLine(ex.ToString());
-                App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to hibernate the system. The operation failed");
+                Trace.TraceError(ex.ToString());
+                //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to hibernate the system. The operation failed");
             }
         }
 
@@ -153,7 +153,8 @@ namespace MultitoolWinUI.Pages.Power
 #if !DEBUG
                     throw new FormatException("You need to set an action");
 #else
-                    App.MainWindow.DisplayMessage("Error", "User input required", "You need to set an action for when the timer ends");
+                    //App.MainWindow.DisplayMessage("Error", "User input required", "You need to set an action for when the timer ends");
+                    Trace.TraceError("User input required. You need to set an action for when the timer ends");
 #endif
                 }
             });

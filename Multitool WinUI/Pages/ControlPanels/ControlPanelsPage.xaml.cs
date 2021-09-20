@@ -1,21 +1,23 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 
 using Multitool.DAL;
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Linq;
+
+using WinRT;
 
 using Windows.Storage;
 using Windows.System;
+using Multitool.NTInterop;
+using System.Runtime.InteropServices;
+using Microsoft.UI.Xaml.Navigation;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -30,22 +32,21 @@ namespace MultitoolWinUI.Pages.ControlPanels
     public sealed partial class ControlPanelsPage : Page
     {
         private const string customSettingsPathFileName = "custom_settings.xml";
-
-        private Dictionary<string, Tuple<Uri, bool>> pathes = new();
+        private readonly Dictionary<string, Tuple<Uri, bool>> pathes = new();
+        private readonly object _lock = new();
         private FileSystemWatcher watcher;
 
         public ControlPanelsPage()
         {
             InitializeComponent();
-            _ = Task.Run(() => LoadCustoms());
+            _ = Task.Run(() => LoadCustoms(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName)));
         }
 
         #region private methods
 
-        private async void LoadCustoms()
+        private async void LoadCustoms(string path)
         {
             XmlDocument xmlDocument = new();
-            string path = Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName);
             try
             {
                 xmlDocument.Load(path);
@@ -55,12 +56,13 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 _ = await ApplicationData.Current.LocalFolder.CreateFileAsync(customSettingsPathFileName, CreationCollisionOption.ReplaceExisting);
                 xmlDocument.AppendChild(xmlDocument.CreateElement("pathes"));
                 xmlDocument.Save(path);
-                App.MainWindow.DisplayMessage("Information", "Control panels", "Custom settings file created (since none was found)");
+
+                //App.MainWindow.DisplayMessage("Information", "Control panels", "Custom settings file created (since none was found)");
             }
             catch (XmlException e)
             {
-                Trace.WriteLine(e);
-                App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to load custom settings pathes. " + e.Message);
+                Trace.TraceError(e.ToString());
+                //App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to load custom settings pathes. " + e.Message);
                 return;
             }
 
@@ -186,8 +188,8 @@ namespace MultitoolWinUI.Pages.ControlPanels
                         }
                         catch (UriFormatException ex)
                         {
-                            Trace.WriteLine(ex);
-                            App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
+                            Trace.TraceError(ex.ToString());
+                            //App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
                         }
                     }
                 }
@@ -224,11 +226,11 @@ namespace MultitoolWinUI.Pages.ControlPanels
 #if TRACE
                 if (pathes.Remove(names[i]))
                 {
-                    Trace.WriteLine("Removed " + names[i] + " from settings pathes");
+                    Trace.TraceWarning("Removed " + names[i] + " from settings pathes");
                 }
                 else
                 {
-                    Trace.WriteLine("Unable to remove " + names[i] + " from settings pathes");
+                    Trace.TraceWarning("Unable to remove " + names[i] + " from settings pathes");
                 }
 #else
                 pathes.Remove(names[i]);
@@ -251,9 +253,111 @@ namespace MultitoolWinUI.Pages.ControlPanels
             });
         }
 
+        private async void CopySettingFile(string path, bool replaceExisting = false)
+        {
+            try
+            {
+                XmlDocument importedDoc = new();
+                importedDoc.Load(path);
+
+                _ = await ApplicationData.Current.LocalFolder.CreateFileAsync(customSettingsPathFileName, CreationCollisionOption.ReplaceExisting);
+                lock (_lock)
+                {
+                    importedDoc.Save(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+                }
+#if false
+                else
+                {
+                    await Task.Run(() =>
+                    {
+                        XmlDocument currentDoc = new();
+                        currentDoc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+
+                        XmlNode importedRoot = importedDoc.SelectSingleNode(".//pathes");
+                        XmlNode currentRoot = currentDoc.SelectSingleNode(".//pathes");
+
+                        // update nodes or/and create new ones
+                        bool contains = false;
+                        foreach (XmlNode node1 in importedRoot)
+                        {
+                            if (node1.Name == "path" && node1.Attributes != null)
+                            {
+                                string settingName = node1.Attributes["name"]?.Value;
+                                string settingPath = node1.Attributes["value"]?.Value;
+                                if (string.IsNullOrWhiteSpace(settingName) || string.IsNullOrWhiteSpace(settingPath))
+                                {
+                                    Trace.TraceInformation("Skipping node, settingName or settingPath empty");
+                                    continue;
+                                }
+
+                                foreach (XmlNode node2 in currentRoot)
+                                {
+                                    if (node2.Name == "path" && node2.Attributes != null)
+                                    {
+                                        string settingName2 = node2.Attributes["name"]?.Value;
+                                        string settingPath2 = node2.Attributes["value"]?.Value;
+                                        if (!string.IsNullOrWhiteSpace(settingName2) && !string.IsNullOrWhiteSpace(settingPath2))
+                                        {
+                                            if (settingName2 == settingName)
+                                            {
+                                                // nodes are the same
+                                                contains = true;
+                                                if (replaceExisting || settingPath2 != settingPath)
+                                                {
+                                                    Trace.TraceInformation("Updating " + settingName);
+                                                    node2.Attributes["value"].Value = settingPath2;
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!contains)
+                                {
+                                    Trace.TraceInformation("Importing [" + node1.Attributes["name"] + ", " + node1.Attributes["value"] + "]");
+                                    currentDoc.DocumentElement.AppendChild(currentDoc.ImportNode(node1, true));
+                                }
+                            }
+                        }
+
+                        lock (_lock)
+                        {
+                            currentDoc.Save(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+                        }
+                    });
+                }
+#endif
+            }
+
+            catch (XmlException e)
+            {
+                Trace.TraceError(e.ToString());
+                Trace.TraceInformation("Importing settings failed");
+            }
+            catch (NullReferenceException e)
+            {
+                Trace.TraceError(e.ToString());
+                Trace.TraceWarning("NullReferenceException in " + nameof(CopySettingFile));
+            }
+        }
+
         #endregion
 
         #region event handlers
+
+        #region navigation
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            if (e.Parameter is string path)
+            {
+                CopySettingFile(path);
+            }
+        }
+
+        #endregion
 
         #region control
 
@@ -261,7 +365,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
         {
             if (!await Launcher.LaunchUriAsync(sender.SettingUri))
             {
-                Trace.WriteLine("Unable to launch: " + sender.SettingUri.AbsoluteUri);
+                Trace.TraceWarning("Unable to launch: " + sender.SettingUri.AbsoluteUri);
             }
         }
 
@@ -304,7 +408,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             }
             catch (XmlException ex)
             {
-                Trace.WriteLine("Unable to pin/unpin element (name: " + sender.ButtonName + ").\n" + ex.ToString());
+                Trace.TraceWarning("Unable to pin/unpin element (name: " + sender.ButtonName + ").\n" + ex.ToString());
                 if (pinned)
                 {
                     ItemsWrapGrid.Children.Remove(sender);
@@ -315,7 +419,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                     PinnedItemsWrapGrid.Children.Remove(sender);
                     ItemsWrapGrid.Children.Add(sender);
                 }
-                App.MainWindow.DisplayMessage("Error", "Control panels", "Failed to save the element state (pinned/unpinned).");
+                //App.MainWindow.DisplayMessage("Error", "Control panels", "Failed to save the element state (pinned/unpinned).");
             }
         }
 
@@ -330,7 +434,12 @@ namespace MultitoolWinUI.Pages.ControlPanels
 
         private void AddSettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+#if DEBUG
+            Frame.Navigate(typeof(ControlPanelsFilePage));
+            Trace.TraceInformation("Navigating to ControlPanelsFilePage");
+#else
+            App.DisplayMessage("Error", nameof(AddSettingsButton_Click) + " is not implemented.", string.Empty);
+#endif
         }
 
         private void SettingsSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
@@ -345,7 +454,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 }
                 if (query.IsMatch(pair.Value.Item1.AbsoluteUri))
                 {
-                    suggestions.Add(pair.Value.ToString());
+                    suggestions.Add(pair.Value.Item1.AbsoluteUri);
                 }
             }
             _ = DispatcherQueue.TryEnqueue(() => sender.ItemsSource = suggestions);
@@ -359,13 +468,15 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 {
                     if (!await Launcher.LaunchUriAsync(tuple.Item1))
                     {
-                        Trace.WriteLine("Unable to launch: " + tuple.Item1.AbsoluteUri);
+                        Trace.TraceWarning("Unable to launch: " + tuple.Item1.AbsoluteUri);
                     }
                 }
             }
         }
 
         #endregion
+
+        #region file change
 
         private void OnFileChange(object sender, FileSystemEventArgs e)
         {
@@ -374,7 +485,10 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 try
                 {
                     XmlDocument doc = new();
-                    doc.Load(e.FullPath);
+                    lock (_lock)
+                    {
+                        doc.Load(e.FullPath);
+                    }
                     XmlElement root = doc.DocumentElement;
 
                     LoadNewElements(root);
@@ -382,20 +496,22 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 }
                 catch (XmlException ex)
                 {
-                    Trace.WriteLine("XmlException: Unable to parse changes from the .XML settings file.\n" + ex);
-                    App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
+                    Trace.TraceError("XmlException: Unable to parse changes from the .XML settings file.\n" + ex);
+                    //App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
                 }
                 catch (IOException ex)
                 {
-                    Trace.WriteLine("IOException: Unable to parse changes from the .XML settings file.\n" + ex);
+                    Trace.TraceError("IOException: Unable to parse changes from the .XML settings file.\n" + ex);
                     
                     if (ex.HResult != -2147024864)
                     {
-                        App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
+                        Trace.TraceError("Unable to parse changes from the .XML settings file.");
                     }
                 }
             }
         }
+
+#endregion
 
         #endregion
     }

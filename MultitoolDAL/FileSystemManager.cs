@@ -24,10 +24,10 @@ namespace Multitool.DAL
 #endif
         public const bool DEFAULT_NOTIFY_STATUS = false;
 
-        private static Dictionary<string, FileSystemCache> cache = new();
-        private static ObjectPool<FileChangeEventArgs> objectPool = new();
-        private object _eventlock = new();
-        private DirectorySizeCalculator calculator = new();
+        private static readonly Dictionary<string, FileSystemCache> cache = new();
+        private static readonly ObjectPool<FileChangeEventArgs> objectPool = new();
+        private readonly object _eventlock = new();
+        private readonly DirectorySizeCalculator calculator = new();
         private double ttl;
         private bool _notify;
 
@@ -161,7 +161,7 @@ namespace Multitool.DAL
                 }
                 catch (InvalidOperationException e)
                 {
-                    Trace.WriteLine("Unable to create cache. Exception:\n" + e.ToString());
+                    Trace.TraceError("Unable to create cache. Exception:\n" + e.ToString());
                 }
             }
         }
@@ -414,7 +414,7 @@ namespace Multitool.DAL
             catch (AggregateException e)
             {
                 e.Data.Add(GetType(), "Uncommon aggregate exception (from calculating dir size). Path :" + currentPath);
-                Trace.WriteLine(e.ToString());
+                Trace.TraceError(e.ToString());
                 InvokeException(e);
             }
         }
@@ -509,13 +509,13 @@ namespace Multitool.DAL
                 return;
             }
 
-            Trace.WriteLine("Cache TTL reached, updating " + e.Cache.Path);
+            Trace.TraceInformation("Cache TTL reached, updating " + e.Cache.Path);
 
             FileSystemCache fsCache = e.Cache;
             for (int i = 0; i < fsCache.Count; i++)
             {
                 FileSystemEntry item = fsCache[i];
-                Trace.WriteLine("\t-> updating " + item.Name);
+                Trace.TraceInformation("\t-> updating " + item.Name);
                 item.RefreshInfos();
                 if (item.IsDirectory)
                 {
@@ -531,7 +531,7 @@ namespace Multitool.DAL
             {
                 if (Directory.Exists(path)) // Check if the added item is a directory
                 {
-                    Trace.WriteLine("Cache changed: directory created, computing directory size");
+                    Trace.TraceInformation("Cache changed: directory created, computing directory size");
                     long size = calculator.CalculateDirectorySize(path, CancellationToken.None);
                     entry = new DirectoryEntry(new DirectoryInfo(path), size);
                 }
