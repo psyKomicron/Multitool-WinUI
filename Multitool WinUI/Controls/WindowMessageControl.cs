@@ -60,7 +60,7 @@ namespace MultitoolWinUI.Controls
         {
             base.OnApplyTemplate();
 
-            if (GetTemplateChild("DismissButton") is Button b)
+            if (GetTemplateChild("DismissButton") is HyperlinkButton b)
             {
                 b.Click += (sender, e) =>
                 {
