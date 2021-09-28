@@ -4,6 +4,46 @@
         <name>Multitool BL</name>
     </assembly>
     <members>
+        <member name="T:Multitool.Net.HttpController">
+            <summary>
+            Wrapper around .NET's <see cref="T:System.Net.Http.HttpClient"/> to avoid socket over-allocation
+            </summary>
+        </member>
+        <member name="M:Multitool.Net.HttpController.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.Net.HttpController.GetStringAsync(System.Uri)">
+            <summary>
+            Wrapper for the <see cref="M:System.Net.Http.HttpClient.GetStringAsync(System.Uri)"/>
+            </summary>
+            <param name="uri">Uri to fetch</param>
+            <returns><see cref="T:System.Threading.Tasks.Task"/> holding the string result</returns>
+        </member>
+        <member name="T:Multitool.NTInterop.InteropWrapper">
+            <summary>
+            Wrapper to hold methods
+            </summary>
+        </member>
+        <member name="M:Multitool.NTInterop.InteropWrapper.GetCursorPosition">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Multitool.NTInterop.InteropWrapper.GetCursorPosition(System.Int32@,System.Int32@)">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+        </member>
+        <member name="M:Multitool.NTInterop.InteropWrapper.SetWindowsPosition(System.IntPtr,System.Drawing.Point)">
+            <summary>
+            
+            </summary>
+            <param name="windowHandle"></param>
+            <param name="newPosition"></param>
+        </member>
         <member name="T:Multitool.NTInterop.OperationFailedException">
             <summary>
             Indicates that a given operation has failed.

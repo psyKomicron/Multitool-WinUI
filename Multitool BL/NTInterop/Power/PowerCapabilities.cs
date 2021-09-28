@@ -4,6 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace Multitool.NTInterop.Power
 {
+    /// <summary>
+    /// Represents the power capabilities of this system
+    /// </summary>
     public class PowerCapabilities
     {
         #region DllImports
@@ -12,6 +15,9 @@ namespace Multitool.NTInterop.Power
         static extern bool GetPwrCapabilities(out SYSTEM_POWER_CAPABILITIES sysCaps);
         #endregion
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public PowerCapabilities()
         {
             GetPowerCapabilities();
@@ -19,37 +25,160 @@ namespace Multitool.NTInterop.Power
         }
 
         #region properties
+
+        /// <summary>
+        ///  True if the system has a power button (power on/power off) 
+        /// </summary>
         public bool PowerButtonPresent { get; private set; }
+
+        /// <summary>
+        /// True if the system has a sleep button
+        /// </summary>
         public bool SleepButtonPresent { get; private set; }
+
+        /// <summary>
+        /// True if the system has a lid
+        /// </summary>
         public bool LidPresent { get; private set; }
+
+        /// <summary>
+        /// Supported states by the CPU (S states)
+        /// </summary>
         public CpuPowerStates CpuStates { get; private set; }
+
+        /// <summary>
+        /// ACPI S1 supported
+        /// </summary>
         public bool S1 { get; private set; }
+
+        /// <summary>
+        /// ACPI S2 supported
+        /// </summary>
         public bool S2 { get; private set; }
+
+        /// <summary>
+        /// ACPI S3 allowed
+        /// </summary>
         public bool S3 { get; private set; }
+
+        /// <summary>
+        /// ACPI S4 supported (hibernation)
+        /// </summary>
         public bool S4 { get; private set; }
+
+        /// <summary>
+        /// ACPI S5 supported
+        /// </summary>
         public bool S5 { get; private set; }
-        public byte ProcessorMaxThrottle { get; private set; }
-        public byte ProcessorMinThrottle { get; private set; }
+
+        /// <summary>
+        /// True if throttling is available
+        /// </summary>
         public bool ProcessorThrottle { get; private set; }
+
+        /// <summary>
+        /// Current power mode maximal throttle
+        /// </summary>
+        public byte ProcessorMaxThrottle { get; private set; }
+
+        /// <summary>
+        /// Current power mode minimal throttle
+        /// </summary>
+        public byte ProcessorMinThrottle { get; private set; }
+
+        /// <summary>
+        /// True if the system has batteries (i.e. laptop)
+        /// </summary>
         public bool SystemBatteriesPresent { get; private set; }
+
+        /// <summary>
+        /// True if the batteries are considered short term
+        /// </summary>
         public bool BatteriesAreShortTerm { get; private set; }
+
+        /// <summary>
+        /// https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-battery_reporting_scale
+        /// </summary>
         public BatteryReportingScale BatterieScale1 { get; private set; }
+
+        /// <summary>
+        /// https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-battery_reporting_scale
+        /// </summary>
         public BatteryReportingScale BatterieScale2 { get; private set; }
+
+        /// <summary>
+        /// https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-battery_reporting_scale
+        /// </summary>
         public BatteryReportingScale BatterieScale3 { get; private set; }
+
+        /// <summary>
+        /// True if the hibernation file (c:\hiber.sys)
+        /// </summary>
         public bool HibernationFilePresent { get; private set; }
+
+        /// <summary>
+        /// ?
+        /// </summary>
         public bool FullWake { get; private set; }
+
+        /// <summary>
+        /// True if the system supports video dimming
+        /// </summary>
         public bool VideoDimPresent { get; private set; }
+
+        /// <summary>
+        /// ?
+        /// </summary>
         public bool ApmPresent { get; private set; }
+
+        /// <summary>
+        /// True if an uninterruptible power supply is present
+        /// </summary>
         public bool UpsPresent { get; private set; }
+
+        /// <summary>
+        /// Thermal control
+        /// </summary>
         public bool ThermalControl { get; private set; }
+
+        /// <summary>
+        /// Disk spin down time (minutes)
+        /// </summary>
         public bool DiskSpinDown { get; private set; }
+
+        /// <summary>
+        /// ?
+        /// </summary>
         public SystemPowerState AcOnLineWake { get; private set; }
+
+        /// <summary>
+        /// ?
+        /// </summary>
         public SystemPowerState SoftLidWake { get; private set; }
+
+        /// <summary>
+        /// ?
+        /// </summary>
         public SystemPowerState RtcWake { get; private set; }
+
+        /// <summary>
+        /// ?
+        /// </summary>
         public SystemPowerState MinDeviceWakeState { get; private set; }
+
+        /// <summary>
+        /// ?
+        /// </summary>
         public SystemPowerState DefaultLowLatencyWake { get; private set; }
+
         #endregion
 
+        #region public methods
+
+        /// <summary>
+        /// Checks if the system allows CPU S4 state, named Hibernation
+        /// </summary>
+        /// <returns>True if hibernation is allowed</returns>
         public static bool IsHibernationAllowed()
         {
             if (GetPwrCapabilities(out SYSTEM_POWER_CAPABILITIES sys))
@@ -61,6 +190,8 @@ namespace Multitool.NTInterop.Power
                 throw InteropHelper.GetLastError("GetPwrCapabilities returned zero code");
             }
         }
+
+        #endregion
 
         #region private methods
 

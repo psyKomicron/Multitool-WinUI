@@ -2,7 +2,7 @@
 
 namespace Multitool.NTInterop.Structs
 {
-    struct SYSTEM_POWER_CAPABILITIES
+    internal struct SYSTEM_POWER_CAPABILITIES
     {
         [MarshalAs(UnmanagedType.U1)]
         public bool PowerButtonPresent;
