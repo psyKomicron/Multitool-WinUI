@@ -28,7 +28,6 @@ namespace MultitoolWinUI.Pages
 
         private void AddDevices(DeviceInformationCollection collection)
         {
-            Debug.WriteLine("Adding devices...");
             if (collection.Count > 0)
             {
                 for (int i = 0; i < collection.Count; i++)

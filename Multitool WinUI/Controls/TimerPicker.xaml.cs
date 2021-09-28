@@ -17,11 +17,11 @@ namespace MultitoolWinUI.Controls
 {
     public sealed partial class TimerPicker : UserControl, INotifyPropertyChanged, IDisposable
     {
+        private readonly Timer timer = new() { AutoReset = false };
+        private readonly DispatcherQueueTimer animationTimer;
         private TimeSpan remainingTimeSpan;
         private TimeSpan originalTimeSpan;
         private TimeSpan timeSpan;
-        private readonly DispatcherQueueTimer animationTimer;
-        private readonly Timer timer = new() { AutoReset = false };
 
         private bool _buttonsEnabled = true;
         private bool _isReadOnly;
@@ -38,6 +38,23 @@ namespace MultitoolWinUI.Controls
             animationTimer.Tick += AnimationTimer_Tick;
             timer.Elapsed += Timer_Elapsed;
         }
+
+        #region events
+
+        /// <inheritdoc/>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Occurs when the timer status has changed (started: True, stopped: False).
+        /// </summary>
+        public event TypedEventHandler<TimerPicker, bool> StatusChanged;
+
+        /// <summary>
+        /// Routed elapsed event.
+        /// </summary>
+        public event ElapsedEventHandler Elapsed;
+
+        #endregion
 
         #region properties
 
@@ -102,23 +119,6 @@ namespace MultitoolWinUI.Controls
 
         #endregion
 
-        #region events
-
-        /// <inheritdoc/>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// Occurs when the timer status has changed (started: True, stopped: False).
-        /// </summary>
-        public event TypedEventHandler<TimerPicker, bool> StatusChanged;
-
-        /// <summary>
-        /// Routed elapsed event.
-        /// </summary>
-        public event ElapsedEventHandler Elapsed;
-
-        #endregion
-
         public TimeSpan GetValue()
         {
             if (timeSpan.Hours != Hours || timeSpan.Minutes != Minutes || timeSpan.Seconds != Seconds)
@@ -137,7 +137,7 @@ namespace MultitoolWinUI.Controls
 
         private void NotifyPropertyChanged([CallerMemberName] string name = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            PropertyChanged?.Invoke(this, new(name));
         }
 
         private void UpdateTimer(TimeSpan span)
@@ -312,7 +312,9 @@ namespace MultitoolWinUI.Controls
         private void RestartTimerButton_Click(object sender, RoutedEventArgs e)
         {
             timer.Stop();
+            animationTimer.Stop();
             timer.Start();
+            animationTimer.Start();
         }
 
         private void StartTimerButton_Click(object sender, RoutedEventArgs e)
@@ -321,14 +323,10 @@ namespace MultitoolWinUI.Controls
             IsReadOnly = true;
 
             remainingTimeSpan = GetValue();
-
-            if (remainingTimeSpan.TotalSeconds == 0)
+            // check value not empty
+            if (remainingTimeSpan.TotalMilliseconds == 0)
             {
-#if !DEBUG
                 throw new FormatException("Input for power action cannot be empty");
-#else
-                remainingTimeSpan = new(1);
-#endif
             }
 
             originalTimeSpan = remainingTimeSpan;
@@ -371,9 +369,8 @@ namespace MultitoolWinUI.Controls
             });
             animationTimer.Stop();
             Elapsed?.Invoke(this, e);
-            Debug.WriteLine("Elapsed");
         }
 
-#endregion
+        #endregion
     }
 }

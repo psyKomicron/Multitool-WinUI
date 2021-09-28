@@ -92,7 +92,7 @@ namespace Multitool.DAL
         /// <summary>Unfroze the <see cref="FileSystemCache"/> to re-allow operations on it.</summary>
         public void UnFreeze()
         {
-            Debug.WriteLine("Unfreezing cache for " + Path);
+            Trace.TraceInformation("Unfreezing cache for " + Path);
             if (timer != null)
             {
                 timer.Interval = ttl;
@@ -276,7 +276,7 @@ namespace Multitool.DAL
         #region watcher events
         private void OnFileChange(object sender, FileSystemEventArgs e)
         {
-            Debug.WriteLine("File changed: \"" + e.FullPath + "\"");
+            Trace.TraceInformation("File changed: \"" + e.FullPath + "\"");
             if (!Frozen)
             {
                 if (timer != null)
@@ -295,7 +295,7 @@ namespace Multitool.DAL
 
         private void OnFileCreated(object sender, FileSystemEventArgs e)
         {
-            Debug.WriteLine("File created: \"" + e.FullPath + "\"");
+            Trace.TraceInformation("File created: \"" + e.FullPath + "\"");
             if (!Frozen)
             {
                 if (timer != null)
@@ -309,7 +309,7 @@ namespace Multitool.DAL
 
         private void OnFileDeleted(object sender, FileSystemEventArgs e)
         {
-            Debug.WriteLine("File deleted: \"" + e.FullPath + "\"");
+            Trace.TraceInformation("File deleted: \"" + e.FullPath + "\"");
             if (!Frozen)
             {
                 if (timer != null)
@@ -325,7 +325,7 @@ namespace Multitool.DAL
 
         private void OnFileRenamed(object sender, RenamedEventArgs e)
         {
-            Debug.WriteLine("File renamed: \"" + e.OldFullPath + "\" to \"" + e.FullPath + "\"");
+            Trace.TraceInformation("File renamed: \"" + e.OldFullPath + "\" to \"" + e.FullPath + "\"");
             if (!Frozen)
             {
                 if (timer != null)
@@ -347,7 +347,7 @@ namespace Multitool.DAL
 #if DEBUG
             else
             {
-                Debug.WriteLine("File renamed (: " + e.OldFullPath + " -> " + e.FullPath + ") | cache is frozen");
+                Trace.TraceWarning("File renamed (: " + e.OldFullPath + " -> " + e.FullPath + ") | cache is frozen");
             }
 #endif
         }

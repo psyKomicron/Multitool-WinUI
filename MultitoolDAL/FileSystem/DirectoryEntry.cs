@@ -82,7 +82,7 @@ namespace Multitool.DAL
                     default:
                         throw new ArgumentException("MoveCodes not recognized");
                 }
-                Debug.WriteLine(Name + "cannot be moved -> " + message);
+                Trace.TraceError(Name + " cannot be moved: " + message);
                 throw new IOException(Path + " cannot be moved (reason: " + message + ")");
             }
         }
