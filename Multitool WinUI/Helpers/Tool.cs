@@ -3,38 +3,30 @@
 using System;
 using System.Collections.Generic;
 
-using Windows.Foundation.Collections;
-using Windows.Storage;
+using Windows.ApplicationModel;
 
 namespace MultitoolWinUI.Helpers
 {
     internal static class Tool
     {
-        public static T GetSetting<T>(string callerName, string key)
-        {
-            IPropertySet set = ApplicationData.Current.LocalSettings.Values;
-            if (set.TryGetValue(callerName + "/" + key, out object value))
-            {
-                return (T)Convert.ChangeType(value, typeof(T));
-            }
-            else
-            {
-                throw new SettingNotFoundException(key);
-            }
-        }
+        public const string BuildType =
+#if DEBUG
+            "Debug";
+#else
+            "Release";
+#endif
 
-        public static void SaveSetting<T>(string callerName, string key, T value)
+        public static string GetPackageVersion()
         {
-            string actualKey = callerName + "/" + key;
-            IPropertySet set = ApplicationData.Current.LocalSettings.Values;
-            if (set.ContainsKey(actualKey))
-            {
-                set[actualKey] = value;
-            }
-            else
-            {
-                set.Add(actualKey, value);
-            }
+            System.Text.StringBuilder builder = new();
+            builder.Append(Package.Current.Id.Version.Major)
+                   .Append('.')
+                   .Append(Package.Current.Id.Version.Minor)
+                   .Append('.')
+                   .Append(Package.Current.Id.Version.Build)
+                   .Append('.')
+                   .Append(Package.Current.Id.Version.Revision);
+            return builder.ToString();
         }
 
         public static T GetAppRessource<T>(string name)
@@ -97,7 +89,7 @@ namespace MultitoolWinUI.Helpers
             if (dic.ContainsKey(key))
             {
                 object o = dic[key];
-                if (o.GetType() == typeof(T))
+                if (o is T)
                 {
                     return (T)dic[key];
                 }

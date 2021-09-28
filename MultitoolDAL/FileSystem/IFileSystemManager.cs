@@ -8,12 +8,12 @@ namespace Multitool.DAL
 {
     public interface IFileSystemManager : IProgressNotifier
     {
-        double CacheTimeout { get; set; }
-
         /// <summary>
         /// Fired when the one or more items in the cache have changed.
         /// </summary>
         event ItemChangedEventHandler Change;
+
+        double CacheTimeout { get; set; }
 
         /// <summary>
         /// <para>
@@ -34,14 +34,12 @@ namespace Multitool.DAL
         Task GetFileSystemEntries<ItemType>(
             string path, IList<ItemType> list,
             AddDelegate<ItemType> addDelegate, CancellationToken cancellationToken) where ItemType : IFileSystemEntry;
-
         /// <summary>
         /// Get the case sensitive path for the <paramref name="path"/> parameter.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
         string GetRealPath(string path);
-
         /// <summary>
         /// Cleans the internal cache.
         /// </summary>

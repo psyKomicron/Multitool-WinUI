@@ -16,20 +16,19 @@ namespace MultitoolWinUI.Pages.Explorer
     /// </summary>
     public sealed partial class ExplorerHomePage : Page
     {
-        private CancellationTokenSource token = new();
+        private readonly CancellationTokenSource token = new();
 
         public ExplorerHomePage()
         {
             InitializeComponent();
-
             DriveInfo[] drives = DriveInfo.GetDrives();
             foreach (DriveInfo item in drives)
             {
                 DisksGrid.Items.Add(new DriveInfoView(item, CancellationTokenSource.CreateLinkedTokenSource(token.Token))
                 {
                     Margin = new Thickness(10),
-                    Width = 550,
-                    Height = 230,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new(5)
                 });
             }
         }

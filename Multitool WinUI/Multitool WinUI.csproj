@@ -9,10 +9,11 @@
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <Configurations>Debug;Release;Release (opti)</Configurations>
-    <AssemblyVersion>1.0.10.0</AssemblyVersion>
+    <AssemblyVersion>1.0.11.0</AssemblyVersion>
     <Authors>Julien Marquet</Authors>
     <PackageReleaseNotes>Application in developpement.</PackageReleaseNotes>
     <ApplicationIcon>multitool.ico</ApplicationIcon>
+    <Version>1.0.11</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <DefineConstants>TRACE</DefineConstants>

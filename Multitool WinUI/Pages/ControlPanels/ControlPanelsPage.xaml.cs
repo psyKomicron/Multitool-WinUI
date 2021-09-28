@@ -18,6 +18,7 @@ using Windows.System;
 using Multitool.NTInterop;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml.Navigation;
+using System.Runtime.CompilerServices;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -57,7 +58,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 xmlDocument.AppendChild(xmlDocument.CreateElement("pathes"));
                 xmlDocument.Save(path);
 
-                //App.MainWindow.DisplayMessage("Information", "Control panels", "Custom settings file created (since none was found)");
+                Trace.TraceInformation("Custom settings file created (since none was found)");
             }
             catch (XmlException e)
             {
@@ -66,22 +67,22 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 return;
             }
 
-            List<UIElement> frameworkElements = new();
+            /*List<UIElement> frameworkElements = new();*/
             LoadNewElements(xmlDocument.DocumentElement);
 
             watcher = WatcherFactory.CreateWatcher(ApplicationData.Current.LocalFolder.Path, new()
             {
                 ChangedHandler = OnFileChange
             });
-            watcher.EnableRaisingEvents = true;
+            watcher.EnableRaisingEvents = false;
 
-            _ = DispatcherQueue.TryEnqueue(() =>
+            /*_ = DispatcherQueue.TryEnqueue(() =>
             {
                 for (int i = 0; i < frameworkElements.Count; i++)
                 {
                     ItemsWrapGrid.Children.Add(frameworkElements[i]);
                 }
-            });
+            });*/
         }
 
         private UIElement CreateElements(string name, Uri uri, bool isPinned)
@@ -91,19 +92,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
             settingPathButton.Deleted += SettingPathButton_Deleted;
             settingPathButton.Pinned += SettingPathButton_Pinned;
             return settingPathButton;
-        }
-
-        private SettingPathView FindButton(string name)
-        {
-            UIElementCollection collection = pathes[name].Item2 ? PinnedItemsWrapGrid.Children : ItemsWrapGrid.Children;
-            for (int i = 0; i < collection.Count; i++)
-            {
-                if ((collection[i] as SettingPathView).ButtonName == name)
-                {
-                    return collection[i] as SettingPathView;
-                }
-            }
-            return null;
         }
 
         private SettingPathView FindButton(string name, bool pinned)
@@ -119,6 +107,32 @@ namespace MultitoolWinUI.Pages.ControlPanels
             return null;
         }
 
+        private void Pin(string name)
+        {
+            UIElement el = FindButton(name, false);
+            if (ItemsWrapGrid.Children.Remove(el))
+            {
+                PinnedItemsWrapGrid.Children.Add(CreateElements(name, pathes[name].Item1, pathes[name].Item2));
+            }
+            else
+            {
+                Trace.TraceInformation("Unable to pin '" + name + "'");
+            }
+        }
+
+        private void UnPin(string name)
+        {
+            UIElement el = FindButton(name, true);
+            if (PinnedItemsWrapGrid.Children.Remove(el))
+            {
+                ItemsWrapGrid.Children.Add(CreateElements(name, pathes[name].Item1, pathes[name].Item2));
+            }
+            else
+            {
+                Trace.TraceInformation("Unable to unpin '" + name + "'");
+            }
+        }
+
         private int FindButtonIndex(string name)
         {
             UIElementCollection collection = pathes[name].Item2 ? PinnedItemsWrapGrid.Children : ItemsWrapGrid.Children;
@@ -132,7 +146,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             return -1;
         }
 
-        private void LoadNewElements(XmlElement root)
+        private void LoadNewElements(XmlNode root)
         {
             // find new valid nodes
             foreach (XmlNode node in root)
@@ -156,21 +170,8 @@ namespace MultitoolWinUI.Pages.ControlPanels
                                 }
                                 if (pathes[name].Item2 != pinned)
                                 {
-                                    _ = DispatcherQueue.TryEnqueue(() =>
-                                    {
-                                        UIElement el = FindButton(name, pathes[name].Item2);
-                                        if (!pathes[name].Item2)
-                                        {
-                                            _ = ItemsWrapGrid.Children.Remove(el);
-                                            PinnedItemsWrapGrid.Children.Add(CreateElements(name, pathes[name].Item1, pathes[name].Item2));
-                                        }
-                                        else
-                                        {
-                                            _ = PinnedItemsWrapGrid.Children.Remove(el);
-                                            ItemsWrapGrid.Children.Add(CreateElements(name, pathes[name].Item1, pathes[name].Item2));
-                                        }
-                                        pathes[name] = new(pathes[name].Item1, pinned);
-                                    });
+                                    _ = DispatcherQueue.TryEnqueue(() => Pin(name));
+                                    pathes[name] = new(pathes[name].Item1, pinned);
                                 }
                             }
                             else
@@ -189,14 +190,13 @@ namespace MultitoolWinUI.Pages.ControlPanels
                         catch (UriFormatException ex)
                         {
                             Trace.TraceError(ex.ToString());
-                            //App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
                         }
                     }
                 }
             }
         }
 
-        private void RemoveOldElements(XmlElement root)
+        private void RemoveOldElements(XmlNode root)
         {
             List<string> names = new();
             Dictionary<string, Tuple<Uri, bool>>.KeyCollection keys = pathes.Keys;
@@ -243,11 +243,11 @@ namespace MultitoolWinUI.Pages.ControlPanels
                     // find button to remove
                     if (pathes[names[i]].Item2)
                     {
-                        PinnedItemsWrapGrid.Children.Remove(FindButton(names[i]));
+                        PinnedItemsWrapGrid.Children.Remove(FindButton(names[i], true));
                     }
                     else
                     {
-                        ItemsWrapGrid.Children.Remove(FindButton(names[i]));
+                        ItemsWrapGrid.Children.Remove(FindButton(names[i], false));
                     }
                 }
             });
@@ -380,7 +380,17 @@ namespace MultitoolWinUI.Pages.ControlPanels
 
         private void SettingPathButton_Pinned(SettingPathView sender, bool pinned)
         {
-            //pathes[sender.ButtonName] = new(pathes[sender.ButtonName].Item1, pinned);
+            if (pinned)
+            {
+                DispatcherQueue.TryEnqueue(() => Pin(sender.ButtonName));
+            }
+            else
+            {
+                DispatcherQueue.TryEnqueue(() => UnPin(sender.ButtonName));
+            }
+            pathes[sender.ButtonName] = new(pathes[sender.ButtonName].Item1, pinned);
+
+            // save changes in XML
             XmlDocument doc = new();
             try
             {
@@ -409,17 +419,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
             catch (XmlException ex)
             {
                 Trace.TraceWarning("Unable to pin/unpin element (name: " + sender.ButtonName + ").\n" + ex.ToString());
-                if (pinned)
-                {
-                    ItemsWrapGrid.Children.Remove(sender);
-                    PinnedItemsWrapGrid.Children.Add(sender);
-                }
-                else
-                {
-                    PinnedItemsWrapGrid.Children.Remove(sender);
-                    ItemsWrapGrid.Children.Add(sender);
-                }
-                //App.MainWindow.DisplayMessage("Error", "Control panels", "Failed to save the element state (pinned/unpinned).");
             }
         }
 
@@ -434,12 +433,8 @@ namespace MultitoolWinUI.Pages.ControlPanels
 
         private void AddSettingsButton_Click(object sender, RoutedEventArgs e)
         {
-#if DEBUG
             Frame.Navigate(typeof(ControlPanelsFilePage));
             Trace.TraceInformation("Navigating to ControlPanelsFilePage");
-#else
-            App.DisplayMessage("Error", nameof(AddSettingsButton_Click) + " is not implemented.", string.Empty);
-#endif
         }
 
         private void SettingsSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
@@ -474,6 +469,24 @@ namespace MultitoolWinUI.Pages.ControlPanels
             }
         }
 
+        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            _ = DispatcherQueue.TryEnqueue(() =>
+            {
+                PinnedItemsWrapGrid.Children.Clear();
+                ItemsWrapGrid.Children.Clear();
+
+            });
+            this.pathes.Clear();
+            XmlDocument doc = new();
+            doc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+            XmlNode pathes = doc.SelectSingleNode(".//pathes");
+            if (pathes != null)
+            {
+                LoadNewElements(pathes);
+            }
+        }
+
         #endregion
 
         #region file change
@@ -497,7 +510,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 catch (XmlException ex)
                 {
                     Trace.TraceError("XmlException: Unable to parse changes from the .XML settings file.\n" + ex);
-                    //App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to parse changes from the .XML settings file.");
                 }
                 catch (IOException ex)
                 {
@@ -511,7 +523,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             }
         }
 
-#endregion
+        #endregion
 
         #endregion
     }

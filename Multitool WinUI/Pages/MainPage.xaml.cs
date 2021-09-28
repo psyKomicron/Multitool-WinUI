@@ -1,13 +1,12 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
-using System;
+using MultitoolWinUI.Helpers;
+
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using System.Xml;
 
-using Windows.ApplicationModel;
 using Windows.Storage;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -26,11 +25,7 @@ namespace MultitoolWinUI.Pages
         {
             InitializeComponent();
             InitializeWindow();
-#if DEBUG
-            BuildTypeBlock.Text = "Debug";
-#else
-            BuildTypeBlock.Text = "Release";
-#endif
+            BuildTypeBlock.Text = Tool.BuildType;
         }
 
         #region properties
@@ -38,7 +33,7 @@ namespace MultitoolWinUI.Pages
 #if DEBUG
         public static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 #else
-        public static string Version => GetPackageVersion();
+        public static string Version => Tool.GetPackageVersion();
 #endif
 
         #endregion
@@ -60,20 +55,5 @@ namespace MultitoolWinUI.Pages
                 Trace.TraceError(e.ToString());
             }
         }
-
-#if !DEBUG
-        private static string GetPackageVersion()
-        {
-            StringBuilder builder = new();
-            builder.Append(Package.Current.Id.Version.Major)
-                   .Append('.')
-                   .Append(Package.Current.Id.Version.Minor)
-                   .Append('.')
-                   .Append(Package.Current.Id.Version.Build)
-                   .Append('.')
-                   .Append(Package.Current.Id.Version.Revision);
-            return builder.ToString();
-        }
-#endif
     }
 }

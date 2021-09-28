@@ -27,11 +27,11 @@ namespace MultitoolWinUI
         public MainWindow()
         {
             InitializeComponent();
-            Title = "Multitool";
-
+            Title = "Multitool v." + Tool.GetPackageVersion();
+            SizeChanged += MainWindow_SizeChanged;
             try
             {
-                IsPaneOpen = Tool.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
+                IsPaneOpen = App.Settings.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
             }
             catch (SettingNotFoundException)
             {
@@ -40,7 +40,7 @@ namespace MultitoolWinUI
 
             try
             {
-                string lastPageName = Tool.GetSetting<string>(nameof(MainWindow), nameof(lastPage));
+                string lastPageName = App.Settings.GetSetting<string>(nameof(MainWindow), nameof(lastPage));
                 switch (lastPageName)
                 {
                     case nameof(MainPage):
@@ -153,14 +153,19 @@ namespace MultitoolWinUI
 
         #region window events
 
+        private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
+        {
+            DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
+        }
+
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
             if (lastPage != null)
             {
-                Tool.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
+                App.Settings.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
             }
-            Tool.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
+            App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
         }
 
         private void MessageDisplay_Dismiss(Controls.WindowMessageControl sender, RoutedEventArgs args)

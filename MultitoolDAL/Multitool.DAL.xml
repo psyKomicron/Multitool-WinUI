@@ -427,21 +427,6 @@
             Cleans the internal cache.
             </summary>
         </member>
-        <member name="E:Multitool.DAL.IProgressNotifier.Progress">
-            <summary>
-            Fires each time a subtask is completed.
-            </summary>
-        </member>
-        <member name="E:Multitool.DAL.IProgressNotifier.Exception">
-            <summary>
-            Fired when the task fails. Carries the exception that caused the failure.
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IProgressNotifier.Notify">
-            <summary>
-            Set it to true to allow to fire the <see cref="E:Multitool.DAL.IProgressNotifier.Progress"/> event.
-            </summary>
-        </member>
         <member name="M:Multitool.DAL.WatcherFactory.CreateWatcher(System.String,System.IO.NotifyFilters,Multitool.DAL.WatcherDelegates)">
             <summary>
             Creates an instance of <see cref="T:System.IO.FileSystemWatcher"/> with the specified path and notify filters.
@@ -458,6 +443,76 @@
             <param name="path">Path for the watcher to watch</param>
             <param name="delegates">Delegates for <see cref="T:System.IO.FileSystemWatcher"/> events. (see <see cref="T:Multitool.DAL.WatcherDelegates"/>)</param>
             <returns>The created watcher</returns>
+        </member>
+        <member name="E:Multitool.DAL.IProgressNotifier.Progress">
+            <summary>
+            Fires each time a subtask is completed.
+            </summary>
+        </member>
+        <member name="E:Multitool.DAL.IProgressNotifier.Exception">
+            <summary>
+            Fired when the task fails. Carries the exception that caused the failure.
+            </summary>
+        </member>
+        <member name="P:Multitool.DAL.IProgressNotifier.Notify">
+            <summary>
+            Set it to true to allow to fire the <see cref="E:Multitool.DAL.IProgressNotifier.Progress"/> event.
+            </summary>
+        </member>
+        <member name="P:Multitool.DAL.ISettings.DataContainer">
+            <summary>
+            The <see cref="T:Windows.Storage.ApplicationDataContainer"/> associated with this instance
+            </summary>
+        </member>
+        <member name="P:Multitool.DAL.ISettings.SettingFormat">
+            <summary>
+            How the setting key will be created
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.ISettings.GetSetting``1(System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="callerName"></param>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Multitool.DAL.ISettings.SaveSetting(System.String,System.String,System.Object)">
+            <summary>
+            <para>
+            Saves a setting to the provided <see cref="P:Multitool.DAL.ISettings.DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="P:Multitool.DAL.ISettings.SettingFormat"/>.
+            </para>
+            <para>
+            If the setting does not exists an entry will be created, if it does the value will be updated.
+            </para>
+            </summary>
+            <param name="callerName">Name of the caller (should be unique)</param>
+            <param name="name">Name of the setting</param>
+            <param name="value">Value to save</param>
+        </member>
+        <member name="M:Multitool.DAL.ISettings.TryGetSetting(System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="callerName"></param>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+        <member name="P:Multitool.DAL.Settings.DataContainer">
+            <inheritdoc/>
+        </member>
+        <member name="P:Multitool.DAL.Settings.SettingFormat">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.Settings.SaveSetting(System.String,System.String,System.Object)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.Settings.GetSetting``1(System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.Settings.TryGetSetting(System.String,System.String)">
+            <inheritdoc/>
         </member>
     </members>
 </doc>

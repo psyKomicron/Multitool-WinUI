@@ -9,7 +9,8 @@
 # Windows
 
 [x] Create and revamp multitool's powerwindow (power control)
+[ ] Use GridView for disk view (instead of the old WPF look)
 
 ## Control panels
 
-finish and beautify
+[x] finish and beautify

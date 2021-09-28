@@ -20,8 +20,8 @@ namespace MultitoolWinUI.Controls
         private TimeSpan remainingTimeSpan;
         private TimeSpan originalTimeSpan;
         private TimeSpan timeSpan;
-        private DispatcherQueueTimer animationTimer;
-        private Timer timer = new() { AutoReset = false };
+        private readonly DispatcherQueueTimer animationTimer;
+        private readonly Timer timer = new() { AutoReset = false };
 
         private bool _buttonsEnabled = true;
         private bool _isReadOnly;
@@ -324,7 +324,11 @@ namespace MultitoolWinUI.Controls
 
             if (remainingTimeSpan.TotalSeconds == 0)
             {
+#if !DEBUG
                 throw new FormatException("Input for power action cannot be empty");
+#else
+                remainingTimeSpan = new(1);
+#endif
             }
 
             originalTimeSpan = remainingTimeSpan;
@@ -347,9 +351,9 @@ namespace MultitoolWinUI.Controls
             }
         }
 
-        #endregion
+#endregion
 
-        #endregion
+#endregion
 
         private void AnimationTimer_Tick(DispatcherQueueTimer sender, object args)
         {
@@ -370,6 +374,6 @@ namespace MultitoolWinUI.Controls
             Debug.WriteLine("Elapsed");
         }
 
-        #endregion
+#endregion
     }
 }

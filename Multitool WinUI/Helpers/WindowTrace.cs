@@ -24,11 +24,13 @@ namespace MultitoolWinUI.Helpers
         private readonly SolidColorBrush warningBrush;
         private readonly SolidColorBrush infoBrush;
         private bool timerRunning;
+        private bool closed;
 
-        public WindowTrace(MainWindow window) : base("WindowTraceListener")
+        public WindowTrace(MainWindow w) : base("WindowTraceListener")
         {
-            this.window = window;
-            dispatcher = window.DispatcherQueue;
+            window = w;
+            window.Closed += Window_Closed;
+            dispatcher = w.DispatcherQueue;
             try
             {
                 errorBrush = new(Tool.GetAppRessource<Color>("SystemAccentColor"));
@@ -45,6 +47,8 @@ namespace MultitoolWinUI.Helpers
             }
             catch (SettingNotFoundException e) { Trace.TraceError(e.Message); }
         }
+
+        #region trace methods
 
         /// <inheritdoc />
         public override void Write(string message)
@@ -97,6 +101,7 @@ namespace MultitoolWinUI.Helpers
             });
         }
 
+        /// <inheritdoc />
         public override void TraceData(TraceEventCache eventCache, string source, TraceEventType eventType, int id, params object[] data)
         {
             _ = Task.Run(() =>
@@ -116,6 +121,7 @@ namespace MultitoolWinUI.Helpers
             });
         }
 
+        /// <inheritdoc />
         public override void TraceEvent(TraceEventCache eventCache, string source, TraceEventType eventType, int id, string format, params object[] args)
         {
             _ = Task.Run(() =>
@@ -141,6 +147,7 @@ namespace MultitoolWinUI.Helpers
             });
         }
 
+        /// <inheritdoc />
         public override void TraceEvent(TraceEventCache eventCache, string source, TraceEventType eventType, int id)
         {
             _ = Task.Run(() =>
@@ -160,6 +167,7 @@ namespace MultitoolWinUI.Helpers
             });
         }
 
+        /// <inheritdoc />
         public override void TraceEvent(TraceEventCache eventCache, string source, TraceEventType eventType, int id, string message)
         {
             _ = Task.Run(() =>
@@ -179,9 +187,13 @@ namespace MultitoolWinUI.Helpers
             });
         }
 
+        #endregion
+
+        #region private methods
+
         private void TraceMessage(string title, string header, string message, Brush background)
         {
-            if (dispatcher.TryEnqueue(() =>
+            if (!closed && dispatcher.TryEnqueue(() =>
             {
                 window.MessageDisplay.Background = background;
                 window.MessageDisplay.Title = title;
@@ -198,10 +210,17 @@ namespace MultitoolWinUI.Helpers
             }
         }
 
+        private void Window_Closed(object sender, WindowEventArgs args)
+        {
+            closed = true;
+        }
+
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             timerRunning = false;
             _ = dispatcher.TryEnqueue(() => window.ExceptionPopup.IsOpen = false);
         }
+
+        #endregion
     }
 }

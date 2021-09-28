@@ -15,6 +15,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <VariableSizedWrapGrid 
             ItemHeight="150" 
@@ -56,12 +57,24 @@
             MinWidth="300"
             HorizontalAlignment="Center"/>
 
+        <Button
+            x:Name="RefreshButton"
+            Click="RefreshButton_Click"
+            Margin="0, 0, 20, 0"
+            Padding="15"
+            HorizontalAlignment="Right"
+            CornerRadius="5"
+            Grid.Row="2">
+            <FontIcon
+                FontFamily="{StaticResource SymbolThemeFontFamily}"
+                Glyph="&#xe72c;"/>
+        </Button>
+
         <VariableSizedWrapGrid 
             x:Name="PinnedItemsWrapGrid"
             ItemHeight="170" 
             ItemWidth="260"
-            MaximumRowsOrColumns="4"
-            Grid.Row="2"
+            Grid.Row="3"
             Orientation="Horizontal">
             <VariableSizedWrapGrid.Resources>
                 <Style TargetType="controlpanels:SettingPathView">
@@ -74,8 +87,7 @@
             x:Name="ItemsWrapGrid"
             ItemHeight="140" 
             ItemWidth="260"
-            MaximumRowsOrColumns="4"
-            Grid.Row="3"
+            Grid.Row="4"
             Orientation="Horizontal">
             <VariableSizedWrapGrid.Resources>
                 <Style TargetType="controlpanels:SettingPathView">

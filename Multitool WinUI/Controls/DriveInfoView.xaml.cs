@@ -28,11 +28,21 @@ namespace MultitoolWinUI.Controls
         private double _sysFilesPercentage;
         private long _sysFilesSize;
 
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public DriveInfoView()
+        {
+            InitializeComponent();
+
+            SetCompleted(false);
+        }
+
         public DriveInfoView(DriveInfo driveInfo, CancellationTokenSource cancelToken)
         {
             InitializeComponent();
             DriveInfo = driveInfo;
-            SetGradients(false);
+            SetCompleted(false);
             if (DriveInfo.IsReady)
             {
                 cancelToken.Token.ThrowIfCancellationRequested();
@@ -41,23 +51,24 @@ namespace MultitoolWinUI.Controls
             else
             {
                 Trace.TraceError("Drive could not be loaded. '" + driveInfo.Name + "' was not ready");
-                //App.DisplayMessage("Error", "The drive could not be loaded", "Drive name: " + driveInfo.Name);
             }
         }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         #region properties
 
-        public string BackgroudColor { get; set; }
+        public DriveInfo DriveInfo { get; set; }
 
-        public DriveInfo DriveInfo { get; }
+        public string DriveName => DriveInfo == null ? string.Empty : DriveInfo.Name;
 
-        public string DriveName => DriveInfo.Name + "(" + DriveInfo?.VolumeLabel + ")";
+        public string VolumeLabel => DriveInfo == null ? string.Empty : DriveInfo.VolumeLabel;
 
-        public string DriveCapacity => Tool.FormatSize(DriveInfo?.TotalSize ?? 0);
+        public string DriveCapacity => DriveInfo == null ? "0" : Tool.FormatSize(DriveInfo.TotalSize);
 
-        public string DriveFreeSpace => Tool.FormatSize(DriveInfo?.TotalFreeSpace ?? 0);
+        public string DriveFreeSpace => DriveInfo == null ? "0" : Tool.FormatSize(DriveInfo.TotalFreeSpace);
 
-        public string SysFilesSize => Tool.FormatSize(_sysFilesSize);
+        public string SysFilesSize => DriveInfo == null ? "0" : Tool.FormatSize(_sysFilesSize);
 
         public double DriveFreeSpacePercentage
         {
@@ -106,8 +117,6 @@ namespace MultitoolWinUI.Controls
 
         #endregion
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
         #region methods
 
         private async Task LoadComponents(CancellationTokenSource cancelTokenSource)
@@ -133,11 +142,8 @@ namespace MultitoolWinUI.Controls
             });
 
             cancelToken.ThrowIfCancellationRequested();
-
             await GetStaticSysFilesSize(cancelToken);
-
             _ = DispatcherQueue.TryEnqueue(() => SysFiles_TextBlock.Opacity = 1);
-
             cancelTokenSource.Dispose();
         }
 
@@ -160,7 +166,8 @@ namespace MultitoolWinUI.Controls
 
             cancelToken.ThrowIfCancellationRequested();
             await Task.Run(() => ComputeSysFiles(DriveInfo.Name, cancelToken), cancelToken);
-            SetGradients(true);
+
+            SetCompleted(true);
         }
 
         private void ComputeSysFiles(string path, CancellationToken cancelToken)
@@ -206,49 +213,39 @@ namespace MultitoolWinUI.Controls
             if (stopwatch.ElapsedMilliseconds > 150)
             {
                 stopwatch.Reset();
-
                 _ = DispatcherQueue.TryEnqueue(() =>
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SysFilesSize)));
-                    SysFilesPercentage = _sysFilesSize / (double)DriveInfo.TotalSize * 100;
+                    SysFilesPercentage = (_sysFilesSize / (double)DriveInfo.TotalSize) * 100;
                 });
-
                 stopwatch.Start();
             }
         }
 
-        private void SetGradients(bool active)
+        private void SetCompleted(bool status)
         {
-            if (active)
+#if DEBUG
+            if (status)
             {
-                SetFirstGradient(Tool.GetAppRessource<Color>("SystemAccentColorDark2"));
-                SetSecondGradient(Tool.GetAppRessource<Color>("SystemAccentColorDark1"));
-                SetThirdGradient(Tool.GetAppRessource<Color>("WarmWhite"));
+                Debug.WriteLine(DriveName + " set completed");
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ProgressRing.IsIndeterminate = false;
+                    ProgressRing.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+                });
             }
             else
             {
-                SetFirstGradient(Tool.GetAppRessource<Color>("DarkBlack"));
-                SetSecondGradient(Tool.GetAppRessource<Color>("LightBlack"));
-                SetThirdGradient(Tool.GetAppRessource<Color>("WarmWhite"));
+                Debug.WriteLine(DriveName + " set completing");
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ProgressRing.IsIndeterminate = true;
+                    ProgressRing.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                });
             }
-        }
-
-        private void SetFirstGradient(Color value)
-        {
-            GradientStopOne.Color = value;
-        }
-
-        private void SetSecondGradient(Color value)
-        {
-            GradientStopTwo.Color = value;
-        }
-
-        private void SetThirdGradient(Color value)
-        {
-            GradientStopThree.Color = value;
+#endif
         }
 
         #endregion
-
     }
 }
