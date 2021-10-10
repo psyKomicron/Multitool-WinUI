@@ -4,13 +4,17 @@ using System.Reflection;
 
 namespace Multitool.Optimisation
 {
-    public class ObjectPool<T> where T : class, IPoolableObject
+    /// <summary>
+    /// To pool objects to reduce instanciation delay when using a lot of the same objects.
+    /// </summary>
+    /// <typeparam name="T">Type of the object to pool</typeparam>
+    public class ObjectPool<T> where T : PoolableObject
     {
         public const int DEFAULT_CAPACITY = 10;
 
-        private object syncObject = new object();
-        private Stack<T> freePool;
-        private List<PropertyInfo> propertyInfos = new List<PropertyInfo>();
+        private readonly object syncObject = new();
+        private readonly Stack<T> freePool;
+        private readonly List<PropertyInfo> propertyInfos = new();
 
         #region constructors
         /// <summary>Initialise the pool with the <see cref="DEFAULT_CAPACITY"/> capacity</summary>
