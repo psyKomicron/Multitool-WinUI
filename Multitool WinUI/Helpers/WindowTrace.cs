@@ -2,10 +2,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
-using System;
-using System.Collections.Generic;
+using Multitool.DAL;
+
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +23,7 @@ namespace MultitoolWinUI.Helpers
         private readonly SolidColorBrush warningBrush;
         private readonly SolidColorBrush infoBrush;
         private bool timerRunning;
-        private bool closed;
+        private volatile bool closed;
 
         public WindowTrace(MainWindow w) : base("WindowTraceListener")
         {
@@ -79,6 +78,11 @@ namespace MultitoolWinUI.Helpers
             {
                 Write(message);
             }
+        }
+
+        public static void TraceError(string message, [CallerMemberName] string callerName = null)
+        {
+            Trace.TraceError(callerName + " -> " + message);
         }
 
         /// <inheritdoc />
@@ -195,11 +199,14 @@ namespace MultitoolWinUI.Helpers
         {
             if (!closed && dispatcher.TryEnqueue(() =>
             {
-                window.MessageDisplay.Background = background;
-                window.MessageDisplay.Title = title;
-                window.MessageDisplay.Header = header;
-                window.MessageDisplay.Content = message;
-                window.ExceptionPopup.IsOpen = true;
+                if (!closed)
+                {
+                    window.MessageDisplay.Background = background;
+                    window.MessageDisplay.Title = title;
+                    window.MessageDisplay.Header = header;
+                    window.MessageDisplay.Content = message;
+                    window.ExceptionPopup.IsOpen = true;
+                }
             }))
             {
                 if (timerRunning)
