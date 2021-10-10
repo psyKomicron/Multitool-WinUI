@@ -59,9 +59,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
-            <ScrollViewer>
-                <Frame x:Name="ContentFrame"></Frame>
-            </ScrollViewer>
+            <Frame x:Name="ContentFrame"></Frame>
         </NavigationView>
 
         <Popup 

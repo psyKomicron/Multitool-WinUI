@@ -1,6 +1,8 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
+using Multitool.DAL;
+
 using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Pages;
 using MultitoolWinUI.Pages.ControlPanels;
