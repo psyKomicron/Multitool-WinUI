@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Security.AccessControl;
+using System.Threading.Tasks;
 
 namespace Multitool.DAL
 {
@@ -62,6 +64,11 @@ namespace Multitool.DAL
                 fileInfo = new FileInfo(oldPath);
             }
             SetInfos(fileInfo);
+        }
+
+        public override FileSystemSecurity GetAccessControl()
+        {
+            return fileInfo.GetAccessControl();
         }
         #endregion
     }

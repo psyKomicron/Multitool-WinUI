@@ -1,5 +1,5 @@
 ﻿using Multitool.DAL.Events;
-using Multitool.Optimisation;
+using Multitool.DAL.FileSystem.Events;
 
 using System;
 using System.Collections.Generic;
@@ -8,35 +8,33 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Multitool.DAL.FileSystem;
+using Windows.Foundation;
 
-namespace Multitool.DAL
+namespace Multitool.DAL.FileSystem
 {
     /// <summary>
     /// Class to manage <see cref="IFileSystemEntry"/> with cache and async methods.
     /// </summary>
     public class FileSystemManager : IFileSystemManager
     {
-        public const double DEFAULT_CACHE_TIMEOUT =
-#if RELEASE
-        300_000;
-#else
-        double.NaN;
-#endif
+        public const double DEFAULT_CACHE_TIMEOUT = 300_000;
         public const bool DEFAULT_NOTIFY_STATUS = false;
 
         private static readonly Dictionary<string, FileSystemCache> cache = new();
-        private static readonly ObjectPool<FileChangeEventArgs> objectPool = new();
         private readonly object _eventlock = new();
         private readonly DirectorySizeCalculator calculator = new();
-        private double ttl;
+
+        private double _ttl;
         private bool _notify;
 
+        #region ctors
         /// <summary>
         /// Default constructor with default cache TTL and with <see cref="Notify"/> set to false.
         /// </summary>
         public FileSystemManager()
         {
-            ttl = DEFAULT_CACHE_TIMEOUT;
+            _ttl = DEFAULT_CACHE_TIMEOUT;
             Notify = DEFAULT_NOTIFY_STATUS;
         }
 
@@ -47,15 +45,15 @@ namespace Multitool.DAL
         /// <param name="notifyProgress"></param>
         public FileSystemManager(double ttl, bool notifyProgress)
         {
-            this.ttl = ttl;
+            this._ttl = ttl;
             Notify = notifyProgress;
         }
+        #endregion
 
         #region properties
         public bool Notify
         {
             get => _notify;
-
             set
             {
                 calculator.Notify = value;
@@ -65,11 +63,10 @@ namespace Multitool.DAL
 
         public double CacheTimeout
         {
-            get => ttl;
-
+            get => _ttl;
             set
             {
-                ttl = value;
+                _ttl = value;
                 foreach (KeyValuePair<string, FileSystemCache> c in cache)
                 {
                     c.Value.UpdateTTL(value);
@@ -79,12 +76,12 @@ namespace Multitool.DAL
         #endregion
 
         #region events
-
         /// <inheritdoc/>
-        public event ItemChangedEventHandler Change;
+        public event TypedEventHandler<IFileSystemManager, ChangeEventArgs> Changed;
 
         /// <inheritdoc/>
         public event TaskCompletedEventHandler Completed;
+
         /// <inheritdoc/>
         public event TaskFailedEventHandler Exception
         {
@@ -105,15 +102,14 @@ namespace Multitool.DAL
                 }
             }
         }
+
         /// <inheritdoc/>
         public event TaskProgressEventHandler Progress;
 
         private event TaskFailedEventHandler SelfException;
-
         #endregion
 
         #region public
-
         /// <inheritdoc/>
         public async Task GetFileSystemEntries<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
         {
@@ -128,9 +124,9 @@ namespace Multitool.DAL
             }
 #endregion
 
-            if (ContainsKey(path))
+            if (cache.ContainsKeyInvariant(path))
             {
-                FileSystemCache fileCache = GetFileSystemCache(path);
+                FileSystemCache fileCache = cache.Get(path);
 
                 if (fileCache.Frozen)
                 {
@@ -238,25 +234,41 @@ namespace Multitool.DAL
         /// <inheritdoc/>
         public void Reset()
         {
+            Trace.TraceInformation("Resetting filesystem manager");
             foreach (KeyValuePair<string, FileSystemCache> pair in cache)
             {
                 FileSystemCache cache = pair.Value;
                 cache.Delete();
             }
             cache.Clear();
+            Trace.TraceInformation("Reset successful");
         }
 
+#if DEBUG
+        public void RefreshAllCache(string path)
+        {
+            FileSystemCache fsCache = cache.Get(path);
+            for (int i = 0; i < fsCache.Count; i++)
+            {
+                FileSystemEntry item = fsCache[i];
+                item.Partial = true;
+                Trace.TraceInformation("\tupdating " + item.Name);
+                item.RefreshInfos();
+            }
+            fsCache.UnFreeze();
+        }
+#endif
         #endregion
 
         #region private
 
         #region file get
-        private async Task GetAll<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, FileSystemCache fileCache, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
+        internal async Task GetAll<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, FileSystemCache fileCache, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
         {
             cache.Add(path, fileCache);
-            fileCache.ItemChanged += OnCacheItemChanged;
+            fileCache.Changed += OnCacheItemChanged;
             fileCache.TTLReached += OnCacheTTLReached;
-            fileCache.WatcherError += OnWatcherError;
+            fileCache.Deleted += OnCacheDeleted; ;
 
             GetFiles(path, fileCache, list, addDelegate, cancellationToken);
             try
@@ -377,22 +389,21 @@ namespace Multitool.DAL
         private async Task GetDirectories<T>(string[] dirPaths, FileSystemCache cacheItems, IList<T> list, AddDelegate<T> addDelegate, CancellationToken cancellationToken) where T : IFileSystemEntry
         {
             cancellationToken.ThrowIfCancellationRequested();
-
             try
             {
                 List<Task> tasks = new(dirPaths.Length);
                 for (int i = 0; i < dirPaths.Length; i++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    Console.WriteLine(dirPaths[i]);
                     InvokeProgress(dirPaths[i]);
 
                     string currentPath = dirPaths[i];
                     FileSystemEntry item = new DirectoryEntry(new DirectoryInfo(currentPath));
-                    tasks.Add(RunDirsParallel(item, currentPath, list, addDelegate, cancellationToken));
-                    cacheItems.Add(item);
-                }
+                    tasks.Add(CalculateDirSizeParallel(item, currentPath, cancellationToken));
 
+                    cacheItems.Add(item);
+                    addDelegate(list, item);
+                }
                 await Task.WhenAll(tasks);
             }
             catch (UnauthorizedAccessException e)
@@ -401,15 +412,14 @@ namespace Multitool.DAL
             }
         }
 
-        private async Task RunDirsParallel<T>(FileSystemEntry item, string currentPath, IList<T> list, AddDelegate<T> addDelegate, CancellationToken cancellationToken) where T : IFileSystemEntry
+        private async Task CalculateDirSizeParallel(FileSystemEntry item, string currentPath, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            addDelegate(list, item);
+            //addDelegate(list, item);
             try
             {
                 await new DirectorySizeCalculator().CalculateDirectorySizeAsync(currentPath, (long newSize) => item.Size += newSize, cancellationToken);
                 item.Partial = false;
-
             }
             catch (AggregateException e)
             {
@@ -420,37 +430,6 @@ namespace Multitool.DAL
         }
 
         #endregion
-
-        private static FileSystemCache GetFileSystemCache(string key)
-        {
-            if (cache.TryGetValue(key, out FileSystemCache sysCache))
-            {
-                return sysCache;
-            }
-            else
-            {
-                foreach (KeyValuePair<string, FileSystemCache> pair in cache)
-                {
-                    if (pair.Key.Equals(key, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return pair.Value;
-                    }
-                }
-            }
-            return null;
-        }
-
-        private static bool ContainsKey(string key)
-        {
-            foreach (KeyValuePair<string, FileSystemCache> pair in cache)
-            {
-                if (pair.Key.Equals(key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
 
         /*private FileSystemEntry GetItemFromCache(string cachePath, string itemPath)
         {
@@ -501,64 +480,38 @@ namespace Multitool.DAL
 
         #endregion
 
-        #region events
-        private void OnCacheTTLReached(object sender, TTLReachedEventArgs e)
+        #region events handlers
+        private void OnCacheTTLReached(FileSystemCache sender, TTLReachedEventArgs e)
         {
-            if (e.TTLUpdated)
-            {
-                return;
-            }
-
-            Trace.TraceInformation("Cache TTL reached, updating " + e.Cache.Path);
-
-            FileSystemCache fsCache = e.Cache;
-            for (int i = 0; i < fsCache.Count; i++)
-            {
-                FileSystemEntry item = fsCache[i];
-                Trace.TraceInformation("\t-> updating " + item.Name);
-                item.RefreshInfos();
-                if (item.IsDirectory)
-                {
-                    item.Size = calculator.CalculateDirectorySize(item.Path, CancellationToken.None);
-                }
-            }
-            fsCache.UnFreeze();
+#if DEBUG
+            e.InUse = false;
+            throw new NotImplementedException();
+#endif
         }
 
-        private void OnCacheItemChanged(object sender, string path, FileSystemEntry entry, bool ttl, WatcherChangeTypes changes)
+        private void OnCacheItemChanged(FileSystemCache sender, CacheChangedEventArgs args)
         {
-            if (changes == WatcherChangeTypes.Created)
+            if (args.ChangeType != ChangeTypes.FileRenamed)
             {
-                if (Directory.Exists(path)) // Check if the added item is a directory
+                Task.Run(() =>
                 {
-                    Trace.TraceInformation("Cache changed: directory created, computing directory size");
-                    long size = calculator.CalculateDirectorySize(path, CancellationToken.None);
-                    entry = new DirectoryEntry(new DirectoryInfo(path), size);
-                }
-                else
-                {
-                    entry = new FileEntry(new FileInfo(path));
-                }
-                ((FileSystemCache)sender).Add(entry);
-            }
-            Change?.Invoke(this, objectPool.GetObject(entry, changes));
-        }
-
-        private void OnWatcherError(FileSystemCache sender, Exception e, WatcherErrorTypes errType)
-        {
-            if (errType == WatcherErrorTypes.PathDeleted)
-            {
-                if (cache.ContainsKey(sender.Path))
-                {
-                    cache.Remove(sender.Path);
-                    sender.Delete();
-                }
+                    Changed?.Invoke(this, new(args.Entry, args.ChangeType));
+                    args.InUse = false;
+                });
             }
         }
 
-#endregion
+        private void OnCacheDeleted(FileSystemCache sender, EventArgs args)
+        {
+            if (cache.ContainsKey(sender.Path))
+            {
+                cache.Remove(sender.Path);
+            }
+        }
 
-        #region event invoke
+        #endregion
+
+        #region events invoke
 
         private void InvokeException(Exception e)
         {

@@ -1,7 +1,8 @@
-﻿using Multitool.DAL.Events;
+﻿using Multitool.DAL.FileSystem.Events;
 
 using System;
 using System.IO;
+using System.Security.AccessControl;
 using System.Threading.Tasks;
 
 using Windows.Foundation;
@@ -27,7 +28,6 @@ namespace Multitool.DAL
         }
 
         #region properties
-
         /// <inheritdoc/>
         public abstract long Size { get; set; }
 
@@ -71,16 +71,19 @@ namespace Multitool.DAL
             set
             {
                 _partial = value;
+#if false
+                _ = Task.Run(() => PartialChanged?.Invoke(this, value));
+#else
+
                 PartialChanged?.Invoke(this, value);
+#endif
             }
         }
-
         #endregion
 
         #region events
-
         /// <inheritdoc/>
-        public event TypedEventHandler<IFileSystemEntry, FileChangeEventArgs> Deleted;
+        public event TypedEventHandler<IFileSystemEntry, ChangeEventArgs> Deleted;
 
         /// <inheritdoc/>
         public event TypedEventHandler<IFileSystemEntry, long> SizedChanged;
@@ -93,15 +96,15 @@ namespace Multitool.DAL
 
         /// <inheritdoc/>
         public event TypedEventHandler<IFileSystemEntry, bool> PartialChanged;
-
         #endregion
 
         #region abstract methods
 
         /// <inheritdoc/>
-        public abstract void Rename(string newName);
-
         public abstract void CopyTo(string newPath);
+
+        /// <inheritdoc/>
+        public abstract FileSystemSecurity GetAccessControl();
 
         /// <inheritdoc/>
         public abstract void Move(string newPath);
@@ -109,23 +112,12 @@ namespace Multitool.DAL
         /// <inheritdoc/>
         public abstract void RefreshInfos();
 
+        /// <inheritdoc/>
+        public abstract void Rename(string newName);
+
         #endregion
 
         #region public methods
-
-        /// <inheritdoc/>
-        public virtual void Delete()
-        {
-            if (CanDelete())
-            {
-                Info.Delete();
-            }
-            else
-            {
-                throw CreateDeleteIOException();
-            }
-        }
-
         /// <inheritdoc/>
         public int CompareTo(object obj)
         {
@@ -144,22 +136,41 @@ namespace Multitool.DAL
         {
             if (IsDirectory && !other.IsDirectory)
             {
-                return -1;
+                return 1;
             }
             if (!IsDirectory && other.IsDirectory)
             {
-                return 1;
+                return -1;
             }
 
             if (Size > other.Size)
             {
-                return -1;
+                return 1;
             }
             if (Size < other.Size)
             {
-                return 1;
+                return -1;
             }
             return 0;
+        }
+
+        /// <inheritdoc/>
+        public virtual void Delete()
+        {
+            if (CanDelete())
+            {
+                Info.Delete();
+            }
+            else
+            {
+                throw CreateDeleteIOException();
+            }
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object obj)
+        {
+            return ReferenceEquals(this, obj) || (obj is not null && Equals(obj as IFileSystemEntry));
         }
 
         /// <inheritdoc/>
@@ -169,19 +180,15 @@ namespace Multitool.DAL
         }
 
         /// <inheritdoc/>
-        public override string ToString()
-        {
-            return Name + ", " + Path;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return ReferenceEquals(this, obj) || (obj is null ? false : Equals(obj as IFileSystemEntry));
-        }
-
         public override int GetHashCode()
         {
             return Info.GetHashCode();
+        }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return Name + ", " + Path;
         }
 
         public static bool operator ==(FileSystemEntry left, FileSystemEntry right)
@@ -213,7 +220,6 @@ namespace Multitool.DAL
         {
             return left is null ? right is null : left.CompareTo(right) >= 0;
         }
-
         #endregion
 
         #region protected methods
@@ -333,7 +339,7 @@ namespace Multitool.DAL
 
         protected void RaiseDeletedEvent()
         {
-            Deleted?.Invoke(this, new FileChangeEventArgs(this, WatcherChangeTypes.Deleted));
+            Deleted?.Invoke(this, new ChangeEventArgs(this, ChangeTypes.FileDeleted));
         }
 
         protected void RaiseSizeChangedEvent(long oldSize)
@@ -350,29 +356,6 @@ namespace Multitool.DAL
         {
             Renamed?.Invoke(this, oldPath);
         }
-        #endregion
-
-        #region events
-
-        #region watcher events
-        private void OnFileChange(object sender, FileSystemEventArgs e)
-        {
-            
-        }
-
-        private void OnFileDeleted(object sender, FileSystemEventArgs e)
-        {
-            RaiseDeletedEvent();
-        }
-
-        private void OnFileRenamed(object sender, RenamedEventArgs e)
-        {
-            Path = e.FullPath;
-            Name = e.Name;
-            RaiseRenamedEvent(e.OldFullPath);
-        }
-        #endregion
-
         #endregion
     }
 }

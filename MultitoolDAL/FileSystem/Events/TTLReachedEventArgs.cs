@@ -1,18 +1,15 @@
-﻿using System;
+﻿using Multitool.Optimisation;
 
 namespace Multitool.DAL.Events
 {
-    internal class TTLReachedEventArgs : EventArgs
+    internal class TTLReachedEventArgs : PoolableObject
     {
-        public TTLReachedEventArgs(string path, FileSystemCache cache, double ttl, bool ttlUpdated = false) : base()
+        public TTLReachedEventArgs(string path, double ttl, bool ttlUpdated = false) : base()
         {
             Path = path;
-            Cache = cache;
             TTLUpdated = ttlUpdated;
             TTL = ttl;
         }
-
-        public FileSystemCache Cache { get; private set; }
 
         public string Path { get; private set; }
 

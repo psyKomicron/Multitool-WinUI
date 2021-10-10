@@ -1,7 +1,9 @@
-﻿using Multitool.DAL.Events;
+﻿using Multitool.DAL.FileSystem.Events;
 
 using System;
 using System.IO;
+using System.Security.AccessControl;
+using System.Threading.Tasks;
 
 using Windows.Foundation;
 
@@ -91,7 +93,7 @@ namespace Multitool.DAL
         /// <summary>
         /// Raised when the entry no longer exists on the disk (has been moved or deleted)
         /// </summary>
-        event TypedEventHandler<IFileSystemEntry, FileChangeEventArgs> Deleted;
+        event TypedEventHandler<IFileSystemEntry, ChangeEventArgs> Deleted;
 
         /// <summary>
         /// Fired when <see cref="Partial"/> is changed.
@@ -113,15 +115,21 @@ namespace Multitool.DAL
         #region methods
 
         /// <summary>
+        /// Copy the file to a new directory
+        /// </summary>
+        /// <param name="newPath">The path to copy the file to</param>
+        void CopyTo(string newPath);
+
+        /// <summary>
         /// Deletes the file
         /// </summary>
         void Delete();
 
         /// <summary>
-        /// Rename the file
+        /// Get the access controls for this entry
         /// </summary>
-        /// <param name="newName">The new name of the file</param>
-        void Rename(string newName);
+        /// <returns><see cref="FileSystemSecurity"/> associated with this entry</returns>
+        FileSystemSecurity GetAccessControl();
 
         /// <summary>
         /// Move the file to a new directory
@@ -131,11 +139,12 @@ namespace Multitool.DAL
         void Move(string newPath);
 
         /// <summary>
-        /// Copy the file to a new directory
+        /// Rename the file
         /// </summary>
-        /// <param name="newPath">The path to copy the file to</param>
-        void CopyTo(string newPath);
+        /// <param name="newName">The new name of the file</param>
+        void Rename(string newName);
 
+        void RefreshInfos();
         #endregion
     }
 }

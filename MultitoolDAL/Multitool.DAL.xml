@@ -223,6 +223,12 @@
         <member name="M:Multitool.DAL.FileSystemEntry.ToString">
             <inheritdoc/>
         </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.Equals(System.Object)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.GetHashCode">
+            <inheritdoc/>
+        </member>
         <member name="M:Multitool.DAL.FileSystemEntry.SetInfos(System.IO.FileSystemInfo)">
             <summary>
             Set path and name of this <see cref="T:Multitool.DAL.FileSystemEntry"/>. Use after refreshing info.

@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Security.AccessControl;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Multitool.DAL
 {
@@ -9,6 +13,7 @@ namespace Multitool.DAL
         public long _size;
         private DirectoryInfo dirInfo;
 
+        #region ctors
         public DirectoryEntry(DirectoryInfo info) : base(info)
         {
             dirInfo = info;
@@ -19,6 +24,7 @@ namespace Multitool.DAL
             dirInfo = info;
             Size = size;
         }
+        #endregion
 
         /// <inheritdoc/>
         public override long Size
@@ -36,56 +42,9 @@ namespace Multitool.DAL
             }
         }
 
+        internal List<FileSystemEntry> Childs { get; } = new();
+
         #region public methods
-
-        /// <inheritdoc/>
-        public override void Delete()
-        {
-            if (CanDelete())
-            {
-                DeleteDir(Path);
-            }
-            else
-            {
-                throw CreateDeleteIOException();
-            }
-        }
-
-        public override void Rename(string newName)
-        {
-            if (CanRename(newName))
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        /// <inheritdoc/>
-        public override void Move(string newPath)
-        {
-            if (CanMove(newPath, out MoveCodes res))
-            {
-                dirInfo.MoveTo(newPath);
-            }
-            else
-            {
-                string message;
-                switch (res)
-                {
-                    case MoveCodes.PathNotFound:
-                        message = "path not found";
-                        break;
-                    case MoveCodes.IsSystem:
-                        message = "file/directory belongs to the system";
-                        break;
-                    case MoveCodes.InfoNotSet:
-                        throw new InvalidOperationException("IO actions cannot be performed until the entry has a reference to a FileSystemInfo");
-                    default:
-                        throw new ArgumentException("MoveCodes not recognized");
-                }
-                Trace.TraceError(Name + " cannot be moved: " + message);
-                throw new IOException(Path + " cannot be moved (reason: " + message + ")");
-            }
-        }
 
         /// <inheritdoc/>
         public override void CopyTo(string newPath)
@@ -102,17 +61,58 @@ namespace Multitool.DAL
                 }
             }
         }
-        public override void RefreshInfos()
+
+        /// <inheritdoc/>
+        public override void Delete()
         {
-            string oldPath = Path;
-            dirInfo.Refresh();
-            if (!dirInfo.Exists)
+            if (CanDelete())
             {
-                dirInfo = new DirectoryInfo(oldPath);
+                DeleteDir(Path);
             }
-            SetInfos(dirInfo);
+            else
+            {
+                throw CreateDeleteIOException();
+            }
         }
 
+        public override FileSystemSecurity GetAccessControl()
+        {
+            return dirInfo.GetAccessControl();
+        }
+
+        /// <inheritdoc/>
+        public override void Move(string newPath)
+        {
+            if (CanMove(newPath, out MoveCodes res))
+            {
+                dirInfo.MoveTo(newPath);
+            }
+            else
+            {
+                string message = res switch
+                {
+                    MoveCodes.PathNotFound => "path not found",
+                    MoveCodes.IsSystem => "file/directory belongs to the system",
+                    MoveCodes.InfoNotSet => throw new InvalidOperationException("IO actions cannot be performed until the entry has a reference to a FileSystemInfo"),
+                    _ => throw new ArgumentException("MoveCodes not recognized"),
+                };
+                Trace.TraceError(Name + " cannot be moved: " + message);
+                throw new IOException(Path + " cannot be moved (reason: " + message + ")");
+            }
+        }
+
+        public override void Rename(string newName)
+        {
+            if (CanRename(newName))
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override void RefreshInfos()
+        {
+            _RefreshInfos();
+        }
         #endregion
 
         #region private methods
@@ -173,6 +173,18 @@ namespace Multitool.DAL
             }
         }
 
+        private async void _RefreshInfos()
+        {
+            string oldPath = Path;
+            dirInfo.Refresh();
+            if (!dirInfo.Exists)
+            {
+                dirInfo = new DirectoryInfo(oldPath);
+            }
+            SetInfos(dirInfo);
+            Partial = true;
+            Size = await new DirectorySizeCalculator().CalculateDirectorySizeAsync(Path, CancellationToken.None);
+        }
         #endregion
     }
 }

@@ -1,17 +1,19 @@
-﻿using Multitool.DAL.Events;
+﻿using Multitool.DAL.FileSystem.Events;
 
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Multitool.DAL
+using Windows.Foundation;
+
+namespace Multitool.DAL.FileSystem
 {
     public interface IFileSystemManager : IProgressNotifier
     {
         /// <summary>
         /// Fired when the one or more items in the cache have changed.
         /// </summary>
-        event ItemChangedEventHandler Change;
+        event TypedEventHandler<IFileSystemManager, ChangeEventArgs> Changed;
 
         double CacheTimeout { get; set; }
 
@@ -45,6 +47,4 @@ namespace Multitool.DAL
         /// </summary>
         void Reset();
     }
-
-    public delegate void ItemChangedEventHandler(object sender, FileChangeEventArgs data);
 }

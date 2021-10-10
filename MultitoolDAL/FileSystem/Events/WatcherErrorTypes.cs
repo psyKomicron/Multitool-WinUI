@@ -1,6 +1,6 @@
 ﻿namespace Multitool.DAL.Events
 {
-    internal enum WatcherErrorTypes
+    public enum WatcherErrorTypes : uint
     {
         BufferError = 0x0,
         PathDeleted = 0x1

@@ -5,9 +5,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
+using System.Threading;
 using System.Timers;
+using Windows.Foundation;
+using Multitool.DAL.FileSystem.Events;
+using Multitool.Optimisation;
 
-namespace Multitool.DAL
+namespace Multitool.DAL.FileSystem
 {
     /// <summary>
     /// Provides logic to watch a directory for changes, and to signal the changes.
@@ -15,11 +20,13 @@ namespace Multitool.DAL
     /// </summary>
     internal class FileSystemCache : IDisposable
     {
-        private static readonly List<string> watchedPaths = new();
         private static readonly object _lock = new();
+        private static readonly List<string> watchedPaths = new();
+        private readonly DirectorySizeCalculator calculator = new();
         private readonly List<FileSystemEntry> watchedItems;
         private readonly FileSystemWatcher watcher;
-        private Timer timer;
+        private readonly ObjectPool<CacheChangedEventArgs> cacheChangedPool = new(7);
+        private System.Timers.Timer timer;
         private double ttl;
 
         /// <summary>Constuctor.</summary>
@@ -65,21 +72,36 @@ namespace Multitool.DAL
         #region properties
         /// <summary>Gets the internal item count.</summary>
         public int Count => watchedItems.Count;
+
         /// <summary>Tells if the cache allow operations on it or not (true if no operation are allowed).</summary>
         public bool Frozen { get; private set; }
+
         /// <summary>True when the cache is not complete.</summary>
         public bool Partial { get; set; }
+
         /// <summary>Gets the creation time of the cache.</summary>
         public DateTime CreationTime { get; }
+
         public string Path { get; }
 
-        /// <summary>Fired when the watched items underwent a change, and should be updated.
-        public event CacheChangedEventHandler ItemChanged;
-        /// <summary>Fired whenever the cache TTL reached 0, and thus should be updated.</summary>
-        public event TTLReachedEventHandler TTLReached;
-        public event WatcherErrorEventHandler WatcherError;
-
         public FileSystemEntry this[int index] => watchedItems[index];
+        #endregion
+
+        #region events
+        /// <summary>
+        /// Raised when the watched items underwent a change, and should be updated.
+        /// </summary>
+        public event TypedEventHandler<FileSystemCache, CacheChangedEventArgs> Changed;
+
+        /// <summary>
+        /// Raised whenever the cache TTL reached 0, and thus should be updated.
+        /// </summary>
+        public event TypedEventHandler<FileSystemCache, TTLReachedEventArgs> TTLReached;
+
+        /// <summary>
+        /// Raised when the directory (<see cref="Path"/>) is deleted.
+        /// </summary>
+        public event TypedEventHandler<FileSystemCache, EventArgs> Deleted;
         #endregion
 
         #region public
@@ -104,7 +126,7 @@ namespace Multitool.DAL
         /// <param name="item"><see cref="FileSystemEntry"/> to add</param>
         public void Add(FileSystemEntry item)
         {
-            IsFrozen();
+            CheckIfFrozen();
             if (timer != null)
             {
                 ResetTimer();
@@ -115,14 +137,17 @@ namespace Multitool.DAL
                 {
                     timer.Start();
                 }
-                watchedItems.Add(item);
-#if RELEASE
-                if (!watchedItems.Contains(item))
+
+                if (watchedItems.Contains(item))
+                {
+                    throw new ArgumentException("Item already in the collection");
+                }
+                else
                 {
                     watchedItems.Add(item);
                 }
-#endif
             }
+            Changed?.Invoke(this, cacheChangedPool.GetObject(item, ChangeTypes.FileCreated));
         }
 
         /// <summary>Remove a <see cref="FileSystemEntry"/> from the collection.</summary>
@@ -130,7 +155,7 @@ namespace Multitool.DAL
         /// <returns>True if the item was removed, False if not</returns>
         public bool Remove(FileSystemEntry item)
         {
-            IsFrozen();
+            CheckIfFrozen();
             lock (_lock)
             {
                 return watchedItems.Remove(item);
@@ -139,7 +164,7 @@ namespace Multitool.DAL
 
         public void RemoveAt(int i)
         {
-            IsFrozen();
+            CheckIfFrozen();
             lock (_lock)
             {
                 watchedItems.RemoveAt(i);
@@ -150,27 +175,26 @@ namespace Multitool.DAL
         /// <param name="newTTL">The new TTL</param>
         public void UpdateTTL(double newTTL)
         {
-            IsFrozen();
+            CheckIfFrozen();
             ttl = newTTL;
-            TTLReached?.Invoke(this, new TTLReachedEventArgs(Path, this, ttl, true));
+            TTLReached?.Invoke(this, new(Path, ttl, true));
         }
 
         /// <summary>Use to discard the cache.</summary>
         public void Delete()
         {
             Frozen = true;
-
+            watcher.EnableRaisingEvents = false;
             lock (_lock)
             {
                 watchedItems.Clear();
                 _ = watchedPaths.Remove(Path);
             }
-
             if (timer != null)
             {
                 timer.Stop();
             }
-            watcher.EnableRaisingEvents = false;
+            Deleted?.Invoke(this, EventArgs.Empty);
         }
         #endregion
 
@@ -206,7 +230,7 @@ namespace Multitool.DAL
             timer.Interval = ttl;
         }
 
-        private void IsFrozen()
+        private void CheckIfFrozen()
         {
             if (Frozen)
             {
@@ -216,7 +240,7 @@ namespace Multitool.DAL
 
         private void CreateTimer()
         {
-            timer = new Timer(ttl);
+            timer = new System.Timers.Timer(ttl);
             timer.Elapsed += OnTimerElapsed;
             timer.AutoReset = true;
         }
@@ -262,7 +286,7 @@ namespace Multitool.DAL
 
         #endregion
 
-        #region events
+        #region events handlers
         private void OnTimerElapsed(object sender, ElapsedEventArgs e)
         {
             Frozen = true;
@@ -270,13 +294,22 @@ namespace Multitool.DAL
             {
                 timer.Stop();
             }
-            TTLReached?.Invoke(this, new TTLReachedEventArgs(Path, this, ttl));
+            TTLReached?.Invoke(this, new(Path, ttl));
+
+            Trace.TraceInformation("Cache TTL reached, updating " + Path);
+            for (int i = 0; i < watchedItems.Count; i++)
+            {
+                FileSystemEntry item = watchedItems[i];
+                Trace.TraceInformation("\tupdating " + item.Name);
+                item.RefreshInfos();
+            }
+            UnFreeze();
         }
 
         #region watcher events
         private void OnFileChange(object sender, FileSystemEventArgs e)
         {
-            Trace.TraceInformation("File changed: \"" + e.FullPath + "\"");
+            Trace.TraceInformation("File changed: '" + e.FullPath + "' (" + (Frozen ? "cache frozen" : "cache hot") + ")");
             if (!Frozen)
             {
                 if (timer != null)
@@ -285,17 +318,17 @@ namespace Multitool.DAL
                 }
 
                 FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
-                ItemChanged?.Invoke(this, string.Empty, item, false, e.ChangeType);
                 if (timer != null)
                 {
                     timer.Start();
                 }
+                Changed?.Invoke(this, cacheChangedPool.GetObject(item, e.ChangeType));
             }
         }
 
-        private void OnFileCreated(object sender, FileSystemEventArgs e)
+        private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
-            Trace.TraceInformation("File created: \"" + e.FullPath + "\"");
+            Trace.TraceInformation("File created: '" + e.FullPath + "'");
             if (!Frozen)
             {
                 if (timer != null)
@@ -303,13 +336,27 @@ namespace Multitool.DAL
                     ResetTimer();
                 }
 
-                ItemChanged?.Invoke(this, e.FullPath, null, false, WatcherChangeTypes.Created);
+                FileSystemEntry entry;
+                if (Directory.Exists(e.FullPath)) // Check if the added item is a directory
+                {
+                    entry = new DirectoryEntry(new(e.FullPath))
+                    {
+                        Partial = true
+                    };
+                    entry.Size = await calculator.CalculateDirectorySizeAsync(e.FullPath, CancellationToken.None);
+                    entry.Partial = false;
+                }
+                else
+                {
+                    entry = new FileEntry(new FileInfo(e.FullPath));
+                }
+                Add(entry);
             }
         }
 
         private void OnFileDeleted(object sender, FileSystemEventArgs e)
         {
-            Trace.TraceInformation("File deleted: \"" + e.FullPath + "\"");
+            Trace.TraceInformation("File deleted: '" + e.FullPath + "'");
             if (!Frozen)
             {
                 if (timer != null)
@@ -319,7 +366,7 @@ namespace Multitool.DAL
 
                 FileSystemEntry deletedItem = watchedItems.Find(v => v.Path.Equals(e.FullPath, StringComparison.OrdinalIgnoreCase));
                 _ = watchedItems.Remove(deletedItem);
-                ItemChanged?.Invoke(this, e.FullPath, deletedItem, false, WatcherChangeTypes.Deleted);
+                Changed?.Invoke(this, cacheChangedPool.GetObject(deletedItem, WatcherChangeTypes.Deleted));
             }
         }
 
@@ -338,7 +385,7 @@ namespace Multitool.DAL
                     item.Name = e.Name;
                     item.Path = e.FullPath;
                 }
-                ItemChanged?.Invoke(this, e.FullPath, item, false, WatcherChangeTypes.Renamed);
+                Changed?.Invoke(this, cacheChangedPool.GetObject(item, WatcherChangeTypes.Renamed));
                 if (timer != null)
                 {
                     timer.Start();
@@ -356,20 +403,13 @@ namespace Multitool.DAL
         {
             if (e.GetException() != null)
             {
-                Trace.TraceError("Watcher error.\nDump -> " + DumpWatcher() + "\n" + e.GetException().ToString());
-                if (e.GetException().InnerException == null)
-                {
-                    WatcherError?.Invoke(this, e.GetException(), WatcherErrorTypes.PathDeleted);
-                }
-                else
-                {
-                    throw e.GetException();
-                }
+                Exception ex = e.GetException();
+                ex.Data.Add("Watcher dump", DumpWatcher());
+                throw ex;
             }
             else
             {
-                Trace.TraceError("Watcher error.\nDump -> " + DumpWatcher());
-                throw new Win32Exception("Watcher error.\n" + DumpWatcher());
+                throw new Win32Exception("Watcher error (no exception).\n" + DumpWatcher());
             }
         }
         #endregion

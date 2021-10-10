@@ -22,7 +22,7 @@ namespace Multitool.DAL.Completion
 
         private void PutEntries(string fileName, IList<string> list, string[] joins)
         {
-            if (string.IsNullOrEmpty(fileName) || list.Count == 0) // no file name, list all directory
+            if (string.IsNullOrEmpty(fileName)) // no file name, list all directory
             {
                 for (int j = 0; j < joins.Length; j++)
                 {
