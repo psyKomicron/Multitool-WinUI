@@ -5,22 +5,21 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:MultitoolWinUI.Pages.Explorer"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:controls="using:MultitoolWinUI.Controls"
     mc:Ignorable="d"
     NavigationCacheMode="Required"
-    Unloaded="Page_Unloaded"
-    PointerPressed="Page_PointerPressed"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-    ScrollViewer.VerticalScrollMode="Disabled">
-
-    <Grid>
+    ScrollViewer.VerticalScrollMode="Disabled"
+    CharacterReceived="Page_CharacterReceived"
+    PointerPressed="Page_PointerPressed">
+    <Grid VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" MinWidth="100"/>
+            <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="5*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="8*"/>
+            <RowDefinition Height="1*" MinHeight="70"/>
+            <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center">
@@ -48,44 +47,52 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
-                <AutoSuggestBox x:Name="PathInput"
-                                HorizontalAlignment="Stretch"
-                                MinHeight="25"
-                                MaxHeight="50"
-                                TextChanged="PathInput_TextChanged"
-                                SuggestionChosen="PathInput_SuggestionChosen"
-                                QuerySubmitted="PathInput_QuerySubmitted"
-                                Text="{Binding ElementName=Page, Path=CurrentPath, Mode=TwoWay}"/>
+                <AutoSuggestBox 
+                    x:Name="PathInput"
+                    HorizontalAlignment="Stretch"
+                    MinHeight="25"
+                    MaxHeight="50"
+                    TextChanged="PathInput_TextChanged"
+                    SuggestionChosen="PathInput_SuggestionChosen"
+                    QuerySubmitted="PathInput_QuerySubmitted"
+                    Text="{Binding ElementName=Page, Path=CurrentPath, Mode=TwoWay}"/>
 
-                <ProgressBar x:Name="Files_ProgressBar"
-                            Background="Transparent"
-                            IsIndeterminate="False"
-                            Height="10"
-                            BorderThickness="0"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Stretch"/>
-                <TextBox x:Name="Progress_TextBox"
-                        Background="Transparent"
-                        FontFamily="Cascadia Code Light"
-                        Foreground="White"
-                        BorderThickness="0"
-                        IsReadOnly="True"
-                        TextAlignment="Left"
-                        VerticalContentAlignment="Center"
-                        MinHeight="25"
-                        MaxHeight="50"/>
+                <TextBox
+                    x:Name="Progress_TextBox"
+                    Background="Transparent"
+                    Foreground="White"
+                    BorderThickness="0"
+                    IsReadOnly="True"
+                    TextAlignment="Left"
+                    VerticalContentAlignment="Center"
+                    MinHeight="25"
+                    MaxHeight="50"/>
+                <ProgressBar 
+                    x:Name="Files_ProgressBar"
+                    Background="Transparent"
+                    IsIndeterminate="False"
+                    Height="10"
+                    BorderThickness="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Stretch"/>
             </StackPanel>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button x:Name="RefreshFileList"
-                        Content="🔄"
-                        FontSize="20"
-                        Click="RefreshFileList_Click"/>
-                <Button x:Name="CancelAction_Button"
-                        Content="✖"
-                        FontSize="20"
-                        Click="CancelButton_Click"
-                        IsEnabled="False"/>
+            <StackPanel 
+                x:Name="ButtonsStackPanel"
+                Grid.Column="1" 
+                Orientation="Horizontal" 
+                HorizontalAlignment="Center">
+                <Button 
+                    x:Name="RefreshFileList"
+                    Content="🔄"
+                    FontSize="20"
+                    Click="RefreshFileList_Click"/>
+                <Button
+                    x:Name="CancelAction_Button"
+                    Content="✖"
+                    FontSize="20"
+                    Click="CancelButton_Click"
+                    IsEnabled="False"/>
             </StackPanel>
         </Grid>
         
@@ -108,84 +115,16 @@
                       HorizontalScrollMode="Disabled"
                       VerticalScrollMode="Enabled">
 
-            <ListView x:Name="MainListView"
-                      Grid.Row="1"
-                      Grid.Column="1"
-                      ItemsSource="{Binding ElementName=Page, Path=CurrentFiles}"
-                      IsItemClickEnabled="True"
-                      DoubleTapped="MainListView_DoubleTapped"
-                      VerticalAlignment="Stretch">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Margin="5">
-                            <Grid.Resources>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                </Style>
-                            </Grid.Resources>
-                            <Grid.ColumnDefinitions>
-                                <!--Icon-->
-                                <ColumnDefinition Width="40"/>
-                                <!--Name-->
-                                <ColumnDefinition Width="500"/>
-                                <!--Size-->
-                                <ColumnDefinition Width="150"/>
-                                <!--Attributes-->
-                                <ColumnDefinition Width="100"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0" Orientation="Horizontal">
-
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="{Binding PartialIcon}"/>
-                                <TextBlock Text="{Binding Icon}"
-                                           FontSize="16"
-                                           Foreground="White"
-                                           Margin="2,0,5,0"/>
-
-                            </StackPanel>
-
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding Name}"
-                                       VerticalAlignment="Center"
-                                       Foreground="{Binding Color}"
-                                       Margin="0,0,30,0"/>
-
-                            <TextBlock Grid.Column="2"
-                                       Foreground="White"
-                                       TextWrapping="Wrap">
-                                <Run Text="{Binding DisplaySize, Mode=OneWay}"/>
-                                <Run Text="{Binding DisplaySizeUnit, Mode=OneWay}"/>
-                            </TextBlock>
-
-                            <StackPanel Grid.Column="3" 
-                                        Orientation="Horizontal" 
-                                        HorizontalAlignment="Center">
-                                <StackPanel.Resources>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Margin" Value="5"/>
-                                    </Style>
-                                </StackPanel.Resources>
-                                <TextBlock Text="{Binding IsHiddenEcon}"
-                                           ToolTipService.ToolTip="Hidden"/>
-
-                                <TextBlock Text="{Binding IsSystemEcon}"
-                                           ToolTipService.ToolTip="System"/>
-
-                                <TextBlock Text="{Binding IsReadOnlyEcon}"
-                                           ToolTipService.ToolTip="Read-only"/>
-
-                                <TextBlock Text="{Binding IsEncryptedEcon}"
-                                           ToolTipService.ToolTip="Encrypted"/>
-
-                                <TextBlock Text="{Binding IsCompressedEcon}"
-                                           ToolTipService.ToolTip="Compressed"/>
-
-                                <TextBlock Text="{Binding IsDeviceEcon}"
-                                           ToolTipService.ToolTip="Device"/>
-                            </StackPanel>
-                        </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
+            <ListView
+                x:Name="MainListView"
+                VerticalAlignment="Stretch"
+                ItemsSource="{Binding ElementName=Page, Path=CurrentFiles}"
+                IsItemClickEnabled="True"
+                Grid.Row="1"
+                Grid.Column="1"
+                SelectionChanged="MainListView_SelectionChanged"
+                DoubleTapped="MainListView_DoubleTapped"
+                KeyDown="MainListView_KeyDown">
             </ListView>
 
         </ScrollViewer>
