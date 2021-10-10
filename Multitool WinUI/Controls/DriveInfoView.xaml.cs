@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Controls;
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 using Multitool.DAL;
 
@@ -22,11 +23,11 @@ namespace MultitoolWinUI.Controls
     {
         private static readonly string[] sysFiles = new string[] { "pagefile.sys", "hiberfil.sys", "swapfile.sys" };
         private readonly Stopwatch stopwatch = new();
-
         private string _recycleBinSize = string.Empty;
         private double _recycleBinPercentage;
         private double _sysFilesPercentage;
         private long _sysFilesSize;
+        private DriveInfo _driveInfo;
 
         /// <summary>
         /// Default constructor
@@ -34,15 +35,35 @@ namespace MultitoolWinUI.Controls
         public DriveInfoView()
         {
             InitializeComponent();
-
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
             SetCompleted(false);
         }
 
-        public DriveInfoView(DriveInfo driveInfo, CancellationTokenSource cancelToken)
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            App.MainWindow.SizeChanged -= OnWindowSizeChanged;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            if (Parent is ListView listview)
+            {
+                Width = listview.ActualWidth - 40;
+                App.MainWindow.SizeChanged += OnWindowSizeChanged;
+                Visibility = Visibility.Visible;
+            }
+        }
+
+        private void OnWindowSizeChanged(object sender, WindowSizeChangedEventArgs args)
+        {
+            Width = (Parent as ListView).ActualWidth - 40;
+        }
+
+        public DriveInfoView(DriveInfo driveInfo, CancellationTokenSource cancelToken) : this()
         {
             InitializeComponent();
-            DriveInfo = driveInfo;
-            SetCompleted(false);
+            _driveInfo = driveInfo;
             if (DriveInfo.IsReady)
             {
                 cancelToken.Token.ThrowIfCancellationRequested();
@@ -58,10 +79,29 @@ namespace MultitoolWinUI.Controls
 
         #region properties
 
-        public DriveInfo DriveInfo { get; set; }
-
-        public string DriveName => DriveInfo == null ? string.Empty : DriveInfo.Name;
-
+        public DriveInfo DriveInfo
+        {
+            get => _driveInfo;
+            set
+            {
+                if (_driveInfo != null)
+                {
+                    _driveInfo = value;
+                }
+                else
+                {
+                    _driveInfo = value;
+                    CancellationTokenSource cancelToken = new();
+                    Unloaded += (object o, RoutedEventArgs e) => cancelToken?.Cancel();
+                    _ = LoadComponents(cancelToken);
+                }
+            }
+        }
+        public string DriveName
+        {
+            get => DriveInfo == null ? string.Empty : DriveInfo.Name;
+            set => DriveInfo = new(value);
+        }
         public string VolumeLabel => DriveInfo == null ? string.Empty : DriveInfo.VolumeLabel;
 
         public string DriveCapacity => DriveInfo == null ? "0" : Tool.FormatSize(DriveInfo.TotalSize);
@@ -224,26 +264,22 @@ namespace MultitoolWinUI.Controls
 
         private void SetCompleted(bool status)
         {
-#if DEBUG
             if (status)
             {
-                Debug.WriteLine(DriveName + " set completed");
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    ProgressRing.IsIndeterminate = false;
-                    ProgressRing.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-                });
+                _ = DispatcherQueue.TryEnqueue(() =>
+                  {
+                      ProgressRing.IsIndeterminate = false;
+                      ProgressRing.Visibility = Visibility.Collapsed;
+                  });
             }
             else
             {
-                Debug.WriteLine(DriveName + " set completing");
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    ProgressRing.IsIndeterminate = true;
-                    ProgressRing.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-                });
+                _ = DispatcherQueue.TryEnqueue(() =>
+                  {
+                      ProgressRing.IsIndeterminate = true;
+                      ProgressRing.Visibility = Visibility.Visible;
+                  });
             }
-#endif
         }
 
         #endregion

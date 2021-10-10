@@ -1,0 +1,65 @@
+﻿<UserControl
+    x:Class="MultitoolWinUI.Controls.FileSystemEntryView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Margin="5">
+        <Grid.Resources>
+            <Style TargetType="TextBlock">
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+        </Grid.Resources>
+        <Grid.ColumnDefinitions>
+            <!--Icon-->
+            <ColumnDefinition Width="4*"/>
+            <!--Name-->
+            <ColumnDefinition Width="50*"/>
+            <!--Size-->
+            <ColumnDefinition Width="15*"/>
+            <!--Attributes-->
+            <ColumnDefinition Width="10*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock
+            Grid.Column="0"
+            Text="{x:Bind Icon}"
+            FontSize="16"
+            Foreground="White"
+            Margin="2,0,5,0"/>
+
+        <TextBlock 
+            Grid.Column="1"
+            Text="{x:Bind Name}"
+            VerticalAlignment="Center"
+            Foreground="{x:Bind Color, Mode=OneWay}"
+            Margin="0,0,30,0"/>
+
+        <TextBlock
+            Grid.Column="2"
+            Foreground="White"
+            TextWrapping="Wrap">
+            <Run Text="{x:Bind DisplaySize, Mode=OneWay}"/>
+            <Run Text="{x:Bind DisplaySizeUnit, Mode=OneWay}"/>
+        </TextBlock>
+
+        <StackPanel
+            Grid.Column="3" 
+            Orientation="Horizontal" 
+            HorizontalAlignment="Center">
+            <StackPanel.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Margin" Value="5"/>
+                </Style>
+            </StackPanel.Resources>
+            <TextBlock Text="{x:Bind IsHiddenEcon}" ToolTipService.ToolTip="Hidden"/>
+            <TextBlock Text="{x:Bind IsSystemEcon}" ToolTipService.ToolTip="System"/>
+            <TextBlock Text="{x:Bind IsReadOnlyEcon}" ToolTipService.ToolTip="Read-only"/>
+            <TextBlock Text="{x:Bind IsEncryptedEcon}" ToolTipService.ToolTip="Encrypted"/>
+            <TextBlock Text="{x:Bind IsCompressedEcon}" ToolTipService.ToolTip="Compressed"/>
+            <TextBlock Text="{x:Bind IsDeviceEcon}" ToolTipService.ToolTip="Device"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
