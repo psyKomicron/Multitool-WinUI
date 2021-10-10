@@ -6,7 +6,7 @@ using Windows.Devices.Enumeration;
 
 namespace MultitoolWinUI.Models
 {
-    public class DeviceInformationViewModel : ViewModel
+    public class DeviceInformationViewModel : Model
     {
         public DeviceInformationViewModel(DeviceInformation info, DispatcherQueue dispatcherQueue) : base(dispatcherQueue)
         {
