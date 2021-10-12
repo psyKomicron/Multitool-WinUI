@@ -151,6 +151,7 @@ namespace Multitool.DAL
             {
                 return -1;
             }
+
             return 0;
         }
 

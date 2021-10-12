@@ -31,6 +31,7 @@
     <None Remove="Controls\FileSystemEntryView.xaml" />
     <None Remove="Controls\MainPageItem.xaml" />
     <None Remove="Controls\TimerPicker.xaml" />
+    <None Remove="Controls\TraceControl.xaml" />
     <None Remove="Pages\ComputerDevicesPage.xaml" />
     <None Remove="Pages\ControlPanels\ControlPanelsFilePage.xaml" />
     <None Remove="Pages\ControlPanels\ControlPanelsPage.xaml" />
@@ -43,7 +44,6 @@
     <None Remove="Pages\Power\PowerPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
-    <None Remove="Themes\Generic.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -78,7 +78,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Controls\FileSystemEntryView.xaml">
+    <Page Update="Controls\TraceControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -91,12 +91,6 @@
 
   <ItemGroup>
     <Page Update="Controls\MainPageItem.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Update="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

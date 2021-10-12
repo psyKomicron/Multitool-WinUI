@@ -2,8 +2,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.DAL;
-
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,19 +17,20 @@ namespace MultitoolWinUI.Helpers
 {
     internal class WindowTrace : TraceListener
     {
+#if DEBUG
+        private readonly Timer timer = new(3000) { AutoReset = true };
+#else
         private readonly Timer timer = new(3000) { AutoReset = false };
+#endif
         private readonly MainWindow window;
         private readonly DispatcherQueue dispatcher;
         private readonly SolidColorBrush errorBrush;
         private readonly SolidColorBrush warningBrush;
         private readonly SolidColorBrush infoBrush;
-        private bool timerRunning;
-        private volatile bool closed;
 
         public WindowTrace(MainWindow w) : base("WindowTraceListener")
         {
             window = w;
-            window.Closed += Window_Closed;
             dispatcher = w.DispatcherQueue;
             try
             {
@@ -47,28 +49,14 @@ namespace MultitoolWinUI.Helpers
             catch (SettingNotFoundException e) { Trace.TraceError(e.Message); }
         }
 
+        public Color DefaultColor { get; set; }
+
         #region trace methods
 
         /// <inheritdoc />
         public override void Write(string message)
         {
-            if (string.IsNullOrEmpty(message))
-            {
-                if (dispatcher.TryEnqueue(() =>
-                {
-                    window.MessageDisplay.Title = string.Empty;
-                    window.MessageDisplay.Header = "Message";
-                    window.MessageDisplay.Content = message;
-                    window.ExceptionPopup.IsOpen = true;
-                }))
-                {
-                    if (timerRunning)
-                    {
-                        timer.Stop();
-                    }
-                    timer.Start();
-                }
-            }
+            
         }
 
         /// <inheritdoc />
@@ -194,40 +182,10 @@ namespace MultitoolWinUI.Helpers
         #endregion
 
         #region private methods
-
         private void TraceMessage(string title, string header, string message, Brush background)
         {
-            if (!closed && dispatcher.TryEnqueue(() =>
-            {
-                if (!closed)
-                {
-                    window.MessageDisplay.Background = background;
-                    window.MessageDisplay.Title = title;
-                    window.MessageDisplay.Header = header;
-                    window.MessageDisplay.Content = message;
-                    window.ExceptionPopup.IsOpen = true;
-                }
-            }))
-            {
-                if (timerRunning)
-                {
-                    timer.Stop();
-                }
-                timer.Start();
-            }
+            window.MessageDisplay.DisplayMessage(title, header, message, background);
         }
-
-        private void Window_Closed(object sender, WindowEventArgs args)
-        {
-            closed = true;
-        }
-
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            timerRunning = false;
-            _ = dispatcher.TryEnqueue(() => window.ExceptionPopup.IsOpen = false);
-        }
-
         #endregion
     }
 }

@@ -13,6 +13,8 @@ using MultitoolWinUI.Pages.Power;
 using System;
 using System.Diagnostics;
 using System.Timers;
+using System.Linq;
+using System.Collections.Generic;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -73,18 +75,10 @@ namespace MultitoolWinUI
             }
             catch (SettingNotFoundException) { }
 
-            Trace.Listeners.Add(new WindowTrace(this));
+            Trace.Listeners.Add(new WindowTrace(this) { Name = "WindowTrace" });
         }
 
         public bool IsPaneOpen { get; set; }
-
-        public void ClosePopup()
-        {
-            if (!DispatcherQueue.TryEnqueue(() => ExceptionPopup.IsOpen = false))
-            {
-                Trace.TraceWarning("Unable to queue action on the dispatcher queue");
-            }
-        }
 
         #region navigation events
 
@@ -157,12 +151,20 @@ namespace MultitoolWinUI
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
-            DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
+            _ = DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
         }
 
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
+            IEnumerable<WindowTrace> tracers = Trace.Listeners.OfType<WindowTrace>();
+            for (int i = 0; i < Trace.Listeners.Count; i++)
+            {
+                if (Trace.Listeners[i].GetType().IsAssignableFrom(typeof(WindowTrace)))
+                {
+                    Trace.Listeners.RemoveAt(i);
+                }
+            }
             if (lastPage != null)
             {
                 App.Settings.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
@@ -170,9 +172,8 @@ namespace MultitoolWinUI
             App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
         }
 
-        private void MessageDisplay_Dismiss(Controls.WindowMessageControl sender, RoutedEventArgs args)
+        private void MessageDisplay_Dismiss(Controls.TraceControl sender, RoutedEventArgs args)
         {
-            ExceptionPopup.IsOpen = false;
         }
 
         #endregion
