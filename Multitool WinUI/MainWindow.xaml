@@ -62,12 +62,16 @@
             <Frame x:Name="ContentFrame"></Frame>
         </NavigationView>
 
-        <controls:TraceControl
-            x:Name="MessageDisplay"
-            x:FieldModifier="public"
-            Height="Auto"
-            HorizontalAlignment="Stretch"
-            Background="{StaticResource DarkDevBlue}"
-            Dismissed="MessageDisplay_Dismiss"/>
+        <Popup
+            x:Name="ContentPopup"
+            HorizontalAlignment="Left">
+            <controls:TraceControl
+                x:Name="MessageDisplay"
+                x:FieldModifier="public"
+                Height="Auto"
+                HorizontalAlignment="Stretch"
+                Background="{StaticResource DarkDevBlue}"
+                VisibilityChanged="MessageDisplay_Dismiss"/>
+        </Popup>
     </Grid>
 </Window>

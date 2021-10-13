@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Timers;
 using System.Linq;
 using System.Collections.Generic;
+using MultitoolWinUI.Controls;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -74,8 +75,11 @@ namespace MultitoolWinUI
                 }
             }
             catch (SettingNotFoundException) { }
-
+#if false
+            Trace.Listeners[0] = new WindowTrace(this) { Name = "Debug_WindowTrace" };
+#else
             Trace.Listeners.Add(new WindowTrace(this) { Name = "WindowTrace" });
+#endif
         }
 
         public bool IsPaneOpen { get; set; }
@@ -100,6 +104,7 @@ namespace MultitoolWinUI
             if (args.InvokedItemContainer != null)
             {
                 string tag = args.InvokedItemContainer.Tag.ToString();
+                Trace.TraceError("/!\\ Test error /!\\");
                 switch (tag)
                 {
                     case "home":
@@ -172,8 +177,9 @@ namespace MultitoolWinUI
             App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
         }
 
-        private void MessageDisplay_Dismiss(Controls.TraceControl sender, RoutedEventArgs args)
+        private void MessageDisplay_Dismiss(TraceControl sender, Visibility args)
         {
+            ContentPopup.IsOpen = args == Visibility.Visible;
         }
 
         #endregion

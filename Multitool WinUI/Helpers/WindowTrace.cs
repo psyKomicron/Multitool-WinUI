@@ -1,15 +1,11 @@
-﻿using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
+﻿using Microsoft.UI.Xaml.Media;
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using Multitool.DAL;
+
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Timers;
 
 using Windows.UI;
 
@@ -17,21 +13,14 @@ namespace MultitoolWinUI.Helpers
 {
     internal class WindowTrace : TraceListener
     {
-#if DEBUG
-        private readonly Timer timer = new(3000) { AutoReset = true };
-#else
-        private readonly Timer timer = new(3000) { AutoReset = false };
-#endif
         private readonly MainWindow window;
-        private readonly DispatcherQueue dispatcher;
         private readonly SolidColorBrush errorBrush;
         private readonly SolidColorBrush warningBrush;
         private readonly SolidColorBrush infoBrush;
 
-        public WindowTrace(MainWindow w) : base("WindowTraceListener")
+        public WindowTrace(MainWindow window) : base()
         {
-            window = w;
-            dispatcher = w.DispatcherQueue;
+            this.window = window;
             try
             {
                 errorBrush = new(Tool.GetAppRessource<Color>("SystemAccentColor"));
@@ -66,11 +55,6 @@ namespace MultitoolWinUI.Helpers
             {
                 Write(message);
             }
-        }
-
-        public static void TraceError(string message, [CallerMemberName] string callerName = null)
-        {
-            Trace.TraceError(callerName + " -> " + message);
         }
 
         /// <inheritdoc />
@@ -184,7 +168,7 @@ namespace MultitoolWinUI.Helpers
         #region private methods
         private void TraceMessage(string title, string header, string message, Brush background)
         {
-            window.MessageDisplay.DisplayMessage(title, header, message, background);
+            window.MessageDisplay.QueueMessage(title, header, message, background);
         }
         #endregion
     }

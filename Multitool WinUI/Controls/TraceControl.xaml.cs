@@ -33,8 +33,10 @@ namespace MultitoolWinUI.Controls
     public sealed partial class TraceControl : UserControl
     {
         private readonly ConcurrentQueue<DispatcherQueueHandler> displayQueue = new();
-        private readonly Timer messageTimer = new() { AutoReset = false, Interval = 3000 };
+        private readonly Timer messageTimer = new() { AutoReset = true, Interval = 3000 };
+        private readonly object _lock = new();
         private volatile bool closed;
+        private volatile bool busy;
 
         public TraceControl()
         {
@@ -43,8 +45,13 @@ namespace MultitoolWinUI.Controls
             {
                 DispatcherQueue.ShutdownStarting += DispatcherQueue_ShutdownStarting;
             }
+            messageTimer.Elapsed += Timer_Elapsed;
+#if !DEBUG
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
+#else
+            closed = false;
+#endif
         }
 
         #region properties
@@ -102,76 +109,58 @@ namespace MultitoolWinUI.Controls
             get => GetValue(MessageProperty);
             set => SetValue(MessageProperty, value);
         }
+
+        public bool Sync { get; set; } = true;
         #endregion
 
-        public event TypedEventHandler<TraceControl, RoutedEventArgs> Dismissed;
+        public event TypedEventHandler<TraceControl, Visibility> VisibilityChanged;
 
-        public void DisplayMessage(string title, string header, object message, Brush background)
+        public void QueueMessage(string title, string header, string message, Brush background)
         {
-            if (displayQueue.IsEmpty)
+            lock (_lock)
             {
-                if (!closed)
+                if (!busy)
                 {
-                    _ = DispatcherQueue.TryEnqueue(() => DispatcherQueueCallback(title, header, message, background));
+                    if (!closed)
+                    {
+                        busy = true;
+                        _ = DispatcherQueue.TryEnqueue(() => DisplayMessage(title, header, message, background));
+                    }
                 }
-            }
-            else
-            {
-                displayQueue.Enqueue(() => DispatcherQueueCallback(title, header, message, background));
+                else
+                {
+                    displayQueue.Enqueue(() => DisplayMessage(title, header, message, background));
+                    Debug.WriteLine("\tQueued message [message: " + message + "]");
+                }
             }
         }
 
-        private void DispatcherQueueCallback(string title, string header, object message, Brush background)
+        #region private methods
+        private void Dump()
+        {
+            StringBuilder builder = new();
+            _ = builder.AppendLine(nameof(TraceControl) + " trace stack dump:");
+            _ = builder.Append("\tQueued callbacks ");
+            _ = builder.Append(displayQueue.Count);
+            displayQueue.Clear();
+            Trace.WriteLine(builder.ToString());
+        }
+
+        private void DisplayMessage(string title, string header, string message, Brush background)
         {
             if (!closed)
             {
-                Debug.WriteLine("\tMessage: [" + title + ", " + header + ", " + message.ToString() + "]");
+                Debug.WriteLine("\tdisplaying : [ " + message + " ]");
                 Background = background;
                 Title = title;
                 Header = header;
                 Message = message;
-                try
-                {
-                    ContentPopup.IsOpen = true;
-                }
-                catch (AccessViolationException e)
-                {
-                    Trace.TraceError(e.ToString());
-                }
+                messageTimer.Start();
+                VisibilityChanged?.Invoke(this, Visibility.Visible);
             }
         }
 
-        private void Dump()
-        {
-            StringBuilder builder = new();
-            _ = builder.AppendLine(nameof(WindowTrace) + " trace stack dump:");
-            _ = builder.Append("\tQueued callbacks ");
-            _ = builder.Append(displayQueue.Count);
-            Trace.WriteLine(builder.ToString());
-        }
-
-        #region event handlers
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            closed = false;
-            Debug.WriteLine("\tPopup width: " + ContentPopup.ActualWidth);
-            Debug.WriteLine("\tGrid width: " + Grid.ActualWidth);
-            DisplayMessage("Information", "Test", new TextBlock() { Text = "Does it work ?" }, new SolidColorBrush(Colors.White));
-        }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e)
-        {
-            closed = true;
-        }
-
-        private void DispatcherQueue_ShutdownStarting(DispatcherQueue sender, DispatcherQueueShutdownStartingEventArgs args)
-        {
-            closed = true;
-            _ = Task.Run(Dump);
-            Trace.WriteLine("Dispatcher shutting down");
-        }
-
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        private bool CheckForCallbacks()
         {
             if (!displayQueue.IsEmpty)
             {
@@ -185,18 +174,63 @@ namespace MultitoolWinUI.Controls
                     Trace.TraceWarning("Unable to dequeue action from display queue");
                 }
 #endif
+                return true;
             }
             else
             {
-                // no messages, close popup + stop timer
-                IsOpen = false;
+                return false;
+            }
+        }
+        #endregion
+
+        #region event handlers
+#if !DEBUG
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine(nameof(TraceControl) + " loaded");
+            closed = false;
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            closed = true;
+            _ = Task.Run(Dump);
+        }
+#endif
+
+        private void DispatcherQueue_ShutdownStarting(DispatcherQueue sender, DispatcherQueueShutdownStartingEventArgs args)
+        {
+            closed = true;
+            busy = false;
+            _ = Task.Run(Dump);
+            Trace.WriteLine("Dispatcher shutting down");
+        }
+
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (!CheckForCallbacks())
+            {
+                // no messages, close + stop timer
+                busy = false;
                 messageTimer.Stop();
+                if (Sync)
+                {
+                    DispatcherQueue.TryEnqueue(() => VisibilityChanged?.Invoke(this, Visibility.Collapsed));
+                }
+                else
+                {
+                    VisibilityChanged?.Invoke(this, Visibility.Collapsed);
+                }
             }
         }
 
         private void HyperlinkButton_Click(object sender, RoutedEventArgs e)
         {
-            Dismissed?.Invoke(this, e);
+            if (!CheckForCallbacks())
+            {
+                busy = false;
+                VisibilityChanged?.Invoke(this, Visibility.Collapsed);
+            }
         }
         #endregion
     }
