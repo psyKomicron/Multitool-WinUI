@@ -73,7 +73,7 @@ namespace MultitoolWinUI.Pages.Explorer
             };
             button.Click += (object sender, RoutedEventArgs e) =>
             {
-                (fileSystemManager as FileSystemManager).RefreshAllCache(CurrentPath);
+                FileSystemManager.RefreshAllCache();
             };
             ButtonsStackPanel.Children.Add(button);
 #endif
@@ -125,10 +125,7 @@ namespace MultitoolWinUI.Pages.Explorer
                 taskStopwatch.Restart();
                 try
                 {
-                    await fileSystemManager.GetFileSystemEntries(realPath, CurrentFiles, (IList<FileSystemEntryView> items, IFileSystemEntry item) =>
-                    {
-                        //Debug.WriteLine("Adding " + item.Path + ", item count " + items.Count);
-                    }, fsCancellationTokenSource.Token);
+                    await fileSystemManager.GetFileSystemEntries(realPath, CurrentFiles, AddDelegate, fsCancellationTokenSource.Token);
 
                     taskStopwatch.Stop();
                     if (fsCancellationTokenSource != null)
@@ -152,7 +149,7 @@ namespace MultitoolWinUI.Pages.Explorer
                     for (int i = 0; i < CurrentFiles.Count; i++)
                     {
                         FileSystemEntryView item = CurrentFiles[i];
-                        if (!Directory.Exists(item.Path))
+                        if (item.IsDirectory && !Directory.Exists(item.Path))
                         {
                             _ = DispatcherQueue.TryEnqueue(() => item.Color = new SolidColorBrush(Colors.Red));
                         }
@@ -193,7 +190,6 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void AddDelegate(IList<FileSystemEntryView> items, IFileSystemEntry item)
         {
-            //Debug.WriteLine("Adding " + item.Path + ", item count " + items.Count);
             DispatcherQueue.TryEnqueue(() => items.Add(new(item)
             {
                 ListView = MainListView,
@@ -609,7 +605,6 @@ namespace MultitoolWinUI.Pages.Explorer
 #endregion
 
         #region manager
-
         private void FileSystemManager_Progress(object sender, string message)
         {
             DisplayMessage(message, false, sender == null);
@@ -637,21 +632,16 @@ namespace MultitoolWinUI.Pages.Explorer
                         }
                     }
                     break;
-#if TRACE
-                case ChangeTypes.FileChanged:
-                    Trace.TraceInformation(data.Entry.Path + " changed");
+                case ChangeTypes.DirectoryCreated:
+                    Trace.TraceWarning("Directory created");
                     break;
-                case ChangeTypes.FileRenamed:
-                    Trace.TraceInformation(data.Entry.Path + " renamed");
+                case ChangeTypes.PathDeleted:
+                    DispatcherQueue.TryEnqueue(() => CurrentFiles.Clear());
+                    Trace.TraceWarning("Path deleted");
                     break;
-                case ChangeTypes.All:
-                    Trace.TraceInformation(data.Entry.Path + " : all changes");
-                    break;
-#endif
             }
         }
-
-#endregion
+        #endregion
 
         #endregion
     }
