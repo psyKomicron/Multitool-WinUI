@@ -37,7 +37,7 @@ namespace MultitoolWinUI
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            Trace.WriteLine("Application starting...");
+            Trace.TraceInformation("Application starting...");
             Settings = new Settings(ApplicationData.Current.LocalSettings)
             {
                 SettingFormat = "{0}/{1}"
