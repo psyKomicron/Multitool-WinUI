@@ -9,8 +9,11 @@
 # Windows
 
 [x] Create and revamp multitool's powerwindow (power control)
-[ ] Use GridView for disk view (instead of the old WPF look)
+[x] Use GridView for disk view (instead of the old WPF look)
 
 ## Control panels
 
-[x] finish and beautify
+[x] Finish and beautify
+
+## Explorer window
+[ ] Fully aware of the changes in the file system (not only file renamed, file created and file deleted)
