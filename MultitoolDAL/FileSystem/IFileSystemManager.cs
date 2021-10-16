@@ -1,6 +1,7 @@
 ﻿using Multitool.DAL.FileSystem.Events;
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,9 +12,14 @@ namespace Multitool.DAL.FileSystem
     public interface IFileSystemManager : IProgressNotifier
     {
         /// <summary>
-        /// Fired when the one or more items in the cache have changed.
+        /// Raised when the one or more items in the cache have changed.
         /// </summary>
         event TypedEventHandler<IFileSystemManager, ChangeEventArgs> Changed;
+
+        /// <summary>
+        /// Raised when a cached path is updating.
+        /// </summary>
+        public event TypedEventHandler<IFileSystemManager, CacheUpdatingEventArgs> CacheUpdating;
 
         double CacheTimeout { get; set; }
 
@@ -40,7 +46,7 @@ namespace Multitool.DAL.FileSystem
         /// Get the case sensitive path for the <paramref name="path"/> parameter.
         /// </summary>
         /// <param name="path"></param>
-        /// <returns></returns>
+        /// <returns>The "real" path</returns>
         string GetRealPath(string path);
         /// <summary>
         /// Cleans the internal cache.

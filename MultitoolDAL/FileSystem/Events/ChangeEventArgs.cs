@@ -1,17 +1,19 @@
-﻿namespace Multitool.DAL.FileSystem.Events
+﻿using System;
+
+namespace Multitool.DAL.FileSystem.Events
 {
     /// <summary>
     /// Provides data for file system changes events.
     /// </summary>
-    public class ChangeEventArgs
+    public class ChangeEventArgs : EventArgs
     {
         /// <summary>
         /// Default constructor
         /// </summary>
-        public ChangeEventArgs()
+        public ChangeEventArgs() : base()
         {
             Entry = null;
-            ChangeTypes = ChangeTypes.All;
+            ChangeTypes = ChangeTypes.None;
         }
 
         /// <summary>

@@ -1,5 +1,4 @@
-﻿using Multitool.DAL.Events;
-using Multitool.DAL.FileSystem.Events;
+﻿using Multitool.DAL.FileSystem.Events;
 
 using System;
 using System.Collections.Generic;
@@ -8,29 +7,32 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Multitool.DAL.FileSystem;
+
 using Windows.Foundation;
+using Windows.Foundation.Metadata;
 
 namespace Multitool.DAL.FileSystem
 {
     /// <summary>
     /// Class to manage <see cref="IFileSystemEntry"/> with cache and async methods.
     /// </summary>
+    [DebuggerDisplay("{Name}, {Path}")]
     public class FileSystemManager : IFileSystemManager
     {
+        [Deprecated("Use property or build configuration", DeprecationType.Deprecate, 0)]
         public const double DEFAULT_CACHE_TIMEOUT = 300_000;
+        [Deprecated("Use property or build configuration", DeprecationType.Deprecate, 0)]
         public const bool DEFAULT_NOTIFY_STATUS = false;
 
         private static readonly Dictionary<string, FileSystemCache> cache = new();
         private readonly object _eventlock = new();
         private readonly DirectorySizeCalculator calculator = new();
-
         private double _ttl;
         private bool _notify;
 
         #region ctors
         /// <summary>
-        /// Default constructor with default cache TTL and with <see cref="Notify"/> set to false.
+        /// Default constructor with default cache TTL and with <see cref="Notify"/> set to <see langword="false"/>.
         /// </summary>
         public FileSystemManager()
         {
@@ -45,7 +47,7 @@ namespace Multitool.DAL.FileSystem
         /// <param name="notifyProgress"></param>
         public FileSystemManager(double ttl, bool notifyProgress)
         {
-            this._ttl = ttl;
+            _ttl = ttl;
             Notify = notifyProgress;
         }
         #endregion
@@ -78,6 +80,9 @@ namespace Multitool.DAL.FileSystem
         #region events
         /// <inheritdoc/>
         public event TypedEventHandler<IFileSystemManager, ChangeEventArgs> Changed;
+
+        /// <inheritdoc/>
+        public event TypedEventHandler<IFileSystemManager, CacheUpdatingEventArgs> CacheUpdating;
 
         /// <inheritdoc/>
         public event TaskCompletedEventHandler Completed;
@@ -130,6 +135,7 @@ namespace Multitool.DAL.FileSystem
 
                 if (fileCache.Frozen)
                 {
+                    Debug.WriteLine("Cache frozen, recreating one and getting files");
                     cache.Remove(fileCache.Path);
                     fileCache.Delete();
                     fileCache.Dispose();
@@ -137,16 +143,19 @@ namespace Multitool.DAL.FileSystem
                 }
                 else
                 {
-                    for (int i = 0; i < fileCache.Count; i++)
+                    await Task.Run(() =>
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        addDelegate(list, fileCache[i]);
-                    }
-                    if (fileCache.Partial)
-                    {
-                        GetPartial(path, fileCache, list, addDelegate, cancellationToken);
-                    }
-                    InvokeCompletion(TaskStatus.RanToCompletion);
+                        for (int i = 0; i < fileCache.Count; i++)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            addDelegate(list, fileCache[i]);
+                        }
+                        if (fileCache.Partial)
+                        {
+                            GetPartial(path, fileCache, list, addDelegate, cancellationToken);
+                        }
+                        InvokeCompletion(TaskStatus.RanToCompletion);
+                    }, cancellationToken);
                 }
             }
             else if (Directory.Exists(path))
@@ -245,17 +254,31 @@ namespace Multitool.DAL.FileSystem
         }
 
 #if DEBUG
-        public void RefreshAllCache(string path)
+        public static void RefreshAllCache()
         {
-            FileSystemCache fsCache = cache.Get(path);
+            foreach (KeyValuePair<string, FileSystemCache> item in cache)
+            {
+                RefreshCache(item.Value);
+            }
+        }
+
+        public static void RefreshCache(string path)
+        {
+            RefreshCache(cache[path]);
+        }
+
+        internal static void RefreshCache(FileSystemCache fsCache)
+        {
             for (int i = 0; i < fsCache.Count; i++)
             {
-                FileSystemEntry item = fsCache[i];
-                item.Partial = true;
-                Trace.TraceInformation("\tupdating " + item.Name);
-                item.RefreshInfos();
+                FileSystemEntry entry = fsCache[i];
+                entry.Partial = true;
+                entry.RefreshInfos();
             }
-            fsCache.UnFreeze();
+            if (fsCache.Frozen)
+            {
+                fsCache.UnFreeze();
+            }
         }
 #endif
         #endregion
@@ -267,7 +290,7 @@ namespace Multitool.DAL.FileSystem
         {
             cache.Add(path, fileCache);
             fileCache.Changed += OnCacheItemChanged;
-            fileCache.TTLReached += OnCacheTTLReached;
+            fileCache.Updating += OnCacheUpdating;
             fileCache.Deleted += OnCacheDeleted; ;
 
             GetFiles(path, fileCache, list, addDelegate, cancellationToken);
@@ -428,91 +451,9 @@ namespace Multitool.DAL.FileSystem
                 InvokeException(e);
             }
         }
-
-        #endregion
-
-        /*private FileSystemEntry GetItemFromCache(string cachePath, string itemPath)
-        {
-            FileSystemCache systemCache = cache[cachePath];
-            if (systemCache != null)
-            {
-                for (int i = 0; i < systemCache.Count; i++)
-                {
-                    if (itemPath.Equals(systemCache[i].Path, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return systemCache[i];
-                    }
-                }
-            }
-            return null;
-        }
-
-        private List<FileSystemEntry> GetAffectedItems(string path)
-        {
-            List<FileSystemEntry> itemsToChange = new List<FileSystemEntry>(50);
-            DirectoryInfo dir = Directory.GetParent(path);
-
-            if (cache.ContainsKey(dir.FullName))
-            {
-                itemsToChange.Add(GetItemFromCache(dir.FullName, path));
-
-                DirectoryInfo parent = Directory.GetParent(dir.FullName);
-
-                // if the directory is cached, else no need to update
-                if (cache.ContainsKey(parent.FullName))
-                {
-                    while (parent != null)
-                    {
-                        if (cache.ContainsKey(parent.FullName))
-                        {
-                            FileSystemEntry item = GetItemFromCache(parent.FullName, dir.FullName);
-                            itemsToChange.Add(item);
-                        }
-                        // get parent
-                        dir = parent;
-                        parent = Directory.GetParent(dir.FullName);
-                    }
-                }
-            }
-
-            return itemsToChange;
-        }*/
-
-        #endregion
-
-        #region events handlers
-        private void OnCacheTTLReached(FileSystemCache sender, TTLReachedEventArgs e)
-        {
-#if DEBUG
-            e.InUse = false;
-            throw new NotImplementedException();
-#endif
-        }
-
-        private void OnCacheItemChanged(FileSystemCache sender, CacheChangedEventArgs args)
-        {
-            if (args.ChangeType != ChangeTypes.FileRenamed)
-            {
-                Task.Run(() =>
-                {
-                    Changed?.Invoke(this, new(args.Entry, args.ChangeType));
-                    args.InUse = false;
-                });
-            }
-        }
-
-        private void OnCacheDeleted(FileSystemCache sender, EventArgs args)
-        {
-            if (cache.ContainsKey(sender.Path))
-            {
-                cache.Remove(sender.Path);
-            }
-        }
-
         #endregion
 
         #region events invoke
-
         private void InvokeException(Exception e)
         {
             if (Notify)
@@ -534,6 +475,37 @@ namespace Multitool.DAL.FileSystem
             if (Notify)
             {
                 Completed?.Invoke(status);
+            }
+        }
+        #endregion
+
+        #endregion
+
+        #region events handlers
+        private void OnCacheUpdating(FileSystemCache sender, EventArgs e)
+        {
+            CacheUpdating?.Invoke(this, new(sender.Path));
+        }
+
+        private void OnCacheItemChanged(FileSystemCache sender, CacheChangedEventArgs args)
+        {
+            /*if (args.ChangeType != ChangeTypes.FileRenamed)
+            {
+                Task.Run(() =>
+                {
+                    Changed?.Invoke(this, new(args.Entry, args.ChangeType));
+                    args.InUse = false;
+                });
+            }*/
+            args.InUse = false;
+        }
+
+        private void OnCacheDeleted(FileSystemCache sender, EventArgs args)
+        {
+            if (cache.ContainsKey(sender.Path))
+            {
+                cache.Remove(sender.Path);
+                Trace.TraceInformation("Removed " + sender.Path + " (cache deleted)");
             }
         }
         #endregion
