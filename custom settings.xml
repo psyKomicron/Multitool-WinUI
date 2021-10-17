@@ -1,0 +1,136 @@
+<pathes>
+    <path name="Settings home page" value="ms-settings:"/>
+    <path name="Display" value="ms-settings:display"/>
+    <path name="Night light settings" value="ms-settings:nightlight"/>
+    <path name="Advanced scaling settings" value="ms-settings:display-advanced"/>
+    <path name="Connect to a wireless display" value="ms-settings-connectabledevices:devicediscovery"/>
+    <path name="Graphics settings" value="ms-settings:display-advancedgraphics"/>
+    <path name="Display orientation" value="ms-settings:screenrotation"/>
+    <path name="Sound" value="ms-settings:sound"/>
+    <path name="Manage sound devices" value="ms-settings:sound-devices"/>
+    <path name="App volume and device preferences" value="ms-settings:apps-volume"/>
+    <path name="Notifications and actions" value="ms-settings:notifications"/>
+    <path name="Focus assist (quiet hours)" value="ms-settings:quiethours"/>
+    <path name="Focus assist (quiet moments home)" value="ms-settings:quietmomentshome"/>
+    <path name="During these hours" value="ms-settings:quietmomentsscheduled"/>
+    <path name="Duplicating my display" value="ms-settings:quietmomentspresentation"/>
+    <path name="Playing a game full screen" value="ms-settings:quietmomentsgame"/>
+    <path name="Power and sleep" value="ms-settings:powersleep"/>
+    <path name="Battery" value="ms-settings:batterysaver"/>
+    <path name="See which apps are affecting your battery life" value="ms-settings:batterysaver-usagedetails"/>
+    <path name="Battery Saver settings" value="ms-settings:batterysaver-settings"/>
+    <path name="Storage" value="ms-settings:storagesense"/>
+    <path name="Configure Storage Sense or run it now" value="ms-settings:storagepolicies"/>
+    <path name="Change where new content is saved" value="ms-settings:savelocations"/>
+    <path name="Tablet mode" value="ms-settings:tabletmode"/>
+    <path name="Multitasking" value="ms-settings:multitasking"/>
+    <path name="Projecting to this PC" value="ms-settings:project"/>
+    <path name="Shared experiences" value="ms-settings:crossdevice"/>
+    <path name="Clipboard" value="ms-settings:clipboard"/>
+    <path name="Remote Desktop" value="ms-settings:remotedesktop"/>
+    <path name="Device Encryption" value="ms-settings:deviceencryption"/>
+    <path name="About" value="ms-settings:about"/>
+    <path name="Bluetooth and other devices (bluetooth)" value="ms-settings:bluetooth"/>
+    <path name="Bluetooth and other devices" value="ms-settings:connecteddevices"/>
+    <path name="Printers and scanners" value="ms-settings:printers"/>
+    <path name="Mouse" value="ms-settings:mousetouchpad"/>
+    <path name="Touchpad" value="ms-settings:devices-touchpad"/>
+    <path name="Typing" value="ms-settings:typing"/>
+    <path name="Hardware keyboard - Text suggestions" value="ms-settings:devicestyping-hwkbtextsuggestions"/>
+    <path name="Wheel" value="ms-settings:wheel"/>
+    <path name="Pen and Windows Ink" value="ms-settings:pen"/>
+    <path name="AutoPlay" value="ms-settings:autoplay"/>
+    <path name="USB" value="ms-settings:usb"/>
+    <path name="Phone" value="ms-settings:mobile-devices"/>
+    <path name="Add a phone" value="ms-settings:mobile-devices-addphone"/>
+    <path name="Your Phone" value="ms-settings:mobile-devices-addphone-direct"/>
+    <path name="Network and Internet" value="ms-settings:network"/>
+    <path name="Status" value="ms-settings:network-status"/>
+    <path name="Show available networks" value="ms-availablenetworks:"/>
+    <path name="Cellular and SIM" value="ms-settings:network-cellular"/>
+    <path name="Wi-Fi" value="ms-settings:network-wifi"/>
+    <path name="Show available networks" value="ms-availablenetworks:"/>
+    <path name="Manage known networks" value="ms-settings:network-wifisettings"/>
+    <path name="Wi-Fi Calling" value="ms-settings:network-wificalling"/>
+    <path name="Ethernet" value="ms-settings:network-ethernet"/>
+    <path name="Dial-up" value="ms-settings:network-dialup"/>
+    <path name="DirectAccess" value="ms-settings:network-directaccess"/>
+    <path name="VPN" value="ms-settings:network-vpn"/>
+    <path name="Airplane mode (airplane mode)" value="ms-settings:network-airplanemode"/>
+    <path name="Airplane mode (proximity)" value="ms-settings:proximity"/>
+    <path name="Mobile hotspot" value="ms-settings:network-mobilehotspot"/>
+    <path name="NFC" value="ms-settings:nfctransactions"/>
+    <path name="Data usage" value="ms-settings:datausage"/>
+    <path name="Proxy" value="ms-settings:network-proxy"/>
+    <path name="Personalization" value="ms-settings:personalization"/>
+    <path name="Background" value="ms-settings:personalization-background"/>
+    <path name="Colors (personalization-colors)" value="ms-settings:personalization-colors"/>
+    <path name="Colors (settings-colors)" value="ms-settings:settings-colors"/>
+    <path name="Lock screen" value="ms-settings:lockscreen"/>
+    <path name="Themes" value="ms-settings:themes"/>
+    <path name="Fonts" value="ms-settings:fonts"/>
+    <path name="Start" value="ms-settings:personalization-start"/>
+    <path name="Choose which folders appear on Start" value="ms-settings:personalization-start-places"/>
+    <path name="Taskbar" value="ms-settings:taskbar"/>
+    <path name="Apps and features" value="ms-settings:appsfeatures"/>
+    <path name="Apps and features (appsfeatures-app)" value="ms-settings:appsfeatures-app"/>
+    <path name="Manage optional features" value="ms-settings:optionalfeatures"/>
+    <path name="Default apps" value="ms-settings:defaultapps"/>
+    <path name="Offline maps" value="ms-settings:maps"/>
+    <path name="Download maps" value="ms-settings:maps-downloadmaps"/>
+    <path name="Apps for websites" value="ms-settings:appsforwebsites"/>
+    <path name="Video playback" value="ms-settings:videoplayback"/>
+    <path name="Startup" value="ms-settings:startupapps"/>
+    <path name="Your info" value="ms-settings:yourinfo"/>
+    <path name="Email and accounts" value="ms-settings:emailandaccounts"/>
+    <path name="Sign-in options" value="ms-settings:signinoptions"/>
+    <path name="Windows Hello face setup" value="ms-settings:signinoptions-launchfaceenrollment"/>
+    <path name="Windows Hello fingerprint setup" value="ms-settings:signinoptions-launchfingerprintenrollment"/>
+    <path name="Security Key setup" value="ms-settings:signinoptions-launchsecuritykeyenrollment"/>
+    <path name="Dynamic Lock" value="ms-settings:signinoptions-dynamiclock"/>
+    <path name="Access work or school" value="ms-settings:workplace"/>
+    <path name="Family and other people (other users)" value="ms-settings:otherusers"/>
+    <path name="Family and other people (family group)" value="ms-settings:family-group"/>
+    <path name="Set up a kiosk" value="ms-settings:assignedaccess"/>
+    <path name="Sync your settings" value="ms-settings:sync"/>
+    <path name="Date and time" value="ms-settings:dateandtime"/>
+    <path name="Region" value="ms-settings:regionformatting"/>
+    <path name="Language (region language)" value="ms-settings:regionlanguage"/>
+    <path name="Language (language options)" value="settings:regionlanguage-languageoptions"/>
+    <path name="Windows Display language" value="ms-settings:regionlanguage-setdisplaylanguage"/>
+    <path name="Add Display language" value="ms-settings:regionlanguage-adddisplaylanguage"/>
+    <path name="Speech" value="ms-settings:speech"/>
+    <!--XBOX settings ignored-->
+    <path name="Extras (available when Settings app extensions installed)" value="ms-settings:extras"/>
+    <path name="Display" value="ms-settings:easeofaccess-display"/>
+    <path name="Mouse Pointer (cursorandpointersize)" value="ms-settings:easeofaccess-cursorandpointersize"/>
+    <path name="Mouse Pointer" value="ms-settings:easeofaccess-MousePointer"/>
+    <path name="Text Cursor" value="ms-settings:easeofaccess-cursor"/>
+    <path name="Magnifier" value="ms-settings:easeofaccess-magnifier"/>
+    <path name="Color Filters" value="ms-settings:easeofaccess-colorfilter"/>
+    <path name="Adaptive Color Filters" value="ms-settings:easeofaccess-colorfilter-adaptivecolorlink"/>
+    <path name="Night Light" value="ms-settings:easeofaccess-colorfilter-bluelightlink"/>
+    <path name="High Contrast" value="ms-settings:easeofaccess-highcontrast"/>
+    <path name="Narrator" value="ms-settings:easeofaccess-narrator"/>
+    <path name="Audio" value="ms-settings:easeofaccess-audio"/>
+    <path name="Closed captions" value="ms-settings:easeofaccess-closedcaptioning"/>
+    <path name="Speech " value="ms-settings:easeofaccess-speechrecognition"/>
+    <path name="Keyboard" value="ms-settings:easeofaccess-keyboard"/>
+    <path name="Mouse" value="ms-settings:easeofaccess-mouse"/>
+    <path name="Eye Control" value="ms-settings:easeofaccess-eyecontrol"/>
+    <path name="Search permissions and history" value="ms-settings:search-permissions"/>
+    <path name="Searching Windows" value="ms-settings:cortana-windowssearch"/>
+    <path name="Cortana" value="ms-settings:cortana"/>
+    <path name="Privacy" value="ms-settings:privacy"/>
+    <path name="Activity history" value="ms-settings:privacy-activityhistory"/>
+    <path name="Camera" value="ms-settings:privacy-webcam"/>
+    <path name="Microphone" value="ms-settings:privacy-microphone"/>
+    <path name="Notifications" value="ms-settings:privacy-notifications"/>
+    <path name="Eye tracker (requires eyetracker hardware)" value="ms-settings:privacy-eyetracker"/>
+    <path name="Background apps" value="ms-settings:privacy-backgroundapps"/>
+    <path name="Windows Update" value="ms-settings:windowsupdate"/>
+    <path name="Check for updates" value="ms-settings:windowsupdate-action"/>
+    <path name="For developers" value="ms-settings:developers"/>
+    <path name="Windows Insider Program" value="ms-settings:windowsinsider"/>
+    <path name="Mixed reality" value="ms-settings:holographic"/>
+</pathes>
