@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
 using Multitool.DAL;
-using Multitool.DAL.Events;
 using Multitool.DAL.FileSystem.Events;
 
 using MultitoolWinUI.Helpers;
