@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
 using Multitool.DAL;
-using Multitool.DAL.Events;
 using Multitool.DAL.FileSystem.Events;
 
 using MultitoolWinUI.Helpers;
@@ -22,9 +21,10 @@ using Windows.Foundation;
 
 namespace MultitoolWinUI.Controls
 {
+    [DebuggerDisplay("{Name}, {Path}")]
     public sealed partial class FileSystemEntryView : UserControl, IFileSystemEntry, INotifyPropertyChanged
     {
-        private const ushort uiUpdateMs = 120;
+        private const ushort uiUpdateMs = 30;
         private const string DirectoryIcon = "📁";
         private const string FileIcon = "📄";
         private const string HiddenIcon = "👁";
@@ -53,7 +53,7 @@ namespace MultitoolWinUI.Controls
             item.AttributesChanged += OnAttributesChanged;
             item.Deleted += OnDeleted;
             item.SizedChanged += OnSizeChanged;
-            item.PartialChanged += Item_PartialChanged;
+            item.PartialChanged += OnPartialChanged;
 
             Icon = GetIcon();
 
@@ -308,7 +308,7 @@ namespace MultitoolWinUI.Controls
 
         #region filesystementry events
 
-        private void Item_PartialChanged(IFileSystemEntry sender, bool args)
+        private void OnPartialChanged(IFileSystemEntry sender, bool args)
         {
             if (Partial)
             {
@@ -332,17 +332,12 @@ namespace MultitoolWinUI.Controls
 
         private void OnSizeChanged(IFileSystemEntry sender, long newSize)
         {
-            if (!Partial)
+            Tool.FormatSize(Size, out double formatted, out string ext);
+            _displaySizeUnit = ext;
+            _displaySize = formatted.ToString("F2", CultureInfo.InvariantCulture);
+            if (uiUpdateStopwatch.ElapsedMilliseconds > uiUpdateMs)
             {
-                Tool.FormatSize(Size, out double formatted, out string ext);
-                DisplaySizeUnit = ext;
-                DisplaySize = formatted.ToString("F2", CultureInfo.InvariantCulture);
-            }
-            else if (uiUpdateStopwatch.ElapsedMilliseconds > uiUpdateMs)
-            {
-                Tool.FormatSize(Size, out double formatted, out string ext);
-                DisplaySizeUnit = ext;
-                DisplaySize = formatted.ToString("F2", CultureInfo.InvariantCulture);
+                RaiseNotifyPropertyChanged(nameof(DisplaySize) + " " + nameof(DisplaySizeUnit));
                 uiUpdateStopwatch.Restart();
             }
         }
