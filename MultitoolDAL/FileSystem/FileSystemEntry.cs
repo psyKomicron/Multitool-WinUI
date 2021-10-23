@@ -100,7 +100,6 @@ namespace Multitool.DAL
 #if false
                 _ = Task.Run(() => PartialChanged?.Invoke(this, value));
 #else
-
                 PartialChanged?.Invoke(this, value);
 #endif
             }

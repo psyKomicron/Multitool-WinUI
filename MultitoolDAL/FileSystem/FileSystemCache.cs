@@ -301,7 +301,7 @@ namespace Multitool.DAL.FileSystem
             string path = string.Empty;
             if (Path.Length > 23)
             {
-                path = Path.Substring(0, 10) + "..." + Path.Substring(Path.Length - 11);
+                path = Path[0..10] + "..." + Path[^11..];
             }
             Trace.TraceInformation("Cache [" + path + "] TTL reached, elapsed " + e.SignalTime.Minute + ":" + e.SignalTime.Second + ":" + e.SignalTime.Millisecond);
             Trace.TraceInformation("Cache TTL reached, updating " + Path);
