@@ -2,9 +2,9 @@
 {
     public class CircularBag<T>
     {
-        private object _lock = new object();
-        private T[] buffer;
-        private int capacity;
+        private readonly object _lock = new();
+        private readonly T[] buffer;
+        private readonly int capacity;
         private int head;
 
         public CircularBag(int capacity)
@@ -17,10 +17,7 @@
 
         public bool Full => Length == capacity;
 
-        public T this[int index]
-        {
-            get => buffer[index];
-        }
+        public T this[int index] => buffer[index];
 
         public void Add(T value)
         {
