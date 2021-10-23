@@ -11,7 +11,6 @@ using Multitool.DAL.FileSystem;
 using Multitool.DAL.FileSystem.Events;
 using Multitool.Parsers;
 using Multitool.Sorting;
-using Multitool.Threading;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
@@ -19,12 +18,10 @@ using MultitoolWinUI.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Security.AccessControl;
 using System.Threading;
-using System.Threading.Tasks;
 
 using Windows.System;
 
@@ -36,7 +33,7 @@ namespace MultitoolWinUI.Pages.Explorer
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class ExplorerPage : Page, INotifyPropertyChanged
+    public sealed partial class ExplorerPage : Page
     {
         private static readonly SolidColorBrush RED = new(Colors.Red);
         private static readonly SolidColorBrush WHITE = new(Colors.White);
@@ -48,8 +45,8 @@ namespace MultitoolWinUI.Pages.Explorer
         private readonly Stack<string> nextPathStack = new(10);
         private readonly Stopwatch taskStopwatch = new();
         private readonly object sortingLock = new();
-        private ListenableCancellationTokenSource fsCancellationTokenSource;
-        private string _currentPath;
+        private CancellationTokenSource fsCancellationTokenSource;
+        //private UriCleaner cleaner = new();
 
         public ExplorerPage()
         {
@@ -82,57 +79,48 @@ namespace MultitoolWinUI.Pages.Explorer
 #endif
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
         #region properties
+
         public ObservableCollection<FileSystemEntryView> CurrentFiles { get; } = new();
 
         public ObservableCollection<string> History { get; } = new();
 
-        public string CurrentPath
-        {
-            get => _currentPath;
-            set
-            {
-                _currentPath = value;
-                PropertyChanged?.Invoke(this, new(nameof(CurrentPath)));
-            }
-        }
+        public string CurrentPath { get; set; }
+
         #endregion
 
         #region private methods
-        private void DisplayFiles(string path)
+
+        private async void DisplayFiles(string path)
         {
             if (fsCancellationTokenSource != null)
             {
-                async void a(ListenableCancellationTokenSource sender, EventArgs args)
-                {
-                    await LoadFiles(path);
-                    fsCancellationTokenSource.Cancelled -= a;
-                }
-                fsCancellationTokenSource.Cancelled += a;
-                CancelFileTask();
+                fsCancellationTokenSource.Cancel();
+                fsCancellationTokenSource.Dispose();
             }
-            else
-            {
-                fsCancellationTokenSource = new();
-                _ = LoadFiles(path);
-            }
-        }
+            fsCancellationTokenSource = new CancellationTokenSource();
 
-        private async Task LoadFiles(string path)
-        {
             try
             {
                 string realPath = fileSystemManager.GetRealPath(UriCleaner.RemoveChariotReturns(path));
                 CurrentPath = realPath;
+#if false
+                if (realPath.Length < 10 && !Data.History.Contains(realPath))
+                {
+                    Data.History.Add(realPath);
+                }
+                else if (realPath.Length >= 10 && !Data.History.Contains(string.Format("{0, 10}", realPath)))
+                {
+                    Data.History.Add(string.Format("{0, 10}", realPath));
+                }
+#endif
                 CurrentFiles.Clear();
                 Progress_TextBox.Text = string.Empty;
-
                 fileSystemManager.Notify = true;
                 Files_ProgressBar.IsIndeterminate = true;
                 CancelAction_Button.IsEnabled = true;
 
+                //IList<FileSystemEntryView> pathItems = CurrentFiles;
                 eventStopwatch.Restart();
                 taskStopwatch.Restart();
                 try
@@ -140,7 +128,10 @@ namespace MultitoolWinUI.Pages.Explorer
                     await fileSystemManager.GetFileSystemEntries(realPath, CurrentFiles, AddDelegate, fsCancellationTokenSource.Token);
 
                     taskStopwatch.Stop();
-                    fsCancellationTokenSource.Dispose();
+                    if (fsCancellationTokenSource != null)
+                    {
+                        fsCancellationTokenSource.Dispose();
+                    }
                     fsCancellationTokenSource = null;
                     eventStopwatch.Reset();
 
@@ -149,9 +140,11 @@ namespace MultitoolWinUI.Pages.Explorer
                     Files_ProgressBar.IsIndeterminate = false;
 
                     Progress_TextBox.Foreground = new SolidColorBrush(Colors.White);
+                    string message = "Task successfully completed";
+
                     Progress_TextBox.Text = taskStopwatch.Elapsed.TotalSeconds >= 1
-                        ? "Task successfully completed (in " + taskStopwatch.Elapsed.TotalSeconds.ToString() + "s)"
-                        : "Task successfully completed (in " + taskStopwatch.ElapsedMilliseconds.ToString() + "ms)";
+                        ? message + " (in " + taskStopwatch.Elapsed.TotalSeconds.ToString() + "s)"
+                        : message + " (in " + taskStopwatch.ElapsedMilliseconds.ToString() + "ms)";
 
                     for (int i = 0; i < CurrentFiles.Count; i++)
                     {
@@ -161,18 +154,6 @@ namespace MultitoolWinUI.Pages.Explorer
                             _ = DispatcherQueue.TryEnqueue(() => item.Color = new SolidColorBrush(Colors.Red));
                         }
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    eventStopwatch.Reset();
-                    CancelAction_Button.IsEnabled = false;
-                    Files_ProgressBar.IsIndeterminate = false;
-
-                    fsCancellationTokenSource.InvokeCancel();
-                    fsCancellationTokenSource = null;
-                    Trace.TraceError("Operation cancelled, loading path : " + path);
-                    Progress_TextBox.Text = "Operation cancelled";
-                    DispatcherQueue.TryEnqueue(() => SortList());
                 }
                 catch (Exception ex) // we catch everything, and display it to the trace and UI
                 {
@@ -184,21 +165,32 @@ namespace MultitoolWinUI.Pages.Explorer
                     Progress_TextBox.Text = ex.ToString();
                 }
             }
-            catch (DirectoryNotFoundException ex)
+            catch (DirectoryNotFoundException)
             {
                 eventStopwatch.Reset();
                 CancelAction_Button.IsEnabled = false;
                 Files_ProgressBar.IsIndeterminate = false;
 
-                Trace.TraceError(ex.ToString());
-                CurrentPath = string.Empty;
-                Progress_TextBox.Text = "Directory not found : '" + path + "'";
+                CurrentPath = path;
+                path = path.ToLowerInvariant();
+#if false
+                // remove from history
+                for (int i = 0; i < Data.History.Count; i++)
+                {
+                    if (Data.History[i].Equals(path, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Data.History.RemoveAt(i);
+                        break;
+                    }
+                }
+#endif
+                Progress_TextBox.Text = "Directory not found (" + path + ").";
             }
         }
 
         private void AddDelegate(IList<FileSystemEntryView> items, IFileSystemEntry item)
         {
-            _ = DispatcherQueue.TryEnqueue(() => items.Add(new(item)
+            DispatcherQueue.TryEnqueue(() => items.Add(new(item)
             {
                 ListView = MainListView,
                 Page = this
@@ -215,35 +207,25 @@ namespace MultitoolWinUI.Pages.Explorer
             }
         }
 
-        private void CancelFileTask()
-        {
-            if (fsCancellationTokenSource != null)
-            {
-                fsCancellationTokenSource.Cancel();
-                fsCancellationTokenSource.Dispose();
-                fsCancellationTokenSource = new();
-            }
-        }
-
         private void DisplayMessage(string message, bool error = false, bool force = false)
         {
             _ = DispatcherQueue.TryEnqueue(() =>
-            {
-                if (force || eventStopwatch.ElapsedMilliseconds > 30) //ms interval between each notification
-                {
-                    if (error)
-                    {
-                        Progress_TextBox.Foreground = RED;
-                        Progress_TextBox.Text = message;
-                    }
-                    else
-                    {
-                        Progress_TextBox.Foreground = WHITE;
-                        Progress_TextBox.Text = message;
-                    }
-                    eventStopwatch.Restart();
-                }
-            });
+              {
+                  if (force || eventStopwatch.ElapsedMilliseconds > 30) //ms interval between each notification
+                  {
+                      if (error)
+                      {
+                          Progress_TextBox.Foreground = RED;
+                          Progress_TextBox.Text = message;
+                      }
+                      else
+                      {
+                          Progress_TextBox.Foreground = WHITE;
+                          Progress_TextBox.Text = message;
+                      }
+                      eventStopwatch.Restart();
+                  }
+              });
         }
 
         private void Next()
@@ -344,149 +326,153 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void MainListView_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            //Debug.WriteLine((char)e.Key);
 #if DEBUG
             if (((int)e.Key > 64 && (int)e.Key < 91) || ((int)e.Key > 47 && (int)e.Key < 58))
             {
                 char keyPressed = default;
                 switch (e.Key)
                 {
-                    case VirtualKey.Cancel:
-                        CancelFileTask();
+                    case Windows.System.VirtualKey.Cancel:
+                        if (fsCancellationTokenSource != null)
+                        {
+                            fsCancellationTokenSource.Cancel();
+                        }
                         return;
-                    case VirtualKey.MiddleButton:
+                    case Windows.System.VirtualKey.MiddleButton:
                         Debug.WriteLine("Middle button pressed");
                         break;
-                    case VirtualKey.XButton1:
+                    case Windows.System.VirtualKey.XButton1:
                         Debug.WriteLine("XButton1 pressed");
                         break;
-                    case VirtualKey.XButton2:
+                    case Windows.System.VirtualKey.XButton2:
                         Debug.WriteLine("XButton2 pressed");
                         break;
-                    case VirtualKey.Enter:
+                    case Windows.System.VirtualKey.Enter:
                         if (MainListView.SelectedItem != null)
                         {
                             Debug.WriteLine("Enter pressed, loading: " + CurrentFiles[MainListView.SelectedIndex].Path);
                             DisplayFiles(CurrentFiles[MainListView.SelectedIndex].Path);
                         }
                         return;
-                    case VirtualKey.Number0:
+                    case Windows.System.VirtualKey.Number0:
                         keyPressed = '0';
                         break;
-                    case VirtualKey.Number1:
+                    case Windows.System.VirtualKey.Number1:
                         keyPressed = '1';
                         break;
-                    case VirtualKey.Number2:
+                    case Windows.System.VirtualKey.Number2:
                         keyPressed = '2';
                         break;
-                    case VirtualKey.Number3:
+                    case Windows.System.VirtualKey.Number3:
                         keyPressed = '3';
                         break;
-                    case VirtualKey.Number4:
+                    case Windows.System.VirtualKey.Number4:
                         keyPressed = '4';
                         break;
-                    case VirtualKey.Number5:
+                    case Windows.System.VirtualKey.Number5:
                         keyPressed = '5';
                         break;
-                    case VirtualKey.Number6:
+                    case Windows.System.VirtualKey.Number6:
                         keyPressed = '6';
                         break;
-                    case VirtualKey.Number7:
+                    case Windows.System.VirtualKey.Number7:
                         keyPressed = '7';
                         break;
-                    case VirtualKey.Number8:
+                    case Windows.System.VirtualKey.Number8:
                         keyPressed = '8';
                         break;
-                    case VirtualKey.Number9:
+                    case Windows.System.VirtualKey.Number9:
                         keyPressed = '9';
                         break;
-                    case VirtualKey.A:
+                    case Windows.System.VirtualKey.A:
                         keyPressed = 'A';
                         break;
-                    case VirtualKey.B:
+                    case Windows.System.VirtualKey.B:
                         keyPressed = 'B';
                         break;
-                    case VirtualKey.C:
+                    case Windows.System.VirtualKey.C:
                         keyPressed = 'C';
                         break;
-                    case VirtualKey.D:
+                    case Windows.System.VirtualKey.D:
                         keyPressed = 'D';
                         break;
-                    case VirtualKey.E:
+                    case Windows.System.VirtualKey.E:
                         keyPressed = 'E';
                         break;
-                    case VirtualKey.F:
+                    case Windows.System.VirtualKey.F:
                         keyPressed = 'F';
                         break;
-                    case VirtualKey.G:
+                    case Windows.System.VirtualKey.G:
                         keyPressed = 'G';
                         break;
-                    case VirtualKey.H:
+                    case Windows.System.VirtualKey.H:
                         keyPressed = 'H';
                         break;
-                    case VirtualKey.I:
+                    case Windows.System.VirtualKey.I:
                         keyPressed = 'I';
                         break;
-                    case VirtualKey.J:
+                    case Windows.System.VirtualKey.J:
                         keyPressed = 'J';
                         break;
-                    case VirtualKey.K:
+                    case Windows.System.VirtualKey.K:
                         keyPressed = 'K';
                         break;
-                    case VirtualKey.L:
+                    case Windows.System.VirtualKey.L:
                         keyPressed = 'L';
                         break;
-                    case VirtualKey.M:
+                    case Windows.System.VirtualKey.M:
                         keyPressed = 'M';
                         break;
-                    case VirtualKey.N:
+                    case Windows.System.VirtualKey.N:
                         keyPressed = 'N';
                         break;
-                    case VirtualKey.O:
+                    case Windows.System.VirtualKey.O:
                         keyPressed = 'O';
                         break;
-                    case VirtualKey.P:
+                    case Windows.System.VirtualKey.P:
                         keyPressed = 'P';
                         break;
-                    case VirtualKey.Q:
+                    case Windows.System.VirtualKey.Q:
                         keyPressed = 'Q';
                         break;
-                    case VirtualKey.R:
+                    case Windows.System.VirtualKey.R:
                         keyPressed = 'R';
                         break;
-                    case VirtualKey.S:
+                    case Windows.System.VirtualKey.S:
                         keyPressed = 'S';
                         break;
-                    case VirtualKey.T:
+                    case Windows.System.VirtualKey.T:
                         keyPressed = 'T';
                         break;
-                    case VirtualKey.U:
+                    case Windows.System.VirtualKey.U:
                         keyPressed = 'U';
                         break;
-                    case VirtualKey.V:
+                    case Windows.System.VirtualKey.V:
                         keyPressed = 'V';
                         break;
-                    case VirtualKey.W:
+                    case Windows.System.VirtualKey.W:
                         keyPressed = 'W';
                         break;
-                    case VirtualKey.X:
+                    case Windows.System.VirtualKey.X:
                         keyPressed = 'X';
                         break;
-                    case VirtualKey.Y:
+                    case Windows.System.VirtualKey.Y:
                         keyPressed = 'Y';
                         break;
-                    case VirtualKey.Z:
+                    case Windows.System.VirtualKey.Z:
                         keyPressed = 'Z';
                         break;
-                    case VirtualKey.GoBack:
+                    case Windows.System.VirtualKey.GoBack:
                         Back();
                         return;
-                    case VirtualKey.GoForward:
+                    case Windows.System.VirtualKey.GoForward:
                         Next();
                         return;
-                    case VirtualKey.Refresh:
+                    case Windows.System.VirtualKey.Refresh:
                         Refresh();
                         return;
-                    case VirtualKey.Search:
+                    case Windows.System.VirtualKey.Search:
                         // give focus to the autosuggest box
                         break;
                 }
@@ -542,7 +528,10 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            CancelFileTask();
+            if (fsCancellationTokenSource != null)
+            {
+                fsCancellationTokenSource.Cancel();
+            }
         }
 
         private void Previous_Click(object sender, RoutedEventArgs e)
@@ -607,7 +596,10 @@ namespace MultitoolWinUI.Pages.Explorer
         private void OnMainWindowClosed(object sender, WindowEventArgs args)
         {
             App.Settings.SaveSetting(nameof(ExplorerPage), nameof(CurrentPath), CurrentPath);
-            CancelFileTask();
+            if (fsCancellationTokenSource != null)
+            {
+                fsCancellationTokenSource.Cancel();
+            }
         }
 
 #endregion

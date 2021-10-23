@@ -40,25 +40,6 @@ namespace MultitoolWinUI
                 IsPaneOpen = true;
             }
 
-            GetLastPage();
-
-#if !DEBUG
-            Trace.Listeners.Add(new WindowTrace(this));
-#endif
-        }
-
-        public bool IsPaneOpen { get; set; }
-
-        public void ClosePopup()
-        {
-            if (!DispatcherQueue.TryEnqueue(() => ExceptionPopup.IsOpen = false))
-            {
-                Trace.TraceWarning("Unable to queue action on the dispatcher queue");
-            }
-        }
-
-        private void GetLastPage()
-        {
             try
             {
                 string lastPageName = App.Settings.GetSetting<string>(nameof(MainWindow), nameof(lastPage));
@@ -86,14 +67,27 @@ namespace MultitoolWinUI
                         lastPage = typeof(HashGeneratorPage);
                         break;
                     default:
-                        Trace.TraceWarning("MainWindow.ctor : Unknown page");
+                        Trace.TraceWarning("MainWindow:ctor: Unknown page");
                         break;
                 }
             }
             catch (SettingNotFoundException) { }
+
+            Trace.Listeners.Add(new WindowTrace(this));
+        }
+
+        public bool IsPaneOpen { get; set; }
+
+        public void ClosePopup()
+        {
+            if (!DispatcherQueue.TryEnqueue(() => ExceptionPopup.IsOpen = false))
+            {
+                Trace.TraceWarning("Unable to queue action on the dispatcher queue");
+            }
         }
 
         #region navigation events
+
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
             if (lastPage != null)
@@ -156,9 +150,11 @@ namespace MultitoolWinUI
                 ContentFrame.GoBack();
             }
         }
+
         #endregion
 
         #region window events
+
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
@@ -178,6 +174,7 @@ namespace MultitoolWinUI
         {
             ExceptionPopup.IsOpen = false;
         }
+
         #endregion
     }
 }
