@@ -1,524 +1,620 @@
 <?xml version="1.0"?>
 <doc>
-    <assembly>
-        <name>Multitool.DAL</name>
-    </assembly>
-    <members>
-        <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
-            <summary>
-            Completes a path by a list of possible choices.
-            </summary>
-            <param name="input">Path input</param>
-            <returns>A list of possible choices</returns>
-        </member>
-        <member name="P:Multitool.DAL.DirectoryEntry.Size">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.DirectoryEntry.Delete">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.DirectoryEntry.Move(System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.DirectoryEntry.CopyTo(System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="T:Multitool.DAL.DirectorySizeCalculator">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.DirectorySizeCalculator.#ctor">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.DirectorySizeCalculator.#ctor(System.Boolean)">
-            <summary>
-            
-            </summary>
-            <param name="notify"></param>
-        </member>
-        <member name="P:Multitool.DAL.DirectorySizeCalculator.Notify">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.DirectorySizeCalculator.Progress">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.DirectorySizeCalculator.Exception">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySizeAsync(System.String,System.Action{System.Int64},System.Threading.CancellationToken)">
-            <summary>
-            Calculate the size of a directory asynchronously, directly pumping the size in real time.
-            </summary>
-            <param name="path"></param>
-            <param name="cancellationToken"></param>
-            <param name="setter"></param>
-        </member>
-        <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySizeAsync(System.String,System.Threading.CancellationToken)">
-            <summary>
-            
-            </summary>
-            <param name="path"></param>
-            <param name="cancellationToken"></param>
-            <returns></returns>
-        </member>
-        <member name="T:Multitool.DAL.Events.FileChangeEventArgs">
-            <summary>
-            Provides data for file system changes events.
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.Events.FileChangeEventArgs.InUse">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.Events.FileChangeEventArgs.Free">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileEntry.Size">
-            <inheritdoc/>
-            <exception cref="T:System.InvalidOperationException">The size cannot be set on a file.</exception>
-        </member>
-        <member name="M:Multitool.DAL.FileEntry.CopyTo(System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileEntry.Move(System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="T:Multitool.DAL.FileSystemCache">
-            <summary>
-            Provides logic to watch a directory for changes, and to signal the changes.
-            <see cref="T:Multitool.DAL.FileSystemCache"/> will only signal the changes and not update itself.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemCache.#ctor(System.String,System.Double)">
-            <summary>Constuctor.</summary>
-            <param name="path">File path to monitor</param>
-            <param name="ttl">Cache time-to-live</param>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemCache.Count">
-            <summary>Gets the internal item count.</summary>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemCache.Frozen">
-            <summary>Tells if the cache allow operations on it or not (true if no operation are allowed).</summary>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemCache.Partial">
-            <summary>True when the cache is not complete.</summary>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemCache.CreationTime">
-            <summary>Gets the creation time of the cache.</summary>
-        </member>
-        <!-- Badly formed XML comment ignored for member "E:Multitool.DAL.FileSystemCache.ItemChanged" -->
-        <member name="E:Multitool.DAL.FileSystemCache.TTLReached">
-            <summary>Fired whenever the cache TTL reached 0, and thus should be updated.</summary>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemCache.Dispose">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemCache.UnFreeze">
-            <summary>Unfroze the <see cref="T:Multitool.DAL.FileSystemCache"/> to re-allow operations on it.</summary>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemCache.Add(Multitool.DAL.FileSystemEntry)">
-            <summary>Add an <see cref="T:Multitool.DAL.FileSystemEntry"/> to the internal collection.</summary>
-            <param name="item"><see cref="T:Multitool.DAL.FileSystemEntry"/> to add</param>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemCache.Remove(Multitool.DAL.FileSystemEntry)">
-            <summary>Remove a <see cref="T:Multitool.DAL.FileSystemEntry"/> from the collection.</summary>
-            <param name="item"><see cref="T:Multitool.DAL.FileSystemEntry"/> to remove</param>
-            <returns>True if the item was removed, False if not</returns>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemCache.UpdateTTL(System.Double)">
-            <summary>Changes the time to live (TTL) value for the cache. Changing the value will act as if the TTL was reached.</summary>
-            <param name="newTTL">The new TTL</param>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemCache.Delete">
-            <summary>Use to discard the cache.</summary>
-        </member>
-        <member name="T:Multitool.DAL.FileSystemEntry">
-            <summary>
-            Base class for directory and file entries
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.#ctor(System.IO.FileSystemInfo)">
-            <summary>
-            Constructor
-            </summary>
-            <param name="info"></param>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.Size">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.Info">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.Attributes">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.IsHidden">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.IsSystem">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.IsReadOnly">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.IsEncrypted">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.IsCompressed">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.IsDevice">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.IsDirectory">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.Path">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.Name">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.FileSystemEntry.Partial">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemEntry.Deleted">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemEntry.SizedChanged">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemEntry.AttributesChanged">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemEntry.Renamed">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemEntry.PartialChanged">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.Rename(System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.Move(System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.RefreshInfos">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.Delete">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.CompareTo(System.Object)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.CompareTo(Multitool.DAL.IFileSystemEntry)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.Equals(Multitool.DAL.IFileSystemEntry)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.ToString">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.Equals(System.Object)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.GetHashCode">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.SetInfos(System.IO.FileSystemInfo)">
-            <summary>
-            Set path and name of this <see cref="T:Multitool.DAL.FileSystemEntry"/>. Use after refreshing info.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemEntry.CanRename(System.String)">
-            <summary>
-            Checks if an entry can be renamed.
-            </summary>
-            <param name="newName"></param>
-            <returns></returns>
-        </member>
-        <member name="T:Multitool.DAL.FileSystemManager">
-            <summary>
-            Class to manage <see cref="T:Multitool.DAL.IFileSystemEntry"/> with cache and async methods.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemManager.#ctor">
-            <summary>
-            Default constructor with default cache TTL and with <see cref="P:Multitool.DAL.FileSystemManager.Notify"/> set to false.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemManager.#ctor(System.Double,System.Boolean)">
-            <summary>
-            Constructor.
-            </summary>
-            <param name="ttl"></param>
-            <param name="notifyProgress"></param>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemManager.Change">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemManager.Completed">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemManager.Exception">
-            <inheritdoc/>
-        </member>
-        <member name="E:Multitool.DAL.FileSystemManager.Progress">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemManager.GetFileSystemEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemManager.GetRealPath(System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.FileSystemManager.Reset">
-            <inheritdoc/>
-        </member>
-        <member name="T:Multitool.DAL.IFileSystemEntry">
-            <summary>
-            Defines a <see cref="T:System.IO.FileSystemInfo"/> decorator
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.Attributes">
-            <summary>
-            Attributes
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.Info">
-            <summary>
-            The underlying <see cref="T:System.IO.FileSystemInfo"/> decorated by <see cref="T:Multitool.DAL.IFileSystemEntry"/>
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.IsCompressed">
-            <summary>
-            True if the file is compressed
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.IsDevice">
-            <summary>
-            True is the file is considered device
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.IsDirectory">
-            <summary>
-            True if the file is a directory
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.IsEncrypted">
-            <summary>
-            True if the file is encrypted
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.IsHidden">
-            <summary>
-            True if the file is hidden
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.IsReadOnly">
-            <summary>
-            True if the file is readonly
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.IsSystem">
-            <summary>
-            True if the file belongs to the system
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.Name">
-            <summary>
-            Name of the file (not the path)
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.Partial">
-            <summary>
-            True if the entry is marked as partial, meaning that this entry has not been fully computed yet.
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.Path">
-            <summary>
-            Path of the file (system full path)
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IFileSystemEntry.Size">
-            <summary>
-            Size of the entry on the disk
-            </summary>
-        </member>
-        <member name="E:Multitool.DAL.IFileSystemEntry.AttributesChanged">
-            <summary>
-            Raises when the attributes are changed (IsCompressed, IsDevice, IsDirectory, ...);
-            </summary>
-        </member>
-        <member name="E:Multitool.DAL.IFileSystemEntry.Deleted">
-            <summary>
-            Raised when the entry no longer exists on the disk (has been moved or deleted)
-            </summary>
-        </member>
-        <member name="E:Multitool.DAL.IFileSystemEntry.PartialChanged">
-            <summary>
-            Fired when <see cref="P:Multitool.DAL.IFileSystemEntry.Partial"/> is changed.
-            </summary>
-        </member>
-        <member name="E:Multitool.DAL.IFileSystemEntry.Renamed">
-            <summary>
-            Raised when renamed
-            </summary>
-        </member>
-        <member name="E:Multitool.DAL.IFileSystemEntry.SizedChanged">
-            <summary>
-            Raised when the size changes 
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.IFileSystemEntry.Delete">
-            <summary>
-            Deletes the file
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.IFileSystemEntry.Rename(System.String)">
-            <summary>
-            Rename the file
-            </summary>
-            <param name="newName">The new name of the file</param>
-        </member>
-        <member name="M:Multitool.DAL.IFileSystemEntry.Move(System.String)">
-            <summary>
-            Move the file to a new directory
-            </summary>
-            <param name="newPath">The path to move the file to</param>
-            <exception cref="T:System.IO.IOException">Thrown when the entry cannot be moved.</exception>
-        </member>
-        <member name="M:Multitool.DAL.IFileSystemEntry.CopyTo(System.String)">
-            <summary>
-            Copy the file to a new directory
-            </summary>
-            <param name="newPath">The path to copy the file to</param>
-        </member>
-        <member name="E:Multitool.DAL.IFileSystemManager.Change">
-            <summary>
-            Fired when the one or more items in the cache have changed.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.IFileSystemManager.GetFileSystemEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
-            <summary>
-            <para>
-            List the content of a directory as a <see cref="T:System.Collections.Generic.IList`1"/>.
-            </para>
-            <para>
-            Because each directory size is calculated, the task can be 
-            cancelled with the <paramref name="cancellationToken"/>.</para>
-            </summary>
-            <typeparam name="ItemType">Generic param of the <see cref="T:System.Collections.Generic.IList`1"/></typeparam>
-            <param name="path">System file path</param>
-            <param name="cancellationToken">Cancellation token to cancel this method</param>
-            <param name="list">Collection to add items to</param>
-            <param name="addDelegate">Delegate to add items to the <paramref name="list"/></param>
-            <exception cref="T:System.ArgumentNullException">
-            If either <paramref name="list"/> or <paramref name="cancellationToken"/> is null/>
-            </exception>
-        </member>
-        <member name="M:Multitool.DAL.IFileSystemManager.GetRealPath(System.String)">
-            <summary>
-            Get the case sensitive path for the <paramref name="path"/> parameter.
-            </summary>
-            <param name="path"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Multitool.DAL.IFileSystemManager.Reset">
-            <summary>
-            Cleans the internal cache.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.WatcherFactory.CreateWatcher(System.String,System.IO.NotifyFilters,Multitool.DAL.WatcherDelegates)">
-            <summary>
-            Creates an instance of <see cref="T:System.IO.FileSystemWatcher"/> with the specified path and notify filters.
-            </summary>
-            <param name="path">Path for the watcher to watch</param>
-            <param name="filters"><see cref="T:System.IO.NotifyFilters"/></param>
-            <param name="delegates">Delegates for <see cref="T:System.IO.FileSystemWatcher"/> events. (see <see cref="T:Multitool.DAL.WatcherDelegates"/>)</param>
-            <returns>The created watcher</returns>
-        </member>
-        <member name="M:Multitool.DAL.WatcherFactory.CreateWatcher(System.String,Multitool.DAL.WatcherDelegates)">
-            <summary>
-            Creates an instance of <see cref="T:System.IO.FileSystemWatcher"/> with the specified path.
-            </summary>
-            <param name="path">Path for the watcher to watch</param>
-            <param name="delegates">Delegates for <see cref="T:System.IO.FileSystemWatcher"/> events. (see <see cref="T:Multitool.DAL.WatcherDelegates"/>)</param>
-            <returns>The created watcher</returns>
-        </member>
-        <member name="E:Multitool.DAL.IProgressNotifier.Progress">
-            <summary>
-            Fires each time a subtask is completed.
-            </summary>
-        </member>
-        <member name="E:Multitool.DAL.IProgressNotifier.Exception">
-            <summary>
-            Fired when the task fails. Carries the exception that caused the failure.
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.IProgressNotifier.Notify">
-            <summary>
-            Set it to true to allow to fire the <see cref="E:Multitool.DAL.IProgressNotifier.Progress"/> event.
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.ISettings.DataContainer">
-            <summary>
-            The <see cref="T:Windows.Storage.ApplicationDataContainer"/> associated with this instance
-            </summary>
-        </member>
-        <member name="P:Multitool.DAL.ISettings.SettingFormat">
-            <summary>
-            How the setting key will be created
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.ISettings.GetSetting``1(System.String,System.String)">
-            <summary>
-            
-            </summary>
-            <typeparam name="T"></typeparam>
-            <param name="callerName"></param>
-            <param name="name"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Multitool.DAL.ISettings.SaveSetting(System.String,System.String,System.Object)">
-            <summary>
-            <para>
-            Saves a setting to the provided <see cref="P:Multitool.DAL.ISettings.DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="P:Multitool.DAL.ISettings.SettingFormat"/>.
-            </para>
-            <para>
-            If the setting does not exists an entry will be created, if it does the value will be updated.
-            </para>
-            </summary>
-            <param name="callerName">Name of the caller (should be unique)</param>
-            <param name="name">Name of the setting</param>
-            <param name="value">Value to save</param>
-        </member>
-        <member name="M:Multitool.DAL.ISettings.TryGetSetting(System.String,System.String)">
-            <summary>
-            
-            </summary>
-            <param name="callerName"></param>
-            <param name="name"></param>
-            <returns></returns>
-        </member>
-        <member name="P:Multitool.DAL.Settings.DataContainer">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.Settings.SettingFormat">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SaveSetting(System.String,System.String,System.Object)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.GetSetting``1(System.String,System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.TryGetSetting(System.String,System.String)">
-            <inheritdoc/>
-        </member>
-    </members>
+  <assembly>
+    <name>Multitool.DAL</name>
+  </assembly>
+  <members>
+    <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
+      <summary>
+        Completes a path by a list of possible choices.
+      </summary>
+      <param name="input">Path input</param>
+      <returns>A list of possible choices</returns>
+    </member>
+    <member name="T:Multitool.DAL.FileSystem.Events.CacheUpdatingEventArgs">
+      <summary>
+        Provides data for cache updating event.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.Events.CacheUpdatingEventArgs.#ctor(System.String)">
+      <summary>
+        Constructor.
+      </summary>
+      <param name="path">The path updating</param>
+    </member>
+    <member name="P:Multitool.DAL.FileSystem.Events.CacheUpdatingEventArgs.Path">
+      <summary>
+        Path updating.
+      </summary>
+    </member>
+    <member name="T:Multitool.DAL.FileSystem.Events.ChangeEventArgs">
+      <summary>
+        Provides data for file system changes events.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.Events.ChangeEventArgs.#ctor">
+      <summary>
+        Default constructor
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.Events.ChangeEventArgs.#ctor(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystem.Events.ChangeTypes)">
+      <summary>
+        Constructor
+      </summary>
+      <param name="entry"></param>
+      <param name="changeTypes"></param>
+    </member>
+    <member name="P:Multitool.DAL.FileSystem.Events.ChangeEventArgs.Entry">
+      <summary>
+        Entry associated with the event
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.FileSystem.Events.ChangeEventArgs.ChangeTypes">
+      <summary>
+        Why this event was raised
+      </summary>
+    </member>
+    <member name="T:Multitool.DAL.FileSystem.FileSystemCache">
+      <summary>
+        Provides logic to cache and watch a directory for changes, and to signal the changes.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemCache.#ctor(System.String,System.Double)">
+      <summary>Constuctor.</summary>
+      <param name="path">File path to monitor</param>
+      <param name="ttl">Cache time-to-live</param>
+    </member>
+    <member name="P:Multitool.DAL.FileSystem.FileSystemCache.Count">
+      <summary>Gets the internal item count.</summary>
+    </member>
+    <member name="P:Multitool.DAL.FileSystem.FileSystemCache.Frozen">
+      <summary>Tells if the cache allow operations on it or not (true if no operation are allowed).</summary>
+    </member>
+    <member name="P:Multitool.DAL.FileSystem.FileSystemCache.Partial">
+      <summary>True when the cache is not complete.</summary>
+    </member>
+    <member name="P:Multitool.DAL.FileSystem.FileSystemCache.CreationTime">
+      <summary>Gets the creation time of the cache.</summary>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemCache.Changed">
+      <summary>
+        Raised when a change occured. :)
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemCache.Updating">
+      <summary>
+        Raised whenever the cache TTL reached 0 and the cache is updating.
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemCache.Deleted">
+      <summary>
+        Raised when the cache's directory (<see cref="P:Multitool.DAL.FileSystem.FileSystemCache.Path"/>) is deleted.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemCache.Dispose">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemCache.UnFreeze">
+      <summary>
+        Unfreeze the <see cref="T:Multitool.DAL.FileSystem.FileSystemCache"/> to re-allow operations on it.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemCache.Add(Multitool.DAL.FileSystemEntry)">
+      <summary>
+        Add an <see cref="T:Multitool.DAL.FileSystemEntry"/> to the internal collection.
+      </summary>
+      <param name="item">
+        <see cref="T:Multitool.DAL.FileSystemEntry"/> to add
+      </param>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemCache.Remove(Multitool.DAL.FileSystemEntry)">
+      <summary>
+        Remove a <see cref="T:Multitool.DAL.FileSystemEntry"/> from the collection.
+      </summary>
+      <param name="item">
+        <see cref="T:Multitool.DAL.FileSystemEntry"/> to remove
+      </param>
+      <returns>
+        <see langword="true"/> if the item was removed, <see langword="false"/> if not
+      </returns>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemCache.UpdateTTL(System.Double)">
+      <summary>
+        Changes the time to live (TTL) value for the cache. Changing the value will act as if the TTL was reached.
+      </summary>
+      <param name="newTTL">The new TTL</param>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemCache.Delete">
+      <summary>
+        Use to discard the cache.
+      </summary>
+    </member>
+    <member name="T:Multitool.DAL.FileSystem.FileSystemManager">
+      <summary>
+        Class to manage <see cref="T:Multitool.DAL.IFileSystemEntry"/> with cache and async methods.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemManager.#ctor">
+      <summary>
+        Default constructor with default cache TTL and with <see cref="P:Multitool.DAL.FileSystem.FileSystemManager.Notify"/> set to <see langword="false"/>.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemManager.#ctor(System.Double,System.Boolean)">
+      <summary>
+        Constructor.
+      </summary>
+      <param name="ttl"></param>
+      <param name="notifyProgress"></param>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemManager.Changed">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemManager.CacheUpdating">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemManager.Completed">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemManager.Exception">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.FileSystemManager.Progress">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemManager.GetFileSystemEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemManager.GetRealPath(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.FileSystemManager.Reset">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.IFileSystemManager.Changed">
+      <summary>
+        Raised when the one or more items in the cache have changed.
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.FileSystem.IFileSystemManager.CacheUpdating">
+      <summary>
+        Raised when a cached path is updating.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.IFileSystemManager.GetFileSystemEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
+      <summary>
+        <para>
+          List the content of a directory as a <see cref="T:System.Collections.Generic.IList`1"/>.
+        </para>
+        <para>
+          Because each directory size is calculated, the task can be
+          cancelled with the <paramref name="cancellationToken"/>.
+        </para>
+      </summary>
+      <typeparam name="ItemType">
+        Generic param of the <see cref="T:System.Collections.Generic.IList`1"/>
+      </typeparam>
+      <param name="path">System file path</param>
+      <param name="cancellationToken">Cancellation token to cancel this method</param>
+      <param name="list">Collection to add items to</param>
+      <param name="addDelegate">
+        Delegate to add items to the <paramref name="list"/>
+      </param>
+      <exception cref="T:System.ArgumentNullException">
+        If either <paramref name="list"/> or <paramref name="cancellationToken"/> is null/>
+      </exception>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.IFileSystemManager.GetRealPath(System.String)">
+      <summary>
+        Get the case sensitive path for the <paramref name="path"/> parameter.
+      </summary>
+      <param name="path"></param>
+      <returns>The "real" path</returns>
+    </member>
+    <member name="M:Multitool.DAL.FileSystem.IFileSystemManager.Reset">
+      <summary>
+        Cleans the internal cache.
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.DirectoryEntry.Size">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.DirectoryEntry.CopyTo(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.DirectoryEntry.Delete">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.DirectoryEntry.Move(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="T:Multitool.DAL.DirectorySizeCalculator">
+      <summary>
+
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.DirectorySizeCalculator.#ctor">
+      <summary>
+
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.DirectorySizeCalculator.#ctor(System.Boolean)">
+      <summary>
+
+      </summary>
+      <param name="notify"></param>
+    </member>
+    <member name="P:Multitool.DAL.DirectorySizeCalculator.Notify">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.DirectorySizeCalculator.Progress">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.DirectorySizeCalculator.Exception">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySizeAsync(System.String,System.Action{System.Int64},System.Threading.CancellationToken)">
+      <summary>
+        Calculate the size of a directory asynchronously, directly pumping the size in real time.
+      </summary>
+      <param name="path"></param>
+      <param name="cancellationToken"></param>
+      <param name="setter"></param>
+    </member>
+    <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySizeAsync(System.String,System.Threading.CancellationToken)">
+      <summary>
+
+      </summary>
+      <param name="path"></param>
+      <param name="cancellationToken"></param>
+      <returns></returns>
+    </member>
+    <member name="P:Multitool.DAL.FileEntry.Size">
+      <inheritdoc/>
+      <exception cref="T:System.InvalidOperationException">The size cannot be set on a file.</exception>
+    </member>
+    <member name="M:Multitool.DAL.FileEntry.CopyTo(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileEntry.Move(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="T:Multitool.DAL.FileSystemEntry">
+      <summary>
+        Base class for directory and file entries
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.#ctor(System.IO.FileSystemInfo)">
+      <summary>
+        Constructor
+      </summary>
+      <param name="info"></param>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.Size">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.Info">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.Attributes">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.IsHidden">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.IsSystem">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.IsReadOnly">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.IsEncrypted">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.IsCompressed">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.IsDevice">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.IsDirectory">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.Path">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.Name">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.FileSystemEntry.Partial">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystemEntry.Deleted">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystemEntry.SizedChanged">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystemEntry.AttributesChanged">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystemEntry.Renamed">
+      <inheritdoc/>
+    </member>
+    <member name="E:Multitool.DAL.FileSystemEntry.PartialChanged">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.CopyTo(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.GetAccessControl">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.Move(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.RefreshInfos">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.Rename(System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.CompareTo(System.Object)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.CompareTo(Multitool.DAL.IFileSystemEntry)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.Delete">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.Equals(System.Object)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.Equals(Multitool.DAL.IFileSystemEntry)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.GetHashCode">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.ToString">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.SetInfos(System.IO.FileSystemInfo)">
+      <summary>
+        Set path and name of this <see cref="T:Multitool.DAL.FileSystemEntry"/>. Use after refreshing info.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.FileSystemEntry.CanRename(System.String)">
+      <summary>
+        Checks if an entry can be renamed.
+      </summary>
+      <param name="newName"></param>
+      <returns></returns>
+    </member>
+    <member name="T:Multitool.DAL.IFileSystemEntry">
+      <summary>
+        Defines a <see cref="T:System.IO.FileSystemInfo"/> decorator.
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.Attributes">
+      <summary>
+        Attributes
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.Info">
+      <summary>
+        The underlying <see cref="T:System.IO.FileSystemInfo"/> decorated by <see cref="T:Multitool.DAL.IFileSystemEntry"/>
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.IsCompressed">
+      <summary>
+        <see langword="true"/> if the file is compressed
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.IsDevice">
+      <summary>
+        <see langword="true"/> is the file is considered device
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.IsDirectory">
+      <summary>
+        <see langword="true"/> if the file is a directory
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.IsEncrypted">
+      <summary>
+        <see langword="true"/> if the file is encrypted
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.IsHidden">
+      <summary>
+        <see langword="true"/> if the file is hidden
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.IsReadOnly">
+      <summary>
+        <see langword="true"/> if the file is readonly
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.IsSystem">
+      <summary>
+        <see langword="true"/> if the file belongs to the system
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.Name">
+      <summary>
+        Name of the file (not the path)
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.Partial">
+      <summary>
+        <see langword="true"/> if the entry is marked as partial, meaning that this entry has not been fully computed yet.
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.Path">
+      <summary>
+        Path of the file (system full path)
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IFileSystemEntry.Size">
+      <summary>
+        Size of the entry on the disk
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.IFileSystemEntry.AttributesChanged">
+      <summary>
+        Raises when the attributes are changed (IsCompressed, IsDevice, IsDirectory, ...);
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.IFileSystemEntry.Deleted">
+      <summary>
+        Raised when the entry no longer exists on the disk (has been moved or deleted)
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.IFileSystemEntry.PartialChanged">
+      <summary>
+        Fired when <see cref="P:Multitool.DAL.IFileSystemEntry.Partial"/> is changed.
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.IFileSystemEntry.Renamed">
+      <summary>
+        Raised when renamed
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.IFileSystemEntry.SizedChanged">
+      <summary>
+        Raised when the size changes
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.IFileSystemEntry.CopyTo(System.String)">
+      <summary>
+        Copy the file to a new directory.
+      </summary>
+      <param name="newPath">The path to copy the file to</param>
+    </member>
+    <member name="M:Multitool.DAL.IFileSystemEntry.Delete">
+      <summary>
+        Deletes the file.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.IFileSystemEntry.GetAccessControl">
+      <summary>
+        Gets the access controls for this entry.
+      </summary>
+      <returns>
+        <see cref="T:System.Security.AccessControl.FileSystemSecurity"/> associated with this entry
+      </returns>
+    </member>
+    <member name="M:Multitool.DAL.IFileSystemEntry.Move(System.String)">
+      <summary>
+        Moves the file to a new directory.
+      </summary>
+      <param name="newPath">The path to move the file to</param>
+      <exception cref="T:System.IO.IOException">Thrown when the entry cannot be moved.</exception>
+    </member>
+    <member name="M:Multitool.DAL.IFileSystemEntry.Rename(System.String)">
+      <summary>
+        Renames the file.
+      </summary>
+      <param name="newName">The new name of the file</param>
+    </member>
+    <member name="M:Multitool.DAL.IFileSystemEntry.RefreshInfos">
+      <summary>
+        Forces sync with the local filesystem.
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.WatcherFactory.CreateWatcher(System.String,System.IO.NotifyFilters,Multitool.DAL.WatcherDelegates)">
+      <summary>
+        Creates an instance of <see cref="T:System.IO.FileSystemWatcher"/> with the specified path and notify filters.
+      </summary>
+      <param name="path">Path for the watcher to watch</param>
+      <param name="filters">
+        <see cref="T:System.IO.NotifyFilters"/>
+      </param>
+      <param name="delegates">
+        Delegates for <see cref="T:System.IO.FileSystemWatcher"/> events. (see <see cref="T:Multitool.DAL.WatcherDelegates"/>)
+      </param>
+      <returns>The created watcher</returns>
+    </member>
+    <member name="M:Multitool.DAL.WatcherFactory.CreateWatcher(System.String,Multitool.DAL.WatcherDelegates)">
+      <summary>
+        Creates an instance of <see cref="T:System.IO.FileSystemWatcher"/> with the specified path.
+      </summary>
+      <param name="path">Path for the watcher to watch</param>
+      <param name="delegates">
+        Delegates for <see cref="T:System.IO.FileSystemWatcher"/> events. (see <see cref="T:Multitool.DAL.WatcherDelegates"/>)
+      </param>
+      <returns>The created watcher</returns>
+    </member>
+    <member name="E:Multitool.DAL.IProgressNotifier.Progress">
+      <summary>
+        Fires each time a subtask is completed.
+      </summary>
+    </member>
+    <member name="E:Multitool.DAL.IProgressNotifier.Exception">
+      <summary>
+        Fired when the task fails. Carries the exception that caused the failure.
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.IProgressNotifier.Notify">
+      <summary>
+        Set it to true to allow to fire the <see cref="E:Multitool.DAL.IProgressNotifier.Progress"/> event.
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.ISettings.DataContainer">
+      <summary>
+        The <see cref="T:Windows.Storage.ApplicationDataContainer"/> associated with this instance
+      </summary>
+    </member>
+    <member name="P:Multitool.DAL.ISettings.SettingFormat">
+      <summary>
+        How the setting key will be created
+      </summary>
+    </member>
+    <member name="M:Multitool.DAL.ISettings.GetSetting``1(System.String,System.String)">
+      <summary>
+
+      </summary>
+      <typeparam name="T"></typeparam>
+      <param name="callerName"></param>
+      <param name="name"></param>
+      <returns></returns>
+    </member>
+    <member name="M:Multitool.DAL.ISettings.SaveSetting(System.String,System.String,System.Object)">
+      <summary>
+        <para>
+          Saves a setting to the provided <see cref="P:Multitool.DAL.ISettings.DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="P:Multitool.DAL.ISettings.SettingFormat"/>.
+        </para>
+        <para>
+          If the setting does not exists an entry will be created, if it does the value will be updated.
+        </para>
+      </summary>
+      <param name="callerName">Name of the caller (should be unique)</param>
+      <param name="name">Name of the setting</param>
+      <param name="value">Value to save</param>
+    </member>
+    <member name="M:Multitool.DAL.ISettings.TryGetSetting(System.String,System.String)">
+      <summary>
+
+      </summary>
+      <param name="callerName"></param>
+      <param name="name"></param>
+      <returns></returns>
+    </member>
+    <member name="P:Multitool.DAL.Settings.DataContainer">
+      <inheritdoc/>
+    </member>
+    <member name="P:Multitool.DAL.Settings.SettingFormat">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.Settings.SaveSetting(System.String,System.String,System.Object)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.Settings.GetSetting``1(System.String,System.String)">
+      <inheritdoc/>
+    </member>
+    <member name="M:Multitool.DAL.Settings.TryGetSetting(System.String,System.String)">
+      <inheritdoc/>
+    </member>
+  </members>
 </doc>
