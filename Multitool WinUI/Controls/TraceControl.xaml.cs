@@ -33,7 +33,7 @@ namespace MultitoolWinUI.Controls
     public sealed partial class TraceControl : UserControl
     {
         private readonly ConcurrentQueue<DispatcherQueueHandler> displayQueue = new();
-        private readonly Timer messageTimer = new() { AutoReset = true, Interval = 3000 };
+        private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false, Interval = 3000 };
         private readonly object _lock = new();
         private volatile bool closed;
         private volatile bool busy;
@@ -55,15 +55,51 @@ namespace MultitoolWinUI.Controls
         }
 
         #region properties
+#if DEBUG
+        public double Interval
+        {
+            get => messageTimer.Interval;
+            set => messageTimer.Interval = value;
+        }
+        /// <summary>
+        /// Glyph to append to the title.
+        /// </summary>
+        public string TitleGlyph
+        {
+            get => Icon.Glyph;
+            set => Icon.Glyph = value;
+        }
 
+        /// <summary>
+        /// Title of the control.
+        /// </summary>
+        public string Title
+        {
+            get => TitleTextBlock.Text;
+            set => TitleTextBlock.Text = value;
+        }
+
+        /// <summary>
+        /// Header of the optional control's content.
+        /// </summary>
+        public string Header
+        {
+            get => HeaderTextBlock.Text;
+            set => HeaderTextBlock.Text = value;
+        }
+
+        public string Message
+        {
+            get => ContentTextBlock.Text;
+            set => ContentTextBlock.Text = value;
+        }
+#else
         #region dependency properties
         public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(nameof(Header), typeof(string), typeof(TraceControl), new(string.Empty));
 
         public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(TraceControl), new(string.Empty));
 
         public static readonly DependencyProperty TitleGlyphProperty = DependencyProperty.Register(nameof(TitleGlyph), typeof(string), typeof(TraceControl), new("\xE783"));
-
-        public static readonly DependencyProperty IsOpenProperty = DependencyProperty.Register(nameof(IsOpen), typeof(bool), typeof(TraceControl), new(false));
 
         public static readonly DependencyProperty MessageProperty = DependencyProperty.Register(nameof(MessageProperty), typeof(object), typeof(TraceControl), new(null));
         #endregion
@@ -95,20 +131,12 @@ namespace MultitoolWinUI.Controls
             set => SetValue(HeaderProperty, value);
         }
 
-        /// <summary>
-        /// Sets if the pop-up is open.
-        /// </summary>
-        public bool IsOpen
-        {
-            get => (bool)GetValue(IsOpenProperty);
-            set => SetValue(IsOpenProperty, value);
-        }
-
         public object Message
         {
             get => GetValue(MessageProperty);
             set => SetValue(MessageProperty, value);
         }
+#endif
 
         public bool Sync { get; set; } = true;
         #endregion
@@ -181,10 +209,27 @@ namespace MultitoolWinUI.Controls
                 return false;
             }
         }
+
+#if DEBUG
+        private void SetTitle(string title)
+        {
+            TitleTextBlock.Text = title;
+        }
+
+        private void SetHeader(string header)
+        {
+            HeaderTextBlock.Text = header;
+        }
+
+        private void SetMessage(string message)
+        {
+            ContentTextBlock.Text = message;
+        }
+#endif
         #endregion
 
         #region event handlers
-#if !DEBUG
+#if false
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine(nameof(TraceControl) + " loaded");

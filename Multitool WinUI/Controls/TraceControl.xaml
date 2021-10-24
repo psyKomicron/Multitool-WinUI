@@ -30,6 +30,7 @@
         </Grid.RowDefinitions>
 
         <FontIcon 
+            x:Name="Icon"
             FontFamily="{StaticResource SymbolThemeFontFamily}"
             Glyph="{Binding ElementName=Control, Path=TitleGlyph}"
             VerticalAlignment="Center"
@@ -37,6 +38,7 @@
             Grid.RowSpan="4"/>
 
         <TextBlock 
+            x:Name="TitleTextBlock"
             Text="{Binding ElementName=Control, Path=Title}"
             VerticalAlignment="Center"
             FontWeight="SemiBold"
@@ -45,7 +47,7 @@
             Grid.RowSpan="4"/>
 
         <TextBlock
-            Name="HeaderTextBlock"
+            x:Name="HeaderTextBlock"
             FontSize="20"
             FontWeight="Bold"
             Text="{Binding ElementName=Control, Path=Header}"
