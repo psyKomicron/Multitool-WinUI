@@ -38,13 +38,40 @@ namespace Multitool.DAL
         public FileAttributes Attributes => Info.Attributes;
 
         /// <inheritdoc/>
-        public bool IsHidden => (Attributes & FileAttributes.Hidden) != 0;
-
+        public bool IsHidden
+        {
+            get => (Attributes & FileAttributes.Hidden) != 0;
+            set
+            {
+                if (!value)
+                {
+                    RemoveIsHidden();
+                }
+                else
+                {
+                    SetHidden();
+                }
+            }
+        }
         /// <inheritdoc/>
         public bool IsSystem => (Attributes & FileAttributes.System) != 0;
 
         /// <inheritdoc/>
-        public bool IsReadOnly => (Attributes & FileAttributes.ReadOnly) != 0;
+        public bool IsReadOnly
+        {
+            get => (Attributes & FileAttributes.ReadOnly) != 0;
+            set
+            {
+                if (!value)
+                {
+                    RemoveReadOnly();
+                }
+                else
+                {
+                    SetReadOnly();
+                }
+            }
+        }
 
         /// <inheritdoc/>
         public bool IsEncrypted => (Attributes & FileAttributes.Encrypted) != 0;
@@ -74,7 +101,6 @@ namespace Multitool.DAL
 #if false
                 _ = Task.Run(() => PartialChanged?.Invoke(this, value));
 #else
-
                 PartialChanged?.Invoke(this, value);
 #endif
             }
@@ -119,6 +145,20 @@ namespace Multitool.DAL
 
         #region public methods
         /// <inheritdoc/>
+        public virtual void Delete()
+        {
+            if (CanDelete())
+            {
+                Info.Delete();
+                RaiseDeletedEvent();
+            }
+            else
+            {
+                throw CreateDeleteIOException();
+            }
+        }
+
+        /// <inheritdoc/>
         public int CompareTo(object obj)
         {
             if (obj is FileSystemEntry that)
@@ -155,19 +195,6 @@ namespace Multitool.DAL
         }
 
         /// <inheritdoc/>
-        public virtual void Delete()
-        {
-            if (CanDelete())
-            {
-                Info.Delete();
-            }
-            else
-            {
-                throw CreateDeleteIOException();
-            }
-        }
-
-        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             return ReferenceEquals(this, obj) || (obj is not null && Equals(obj as IFileSystemEntry));
@@ -177,6 +204,12 @@ namespace Multitool.DAL
         public bool Equals(IFileSystemEntry other)
         {
             return other != null && Path.Equals(other.Path, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public bool Equals(FileSystemInfo info)
+        {
+            return Path.Equals(info.FullName, StringComparison.OrdinalIgnoreCase) &&
+                Attributes == info.Attributes;
         }
 
         /// <inheritdoc/>
@@ -191,6 +224,7 @@ namespace Multitool.DAL
             return Name + ", " + Path;
         }
 
+        #region operators
         public static bool operator ==(FileSystemEntry left, FileSystemEntry right)
         {
             return left is null ? right is null : left.Equals(right);
@@ -220,6 +254,8 @@ namespace Multitool.DAL
         {
             return left is null ? right is null : left.CompareTo(right) >= 0;
         }
+        #endregion
+
         #endregion
 
         #region protected methods
@@ -331,12 +367,34 @@ namespace Multitool.DAL
             return CreateDeleteIOException(Info);
         }
 
-        protected void RemoveReadOnly(FileSystemInfo info)
+        protected void RemoveReadOnly()
         {
-            info.Attributes &= ~FileAttributes.ReadOnly;
-            AttributesChanged?.Invoke(this, FileAttributes.ReadOnly);
+            Info.Attributes &= ~FileAttributes.ReadOnly;
+            RaiseAttributesChangedEvent(FileAttributes.ReadOnly);
         }
 
+        protected static void RemoveReadOnly(FileSystemInfo info)
+        {
+            info.Attributes &= ~FileAttributes.ReadOnly;
+        }
+
+        protected void RemoveIsHidden()
+        {
+            Info.Attributes &= ~FileAttributes.ReadOnly;
+            RaiseAttributesChangedEvent(FileAttributes.Hidden);
+        }
+
+        protected void SetReadOnly()
+        {
+            Info.Attributes |= FileAttributes.ReadOnly;
+        }
+
+        protected void SetHidden()
+        {
+            Info.Attributes |= FileAttributes.Hidden;
+        }
+
+        #region event invoke
         protected void RaiseDeletedEvent()
         {
             Deleted?.Invoke(this, new ChangeEventArgs(this, ChangeTypes.FileDeleted));
@@ -356,6 +414,8 @@ namespace Multitool.DAL
         {
             Renamed?.Invoke(this, oldPath);
         }
+        #endregion
+
         #endregion
     }
 }

@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.AccessControl;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Multitool.DAL
 {
@@ -111,7 +110,7 @@ namespace Multitool.DAL
 
         public override void RefreshInfos()
         {
-            _RefreshInfos();
+            RefreshInfosAsync();
         }
         #endregion
 
@@ -173,7 +172,7 @@ namespace Multitool.DAL
             }
         }
 
-        private async void _RefreshInfos()
+        private async void RefreshInfosAsync()
         {
             string oldPath = Path;
             dirInfo.Refresh();
@@ -184,6 +183,7 @@ namespace Multitool.DAL
             SetInfos(dirInfo);
             Partial = true;
             Size = await new DirectorySizeCalculator().CalculateDirectorySizeAsync(Path, CancellationToken.None);
+            Partial = false;
         }
         #endregion
     }

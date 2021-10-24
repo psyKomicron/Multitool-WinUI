@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
 using Multitool.DAL;
-using Multitool.DAL.Events;
 using Multitool.DAL.FileSystem.Events;
 
 using MultitoolWinUI.Helpers;
@@ -90,9 +89,16 @@ namespace MultitoolWinUI.Controls
 
         public bool IsEncrypted => FileSystemEntry.IsEncrypted;
 
-        public bool IsHidden => FileSystemEntry.IsHidden;
-
-        public bool IsReadOnly => FileSystemEntry.IsReadOnly;
+        public bool IsHidden
+        {
+            get => FileSystemEntry.IsHidden;
+            set => FileSystemEntry.IsHidden = value;
+        }
+        public bool IsReadOnly
+        {
+            get => FileSystemEntry.IsReadOnly;
+            set => FileSystemEntry.IsReadOnly = value;
+        }
 
         public bool IsSystem => FileSystemEntry.IsSystem;
 
@@ -216,7 +222,6 @@ namespace MultitoolWinUI.Controls
         #endregion
 
         #region view
-
         public ListView ListView { get; set; }
 
         public Page Page { get; set; }
@@ -274,7 +279,6 @@ namespace MultitoolWinUI.Controls
                 RaiseNotifyPropertyChanged();
             }
         }
-
         #endregion
 
         public event PropertyChangedEventHandler PropertyChanged;

@@ -304,21 +304,11 @@
             Ignore if earlier than Windows 10 (10.0.10240.0).
             </summary>
         </member>
-        <member name="T:Multitool.Optimisation.IPoolableObject">
+        <member name="T:Multitool.Optimisation.ObjectPool`1">
             <summary>
-            Allows for objects to be reused when they are not longer used.
-            Mainly used for event data.
+            To pool objects to reduce instanciation delay when using a lot of the same objects.
             </summary>
-        </member>
-        <member name="P:Multitool.Optimisation.IPoolableObject.InUse">
-            <summary>
-            Tells if the <see cref="T:Multitool.Optimisation.IPoolableObject"/> is in use and thus cannot be used by the pool.
-            </summary>
-        </member>
-        <member name="E:Multitool.Optimisation.IPoolableObject.Free">
-            <summary>
-            Fired when the object is free to be reused by the <see cref="T:Multitool.Optimisation.ObjectPool`1"/>.
-            </summary>
+            <typeparam name="T">Type of the object to pool</typeparam>
         </member>
         <member name="M:Multitool.Optimisation.ObjectPool`1.#ctor">
             <summary>Initialise the pool with the <see cref="F:Multitool.Optimisation.ObjectPool`1.DEFAULT_CAPACITY"/> capacity</summary>
@@ -353,6 +343,22 @@
             </summary>
             <param name="ctorParams">Parameters to feed to the class constructor of the object.</param>
             <returns></returns>
+        </member>
+        <member name="T:Multitool.Optimisation.PoolableObject">
+            <summary>
+            Allows for objects to be reused when they are not longer used.
+            Mainly used for event data.
+            </summary>
+        </member>
+        <member name="P:Multitool.Optimisation.PoolableObject.InUse">
+            <summary>
+            Tells if the <see cref="!:IPoolableObject"/> is in use and thus cannot be used by the pool.
+            </summary>
+        </member>
+        <member name="E:Multitool.Optimisation.PoolableObject.Free">
+            <summary>
+            Fired when the object is free to be reused by the <see cref="T:Multitool.Optimisation.ObjectPool`1"/>.
+            </summary>
         </member>
         <member name="M:Multitool.Parsers.UriCleaner.RemoveChariotReturns(System.String@)">
             <summary>

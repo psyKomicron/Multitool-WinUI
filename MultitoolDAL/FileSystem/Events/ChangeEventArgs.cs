@@ -1,17 +1,20 @@
-﻿namespace Multitool.DAL.FileSystem.Events
+﻿using System;
+
+#nullable enable
+namespace Multitool.DAL.FileSystem.Events
 {
     /// <summary>
     /// Provides data for file system changes events.
     /// </summary>
-    public class ChangeEventArgs
+    public class ChangeEventArgs : EventArgs
     {
         /// <summary>
         /// Default constructor
         /// </summary>
-        public ChangeEventArgs()
+        public ChangeEventArgs() : base()
         {
             Entry = null;
-            ChangeTypes = ChangeTypes.All;
+            ChangeTypes = ChangeTypes.None;
         }
 
         /// <summary>
@@ -25,10 +28,17 @@
             ChangeTypes = changeTypes;
         }
 
+        public ChangeEventArgs(ChangeTypes changeTypes) : base()
+        {
+            ChangeTypes = changeTypes;
+        }
+
+        internal ChangeEventArgs(CacheChangedEventArgs eventArgs) : this(eventArgs.Entry, eventArgs.ChangeType) { }
+
         /// <summary>
         /// Entry associated with the event
         /// </summary>
-        public IFileSystemEntry Entry { get; }
+        public IFileSystemEntry? Entry { get; }
 
         /// <summary>
         /// Why this event was raised

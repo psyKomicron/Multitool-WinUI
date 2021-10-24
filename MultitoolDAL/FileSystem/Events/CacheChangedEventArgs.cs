@@ -6,7 +6,7 @@ namespace Multitool.DAL.FileSystem.Events
     {
         public CacheChangedEventArgs() : base()
         {
-            ChangeType = ChangeTypes.All;
+            ChangeType = ChangeTypes.None;
         }
 
         public CacheChangedEventArgs(FileSystemEntry entry, ChangeTypes changeType) : base()
