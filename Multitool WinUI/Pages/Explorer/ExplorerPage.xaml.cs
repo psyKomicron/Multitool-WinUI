@@ -149,9 +149,15 @@ namespace MultitoolWinUI.Pages.Explorer
                     Files_ProgressBar.IsIndeterminate = false;
 
                     Progress_TextBox.Foreground = new SolidColorBrush(Colors.White);
-                    Progress_TextBox.Text = taskStopwatch.Elapsed.TotalSeconds >= 1
-                        ? "Task successfully completed (in " + taskStopwatch.Elapsed.TotalSeconds.ToString() + "s)"
-                        : "Task successfully completed (in " + taskStopwatch.ElapsedMilliseconds.ToString() + "ms)";
+                    if (taskStopwatch.Elapsed.TotalSeconds < 1)
+                    {
+                        Progress_TextBox.Text = "Task successfully completed (in " + taskStopwatch.ElapsedMilliseconds.ToString() + "ms)";
+                    }
+                    else
+                    {
+                        TimeSpan elapsed = taskStopwatch.Elapsed;
+                        Progress_TextBox.Text = "Task successfully completed (in " + elapsed.ToString("mm\\:ss") + ")";
+                    }
 
                     for (int i = 0; i < CurrentFiles.Count; i++)
                     {
@@ -229,7 +235,7 @@ namespace MultitoolWinUI.Pages.Explorer
         {
             _ = DispatcherQueue.TryEnqueue(() =>
             {
-                if (force || eventStopwatch.ElapsedMilliseconds > 30) //ms interval between each notification
+                if (force || eventStopwatch.ElapsedMilliseconds > 100) //ms interval between each notification
                 {
                     if (error)
                     {
@@ -628,7 +634,7 @@ namespace MultitoolWinUI.Pages.Explorer
             switch (data.ChangeTypes)
             {
                 case ChangeTypes.FileCreated:
-                    AddDelegate(CurrentFiles, data.Entry);
+                    //AddDelegate(CurrentFiles, data.Entry);
                     break;
                 case ChangeTypes.FileDeleted:
                     for (int i = 0; i < CurrentFiles.Count; i++)

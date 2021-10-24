@@ -1,5 +1,6 @@
 ﻿using System;
 
+#nullable enable
 namespace Multitool.DAL.FileSystem.Events
 {
     /// <summary>
@@ -27,10 +28,17 @@ namespace Multitool.DAL.FileSystem.Events
             ChangeTypes = changeTypes;
         }
 
+        public ChangeEventArgs(ChangeTypes changeTypes) : base()
+        {
+            ChangeTypes = changeTypes;
+        }
+
+        internal ChangeEventArgs(CacheChangedEventArgs eventArgs) : this(eventArgs.Entry, eventArgs.ChangeType) { }
+
         /// <summary>
         /// Entry associated with the event
         /// </summary>
-        public IFileSystemEntry Entry { get; }
+        public IFileSystemEntry? Entry { get; }
 
         /// <summary>
         /// Why this event was raised

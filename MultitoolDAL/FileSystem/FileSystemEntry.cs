@@ -72,6 +72,7 @@ namespace Multitool.DAL
                 }
             }
         }
+
         /// <inheritdoc/>
         public bool IsEncrypted => (Attributes & FileAttributes.Encrypted) != 0;
 
@@ -144,6 +145,20 @@ namespace Multitool.DAL
 
         #region public methods
         /// <inheritdoc/>
+        public virtual void Delete()
+        {
+            if (CanDelete())
+            {
+                Info.Delete();
+                RaiseDeletedEvent();
+            }
+            else
+            {
+                throw CreateDeleteIOException();
+            }
+        }
+
+        /// <inheritdoc/>
         public int CompareTo(object obj)
         {
             if (obj is FileSystemEntry that)
@@ -180,20 +195,6 @@ namespace Multitool.DAL
         }
 
         /// <inheritdoc/>
-        public virtual void Delete()
-        {
-            if (CanDelete())
-            {
-                Info.Delete();
-                RaiseDeletedEvent();
-            }
-            else
-            {
-                throw CreateDeleteIOException();
-            }
-        }
-
-        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             return ReferenceEquals(this, obj) || (obj is not null && Equals(obj as IFileSystemEntry));
@@ -203,6 +204,12 @@ namespace Multitool.DAL
         public bool Equals(IFileSystemEntry other)
         {
             return other != null && Path.Equals(other.Path, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public bool Equals(FileSystemInfo info)
+        {
+            return Path.Equals(info.FullName, StringComparison.OrdinalIgnoreCase) &&
+                Attributes == info.Attributes;
         }
 
         /// <inheritdoc/>
@@ -217,6 +224,7 @@ namespace Multitool.DAL
             return Name + ", " + Path;
         }
 
+        #region operators
         public static bool operator ==(FileSystemEntry left, FileSystemEntry right)
         {
             return left is null ? right is null : left.Equals(right);
@@ -246,6 +254,8 @@ namespace Multitool.DAL
         {
             return left is null ? right is null : left.CompareTo(right) >= 0;
         }
+        #endregion
+
         #endregion
 
         #region protected methods

@@ -298,6 +298,7 @@ namespace Multitool.DAL.FileSystem
         {
             Frozen = true;
             timer.Stop();
+#if DEBUG
             string path = string.Empty;
             if (Path.Length > 23)
             {
@@ -305,13 +306,17 @@ namespace Multitool.DAL.FileSystem
             }
             Trace.TraceInformation("Cache [" + path + "] TTL reached, elapsed " + e.SignalTime.Minute + ":" + e.SignalTime.Second + ":" + e.SignalTime.Millisecond);
             Trace.TraceInformation("Cache TTL reached, updating " + Path);
+#endif
+
             Task.Run(() => Updating?.Invoke(this, EventArgs.Empty));
+
             for (int i = 0; i < watchedItems.Count; i++)
             {
                 FileSystemEntry item = watchedItems[i];
                 Trace.TraceInformation("\tupdating " + item.Name);
                 item.RefreshInfos();
             }
+
             UnFreeze();
         }
 
@@ -324,12 +329,9 @@ namespace Multitool.DAL.FileSystem
                 {
                     ResetTimer();
                 }
-
                 FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
-                if (timer != null)
-                {
-                    timer.Start();
-                }
+                item.RefreshInfos();
+                timer.Start();
             }
         }
 

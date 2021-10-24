@@ -232,33 +232,15 @@ namespace Multitool.DAL.FileSystem
                 }
                 else
                 {
-#if false
-                    await Task.Run(() =>
+                    for (int i = 0; i < fileCache.Count; i++)
                     {
-                        for (int i = 0; i < fileCache.Count; i++)
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            addDelegate(list, fileCache[i]);
-                        }
-                    }, cancellationToken);
-#endif
+                        cancellationToken.ThrowIfCancellationRequested();
+                        addDelegate(list, fileCache[i]);
+                    }
                     if (fileCache.Partial)
                     {
                         await GetPartial(path, fileCache, list, addDelegate, cancellationToken);
                     }
-#if true
-                    else
-                    {
-                        await Task.Run(() =>
-                        {
-                            for (int i = 0; i < fileCache.Count; i++)
-                            {
-                                cancellationToken.ThrowIfCancellationRequested();
-                                addDelegate(list, fileCache[i]);
-                            }
-                        }, cancellationToken);
-                    }
-#endif
                     InvokeCompletion(TaskStatus.RanToCompletion);
                 }
             }
@@ -314,7 +296,7 @@ namespace Multitool.DAL.FileSystem
         internal async Task GetAll<ItemType>(string path, IList<ItemType> list, AddDelegate<ItemType> addDelegate, FileSystemCache fileCache, CancellationToken cancellationToken) where ItemType : IFileSystemEntry
         {
             cache.Add(path, fileCache);
-            fileCache.Changed += OnCacheItemChanged;
+            fileCache.Changed += OnCacheChanged;
             fileCache.Updating += OnCacheUpdating;
             fileCache.Deleted += OnCacheDeleted;
 
@@ -327,83 +309,83 @@ namespace Multitool.DAL.FileSystem
         private async Task GetPartial<T>(string path, FileSystemCache cacheItems, IList<T> list, AddDelegate<T> addDelegate, CancellationToken cancellationToken) where T : IFileSystemEntry
         {
             cancellationToken.ThrowIfCancellationRequested();
-            List<string> paths = new(Directory.GetFileSystemEntries(path));
-            List<string> toDo = new(paths.Count - cacheItems.Count + 1);
-            // get partial items
+            // update partial items
+            List<Task> partials = new();
             for (int i = 0; i < cacheItems.Count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                IFileSystemEntry cacheItem = cacheItems[i];
-                if (cacheItem.Partial)
+                if (cacheItems[i].Partial)
                 {
-                    toDo.Add(cacheItem.Path);
-                    cacheItems.RemoveAt(i);
-                    paths.Remove(cacheItem.Path);
+                    FileSystemEntry item = cacheItems[i];
+                    item.Partial = true;
+                    item.Size = 0;
+                    partials.Add(CalculateDirSizeParallel(item, cancellationToken));
                 }
             }
+            await Task.WhenAll(partials);
+
             // get the missing file entries
-            for (int i = 0; i < paths.Count; i++)
+            List<string> paths = new(Directory.GetFileSystemEntries(path));
+            if (cacheItems.Count != paths.Count)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                string filePath = paths[i];
-                bool contains = false;
-                //List<Task> addTasks = new();
-                for (int j = 0; j < cacheItems.Count; j++)
+                List<string> toDo = new(paths.Count - cacheItems.Count + 1);
+                for (int i = 0; i < paths.Count; i++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+                    string filePath = paths[i];
+                    bool contains = false;
 
-                    if (cacheItems[j].Path.Equals(filePath, StringComparison.OrdinalIgnoreCase))
+                    for (int j = 0; j < cacheItems.Count; j++)
                     {
-                        contains = true;
-                        int currIndex = j;
-#if false
-                        Task t = new(() => addDelegate(list, cacheItems[currIndex]), cancellationToken);
-                        addTasks.Add(t);
-                        t.Start();
-#endif
-                        _ = Task.Run(() => addDelegate(list, cacheItems[currIndex]), cancellationToken);
-                        break;
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (cacheItems[j].Path.Equals(filePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            contains = true;
+                            break;
+                        }
+                    }
+                    if (!contains)
+                    {
+                        toDo.Add(filePath);
                     }
                 }
-                if (!contains)
+
+                try
                 {
-                    toDo.Add(filePath);
-                }
-            }
+                    List<Task> dirTasks = new();
+                    for (int i = 0; i < toDo.Count; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
 
-            try
-            {
-                for (int i = 0; i < toDo.Count; i++)
+                        InvokeProgress(toDo[i]);
+
+                        if (File.Exists(toDo[i]))
+                        {
+                            FileEntry item = new(new(toDo[i]));
+                            cacheItems.Add(item);
+#if DEBUG
+                            _ = Task.Run(() => addDelegate(list, item), cancellationToken);
+#endif
+                        }
+                        else if (Directory.Exists(toDo[i]))
+                        {
+                            DirectoryEntry item = new(new(toDo[i]));
+                            cacheItems.Add(item);
+#if DEBUG
+                            _ = Task.Run(() => addDelegate(list, item), cancellationToken);
+#endif
+                            dirTasks.Add(CalculateDirSizeParallel(item, cancellationToken));
+                        }
+                    }
+                    toDo.Clear();
+                    await Task.WhenAll(dirTasks);
+                    cacheItems.Partial = false;
+                }
+                catch (UnauthorizedAccessException e)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    InvokeProgress(toDo[i]);
-
-                    if (File.Exists(toDo[i]))
-                    {
-                        FileEntry item = new(new(toDo[i]));
-                        cacheItems.Add(item);
-#if DEBUG
-                        _ = Task.Run(() => addDelegate(list, item), cancellationToken);
-#endif
-                    }
-                    else if (Directory.Exists(toDo[i]))
-                    {
-                        DirectoryEntry item = new(new(toDo[i]));
-                        cacheItems.Add(item);
-#if DEBUG
-                        _ = Task.Run(() => addDelegate(list, item), cancellationToken);
-#endif
-                        await calculator.CalculateDirectorySizeAsync(toDo[i], (long newSize) => item.Size += newSize, cancellationToken);
-                        item.Partial = false;
-                    }
+                    InvokeException(e);
                 }
-                toDo.Clear();
-                cacheItems.Partial = false;
-            }
-            catch (UnauthorizedAccessException e)
-            {
-                InvokeException(e);
             }
         }
 
@@ -440,9 +422,8 @@ namespace Multitool.DAL.FileSystem
                     cancellationToken.ThrowIfCancellationRequested();
                     InvokeProgress(dirPaths[i]);
 
-                    string currentPath = dirPaths[i];
-                    FileSystemEntry item = new DirectoryEntry(new(currentPath));
-                    tasks.Add(CalculateDirSizeParallel(item, currentPath, cancellationToken));
+                    FileSystemEntry item = new DirectoryEntry(new(dirPaths[i]));
+                    tasks.Add(CalculateDirSizeParallel(item, cancellationToken));
 
                     cacheItems.Add(item);
                     addDelegate(list, item);
@@ -455,17 +436,18 @@ namespace Multitool.DAL.FileSystem
             }
         }
 
-        private async Task CalculateDirSizeParallel(FileSystemEntry item, string currentPath, CancellationToken cancellationToken)
+        private async Task CalculateDirSizeParallel(FileSystemEntry item, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                await calculator.CalculateDirectorySizeAsync(currentPath, (long newSize) => item.Size += newSize, cancellationToken);
+                item.Partial = true;
+                await calculator.CalculateDirectorySizeAsync(item.Path, (long newSize) => item.Size += newSize, cancellationToken);
                 item.Partial = false;
             }
             catch (AggregateException e)
             {
-                e.Data.Add(GetType(), "Uncommon aggregate exception (from calculating dir size). Path :" + currentPath);
+                e.Data.Add(GetType(), "Uncommon aggregate exception (from calculating dir size). Path :" + item.Path);
                 Trace.TraceError(e.ToString());
                 InvokeException(e);
             }
@@ -506,26 +488,23 @@ namespace Multitool.DAL.FileSystem
             CacheUpdating?.Invoke(this, new(sender.Path));
         }
 
-        private void OnCacheItemChanged(FileSystemCache sender, CacheChangedEventArgs args)
+        private async void OnCacheChanged(FileSystemCache sender, CacheChangedEventArgs args)
         {
-            /*if (args.ChangeType != ChangeTypes.FileRenamed)
+            await Task.Run(() =>
             {
-                Task.Run(() =>
-                {
-                    Changed?.Invoke(this, new(args.Entry, args.ChangeType));
-                    args.InUse = false;
-                });
-            }*/
+                Changed?.Invoke(this, new(args));
+            });
             args.InUse = false;
         }
 
         private void OnCacheDeleted(FileSystemCache sender, EventArgs args)
         {
-            if (cache.ContainsKey(sender.Path))
+            cache.Remove(sender.Path);
+            Trace.TraceInformation("Removed " + sender.Path + " (cache deleted)");
+            _ = Task.Run(() =>
             {
-                cache.Remove(sender.Path);
-                Trace.TraceInformation("Removed " + sender.Path + " (cache deleted)");
-            }
+                Changed?.Invoke(this, new(ChangeTypes.PathDeleted));
+            });
         }
 
         private void OnCalculatorProgress(object sender, string message)
