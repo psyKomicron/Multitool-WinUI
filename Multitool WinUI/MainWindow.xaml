@@ -62,21 +62,16 @@
             <Frame x:Name="ContentFrame"></Frame>
         </NavigationView>
 
-        <Popup 
-            x:Name="ExceptionPopup"
-            x:FieldModifier="public"
-            IsLightDismissEnabled="True"
-            HorizontalAlignment="Stretch">
-
-            <controls:WindowMessageControl
+        <Popup
+            x:Name="ContentPopup"
+            HorizontalAlignment="Left">
+            <controls:TraceControl
                 x:Name="MessageDisplay"
                 x:FieldModifier="public"
-                Width="{x:Bind Window.Bounds.Width}"
                 Height="Auto"
                 HorizontalAlignment="Stretch"
                 Background="{StaticResource DarkDevBlue}"
-                Dismiss="MessageDisplay_Dismiss"/>
-
+                VisibilityChanged="MessageDisplay_Dismiss"/>
         </Popup>
     </Grid>
 </Window>

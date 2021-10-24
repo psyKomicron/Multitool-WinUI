@@ -180,6 +180,11 @@ namespace MultitoolWinUI.Controls
             return FileSystemEntry.CompareTo(obj);
         }
 
+        #endregion
+
+        #region public
+
+        ///<inheritdoc/>
         public int CompareTo(IFileSystemEntry other)
         {
             return FileSystemEntry.CompareTo(other);
@@ -219,6 +224,7 @@ namespace MultitoolWinUI.Controls
         {
             FileSystemEntry.RefreshInfos();
         }
+
         #endregion
 
         #region view

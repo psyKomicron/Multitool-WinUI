@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Multitool.Net
@@ -9,8 +11,27 @@ namespace Multitool.Net
     /// </summary>
     public sealed class HttpController : IDisposable
     {
-        private bool _disposed;
+        private volatile bool _disposed;
         private static readonly HttpClient _client = new();
+
+        public HttpController() { }
+
+        #region properties
+
+        public static IWebProxy DefaultProxy { get; set; }
+
+        public HttpVersionPolicy DefaultVersionPolicy { get; set; }
+
+        public Version DefaultRequestVersion { get; set; }
+
+        public HttpRequestHeaders DefaultRequestHeaders { get; set; }
+
+        public Uri? BaseAddress { get; set; }
+
+        public long MaxResponseContentBufferSize { get; set; }
+
+        public TimeSpan Timeout { get; set; }
+        #endregion
 
         /// <inheritdoc/>
         public void Dispose()

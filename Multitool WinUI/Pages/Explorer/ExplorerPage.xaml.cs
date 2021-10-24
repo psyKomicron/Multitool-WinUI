@@ -14,7 +14,6 @@ using Multitool.Sorting;
 using Multitool.Threading;
 
 using MultitoolWinUI.Controls;
-using MultitoolWinUI.Helpers;
 
 using System;
 using System.Collections.Generic;
@@ -570,7 +569,7 @@ namespace MultitoolWinUI.Pages.Explorer
             }
             catch (UnauthorizedAccessException e)
             {
-                WindowTrace.TraceError(e.ToString());
+                Trace.TraceError(e.ToString());
             }
         }
 
