@@ -310,7 +310,7 @@ namespace MultitoolWinUI.Pages.Explorer
             {
                 if (e.AddedItems[0] is IFileSystemEntry item)
                 {
-                    FileSystemSecurity fss = item.GetAccessControl();
+                    //FileSystemSecurity fss = item.GetAccessControl();
 #if false
                     BottomBarAccessRightType.Inlines.Add(new Run() { Text = fss.AccessRightType.Name });
                     //BottomBarAccessRuleModified = fss.AccessRules;
