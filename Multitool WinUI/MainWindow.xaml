@@ -58,6 +58,13 @@
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEA18;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
+                <NavigationViewItem Tag="test"
+                                     Content="Test page">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE7BA;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
             <Frame x:Name="ContentFrame"></Frame>
         </NavigationView>
@@ -68,10 +75,9 @@
             <controls:TraceControl
                 x:Name="MessageDisplay"
                 x:FieldModifier="public"
-                Height="Auto"
                 HorizontalAlignment="Stretch"
                 Background="{StaticResource DarkDevBlue}"
-                VisibilityChanged="MessageDisplay_Dismiss"/>
+                VisibilityChanged="MessageDisplay_VisibilityChanged"/>
         </Popup>
     </Grid>
 </Window>

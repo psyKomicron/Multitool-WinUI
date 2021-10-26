@@ -104,7 +104,6 @@ namespace MultitoolWinUI
             if (args.InvokedItemContainer != null)
             {
                 string tag = args.InvokedItemContainer.Tag.ToString();
-                Trace.TraceError("/!\\ Test error /!\\");
                 switch (tag)
                 {
                     case "home":
@@ -134,6 +133,9 @@ namespace MultitoolWinUI
                     case "hashgenerator":
                         lastPage = typeof(HashGeneratorPage);
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
+                        break;
+                    case "test":
+                        _ = ContentFrame.Navigate(typeof(TestPage));
                         break;
                     default:
                         Trace.TraceWarning("Trying to navigate to: " + tag);
@@ -177,7 +179,7 @@ namespace MultitoolWinUI
             App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
         }
 
-        private void MessageDisplay_Dismiss(TraceControl sender, Visibility args)
+        private void MessageDisplay_VisibilityChanged(TraceControl sender, Visibility args)
         {
             ContentPopup.IsOpen = args == Visibility.Visible;
         }
