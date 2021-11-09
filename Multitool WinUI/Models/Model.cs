@@ -18,7 +18,14 @@ namespace MultitoolWinUI.Models
 
         protected void RaiseNotifyPropertyChanged([CallerMemberName] string propName = "")
         {
-            _ = CurrentDispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)));
+            if (CurrentDispatcherQueue != null)
+            {
+                _ = CurrentDispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new(propName)));
+            }
+            else
+            {
+                PropertyChanged?.Invoke(this, new(propName));
+            }
         }
     }
 }
