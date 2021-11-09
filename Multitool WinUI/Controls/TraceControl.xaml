@@ -9,20 +9,20 @@
     mc:Ignorable="d"
     Padding="20">
     <Grid 
-        x:Name="Grid"
-        Background="ForestGreen"
+        x:Name="ContentGrid"
+        
         Padding="3"
         Margin="5"
         RowSpacing="1"
         CornerRadius="3"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="{Binding ElementName=Control, Path=VerticalAlignment}" 
+        VerticalAlignment="{x:Bind VerticalAlignment, Mode=OneWay}" 
         MaxHeight="200">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="30px"/>
             <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="5*"/>
-            <ColumnDefinition Width="50px"/>
+            <ColumnDefinition Width="70px"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -32,14 +32,14 @@
         <FontIcon 
             x:Name="Icon"
             FontFamily="{StaticResource SymbolThemeFontFamily}"
-            Glyph="{Binding ElementName=Control, Path=TitleGlyph}"
+            Glyph="{x:Bind TitleGlyph, Mode=OneWay}"
             VerticalAlignment="Center"
             Grid.Column="0"
             Grid.RowSpan="4"/>
 
         <TextBlock 
             x:Name="TitleTextBlock"
-            Text="{Binding ElementName=Control, Path=Title}"
+            Text="{x:Bind Title, Mode=OneWay}"
             VerticalAlignment="Center"
             FontWeight="SemiBold"
             FontSize="30"
@@ -50,19 +50,15 @@
             x:Name="HeaderTextBlock"
             FontSize="20"
             FontWeight="Bold"
-            Text="{Binding ElementName=Control, Path=Header}"
+            Text="{x:Bind Header, Mode=OneWay}"
             Grid.Row="0"
             Grid.Column="2"/>
 
         <ScrollViewer Grid.Column="2" Grid.Row="1">
-            <!--<ContentPresenter 
-                Margin="10, 0, 0, 0" 
-                Content="{Binding ElementName=Control, Path=Message}"
-                MaxHeight="180"/>-->
             <TextBlock
                 x:Name="ContentTextBlock"
                 Margin="10, 0, 0, 0"
-                Text="{Binding ElementName=Control, Path=Message, Mode=OneWay}"/>
+                Text="{x:Bind Message, Mode=OneWay}"/>
         </ScrollViewer>
 
         <HyperlinkButton 
