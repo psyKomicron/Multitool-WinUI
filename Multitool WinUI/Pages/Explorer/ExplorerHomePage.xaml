@@ -12,12 +12,10 @@
         IsItemClickEnabled="True"
         ItemClick="DisksGrid_ItemClick"
         SelectionMode="None"
-        HorizontalAlignment="Stretch"
-        Background="{StaticResource LightBlack}">
+        HorizontalAlignment="Stretch">
         <ListView.ItemContainerStyle>
             <Style TargetType="ListViewItem">
-                <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
             </Style>
         </ListView.ItemContainerStyle>
     </ListView>
