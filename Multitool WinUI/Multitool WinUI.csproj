@@ -40,17 +40,17 @@
     <None Remove="Pages\ExplorerHomePage.xaml" />
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
+    <None Remove="Pages\IrcChatPage.xaml" />
     <None Remove="Pages\MainPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
-    <None Remove="Pages\TestPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ProjectReunion" Version="0.8.3" />
-    <PackageReference Include="Microsoft.ProjectReunion.Foundation" Version="0.8.3" />
-    <PackageReference Include="Microsoft.ProjectReunion.WinUI" Version="0.8.3" />
+    <PackageReference Include="Microsoft.ProjectReunion" Version="0.8.5" />
+    <PackageReference Include="Microsoft.ProjectReunion.Foundation" Version="0.8.5" />
+    <PackageReference Include="Microsoft.ProjectReunion.WinUI" Version="0.8.5" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 
@@ -60,6 +60,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Multitool BL\Multitool BL.csproj" />
+    <ProjectReference Include="..\Multitool.Net\Multitool.Net.csproj" />
     <ProjectReference Include="..\MultitoolDAL\Multitool.DAL.csproj" />
   </ItemGroup>
 
@@ -79,7 +80,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Pages\TestPage.xaml">
+    <Page Update="Pages\IrcChatPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
