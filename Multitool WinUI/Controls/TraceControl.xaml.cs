@@ -46,7 +46,7 @@ namespace MultitoolWinUI.Controls
                 DispatcherQueue.ShutdownStarting += DispatcherQueue_ShutdownStarting;
             }
             messageTimer.Elapsed += Timer_Elapsed;
-#if !DEBUG
+#if false
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
 #else
@@ -55,7 +55,7 @@ namespace MultitoolWinUI.Controls
         }
 
         #region properties
-#if DEBUG
+#if true
         public double Interval
         {
             get => messageTimer.Interval;
@@ -92,6 +92,12 @@ namespace MultitoolWinUI.Controls
         {
             get => ContentTextBlock.Text;
             set => ContentTextBlock.Text = value;
+        }
+
+        public Brush MessageBackground
+        {
+            get => Grid.Background;
+            set => Grid.Background = value;
         }
 #else
         #region dependency properties
@@ -178,8 +184,7 @@ namespace MultitoolWinUI.Controls
         {
             if (!closed)
             {
-                Debug.WriteLine("\tdisplaying : [ " + message + " ]");
-                Background = background;
+                MessageBackground = background;
                 Title = title;
                 Header = header;
                 Message = message;
