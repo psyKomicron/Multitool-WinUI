@@ -69,6 +69,9 @@ namespace MultitoolWinUI
                     case nameof(HashGeneratorPage):
                         lastPage = typeof(HashGeneratorPage);
                         break;
+                    case nameof(IrcChatPage):
+                        lastPage = typeof(IrcChatPage);
+                        break;
                     default:
                         Trace.TraceWarning("MainWindow:ctor: Unknown page");
                         break;
@@ -135,10 +138,11 @@ namespace MultitoolWinUI
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
                     case "test":
-                        _ = ContentFrame.Navigate(typeof(TestPage));
+                        lastPage = typeof(IrcChatPage);
+                        _ = ContentFrame.Navigate(typeof(IrcChatPage));
                         break;
                     default:
-                        Trace.TraceWarning("Trying to navigate to: " + tag);
+                        Trace.TraceWarning("Trying to navigate to : " + tag);
                         break;
                 }
             }
