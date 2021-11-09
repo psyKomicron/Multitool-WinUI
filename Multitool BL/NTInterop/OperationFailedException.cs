@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Multitool.NTInterop
 {
@@ -18,6 +19,6 @@ namespace Multitool.NTInterop
         /// <param name="operationName">the name of the failed operation</param>
         /// <param name="reason">message for why the operation failed</param>
         /// <param name="internalEx">internal exception</param>
-        public OperationFailedException(string operationName, string reason, Exception internalEx) : base("Operation failed: '" + operationName + "'. Reason: " + reason, internalEx) { }
+        public OperationFailedException(string reason, Exception internalEx, [CallerMemberName] string operationName = null) : base("Operation failed: '" + operationName + "'. Reason: " + reason, internalEx) { }
     }
 }
