@@ -19,7 +19,7 @@ namespace Multitool.NTInterop.Power
         {
             if (!LockWorkStation())
             {
-                throw new OperationFailedException(nameof(Lock), "LockWorkStation failed", InteropHelper.GetLastError("LockWorkStation returned zero code"));
+                throw new OperationFailedException("LockWorkStation failed", InteropHelper.GetLastError("LockWorkStation returned zero code"));
             }
             else
             {
@@ -34,7 +34,7 @@ namespace Multitool.NTInterop.Power
         {
             if (!SetSuspendState(false, false, false))
             {
-                throw new OperationFailedException(nameof(Suspend), "SetSuspendState failed", InteropHelper.GetLastError("SetSuspendState returned zero code"));
+                throw new OperationFailedException("SetSuspendState failed", InteropHelper.GetLastError("SetSuspendState returned zero code"));
             }
             else
             {
@@ -51,7 +51,7 @@ namespace Multitool.NTInterop.Power
             {
                 if (!SetSuspendState(false, true, false))
                 {
-                    throw new OperationFailedException(nameof(Hibernate), "SetSuspendState failed", InteropHelper.GetLastError("SetSuspendState returned zero code"));
+                    throw new OperationFailedException("SetSuspendState failed", InteropHelper.GetLastError("SetSuspendState returned zero code"));
                 }
                 else
                 {
@@ -71,7 +71,7 @@ namespace Multitool.NTInterop.Power
         {
             if (!InitiateSystemShutdown(null, null, 0, ForceApplicationShutdown, false, ShutdownFlag))
             {
-                throw new OperationFailedException(nameof(Shutdown), "InitiateSystemShutdown returned non zero code", InteropHelper.GetLastError("InitiateSystemShutdown returned zero code"));
+                throw new OperationFailedException("InitiateSystemShutdown returned non zero code", InteropHelper.GetLastError("InitiateSystemShutdown returned zero code"));
             }
         }
 
@@ -83,7 +83,7 @@ namespace Multitool.NTInterop.Power
             uint res = InitiateShutdown(null, null, 0, 0x80, ShutdownFlag);
             if (res != (uint)SystemCodes.ERROR_SUCCESS)
             {
-                throw new OperationFailedException(nameof(Shutdown), "InitiateShutdown failed", InteropHelper.GetLastError("InitiateSystemShutdown returned non-zero code", res));
+                throw new OperationFailedException("InitiateShutdown failed", InteropHelper.GetLastError("InitiateSystemShutdown returned non-zero code", res));
             }
         }
 

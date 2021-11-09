@@ -37,29 +37,23 @@
             Foreground="{x:Bind Color, Mode=OneWay}"
             Margin="0,0,30,0"/>
 
-        <TextBlock
+        <VariableSizedWrapGrid
+            x:Name="AttributesGrid"
             Grid.Column="2"
+            MaximumRowsOrColumns="3"
+            Orientation="Horizontal"
+            ItemHeight="30"
+            ItemWidth="30"
+            HorizontalAlignment="Center">
+        </VariableSizedWrapGrid>
+
+        <TextBlock
+            Grid.Column="3"
             Foreground="White"
             TextWrapping="Wrap">
             <Run Text="{x:Bind DisplaySize, Mode=OneWay}"/>
             <Run Text="{x:Bind DisplaySizeUnit, Mode=OneWay}"/>
         </TextBlock>
-
-        <StackPanel
-            Grid.Column="3" 
-            Orientation="Horizontal" 
-            HorizontalAlignment="Center">
-            <StackPanel.Resources>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Margin" Value="5"/>
-                </Style>
-            </StackPanel.Resources>
-            <TextBlock Text="{x:Bind IsHiddenEcon}" ToolTipService.ToolTip="Hidden"/>
-            <TextBlock Text="{x:Bind IsSystemEcon}" ToolTipService.ToolTip="System"/>
-            <TextBlock Text="{x:Bind IsReadOnlyEcon}" ToolTipService.ToolTip="Read-only"/>
-            <TextBlock Text="{x:Bind IsEncryptedEcon}" ToolTipService.ToolTip="Encrypted"/>
-            <TextBlock Text="{x:Bind IsCompressedEcon}" ToolTipService.ToolTip="Compressed"/>
-            <TextBlock Text="{x:Bind IsDeviceEcon}" ToolTipService.ToolTip="Device"/>
-        </StackPanel>
+        
     </Grid>
 </UserControl>

@@ -16,6 +16,10 @@ using System.Timers;
 using System.Linq;
 using System.Collections.Generic;
 using MultitoolWinUI.Controls;
+using Windows.UI.ViewManagement;
+using Windows.UI;
+using Microsoft.UI;
+using Windows.UI.WindowManagement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -84,8 +88,29 @@ namespace MultitoolWinUI
 
         public bool IsPaneOpen { get; set; }
 
-        #region navigation events
+        private static void SetAppBar()
+        {
+#if false
+            ApplicationViewTitleBar bar = ApplicationView.GetForCurrentView().TitleBar;
+            // Set active window colors
+            bar.ForegroundColor = Colors.White;
+            bar.BackgroundColor = Tool.GetAppRessource<Color>("DarkBlack");
+            bar.ButtonForegroundColor = Colors.White;
+            bar.ButtonBackgroundColor = Colors.SeaGreen;
+            bar.ButtonHoverForegroundColor = Colors.White;
+            bar.ButtonHoverBackgroundColor = Colors.DarkSeaGreen;
+            bar.ButtonPressedForegroundColor = Colors.Gray;
+            bar.ButtonPressedBackgroundColor = Colors.LightGreen;
 
+            // Set inactive window colors
+            bar.InactiveForegroundColor = Colors.Gray;
+            bar.InactiveBackgroundColor = Tool.GetAppRessource<Color>("LightBlack");
+            bar.ButtonInactiveForegroundColor = Colors.Gray;
+            bar.ButtonInactiveBackgroundColor = Colors.SeaGreen;
+#endif
+        }
+
+        #region navigation events
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
             if (lastPage != null)
@@ -97,6 +122,9 @@ namespace MultitoolWinUI
                 lastPage = typeof(MainPage);
                 _ = ContentFrame.Navigate(typeof(MainPage));
             }
+#if DEBUG
+            SetAppBar();
+#endif
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -104,7 +132,6 @@ namespace MultitoolWinUI
             if (args.InvokedItemContainer != null)
             {
                 string tag = args.InvokedItemContainer.Tag.ToString();
-                Trace.TraceError("/!\\ Test error /!\\");
                 switch (tag)
                 {
                     case "home":
@@ -149,11 +176,9 @@ namespace MultitoolWinUI
                 ContentFrame.GoBack();
             }
         }
-
         #endregion
 
         #region window events
-
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             _ = DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
@@ -181,7 +206,11 @@ namespace MultitoolWinUI
         {
             ContentPopup.IsOpen = args == Visibility.Visible;
         }
-
         #endregion
+
+        private void Window_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            
+        }
     }
 }

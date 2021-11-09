@@ -1,5 +1,8 @@
 ﻿namespace Multitool.DAL.Completion
 {
+    /// <summary>
+    /// Defines a method to complete pathes.
+    /// </summary>
     public interface IPathCompletor
     {
         /// <summary>

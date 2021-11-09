@@ -11,7 +11,7 @@
   <Identity
     Name="a34c0c86-c628-4f8e-9e06-1af20315e557"
     Publisher="CN=MonsieurJ"
-    Version="1.0.11.0" />
+    Version="1.0.15.0" />
 
   <Properties>
     <DisplayName>Multitool WinUI (Package)</DisplayName>

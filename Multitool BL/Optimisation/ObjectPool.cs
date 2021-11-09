@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Reflection;
 
+using Windows.Foundation;
+
 namespace Multitool.Optimisation
 {
     /// <summary>
@@ -59,6 +61,8 @@ namespace Multitool.Optimisation
             PreloadPool(capacity, constructorParameters);
         }
         #endregion
+
+        public event TypedEventHandler<ObjectPool<T>, int> CollectionResized;
 
         /// <summary>
         /// Gets an object from the pool.
@@ -122,7 +126,7 @@ namespace Multitool.Optimisation
             }
             else // parameter-less constructor
             {
-                ConstructorInfo constructorInfo = typeof(T).GetConstructor(new Type[0]);
+                ConstructorInfo constructorInfo = typeof(T).GetConstructor(Array.Empty<Type>());
                 if (constructorInfo == null)
                 {
                     throw new ArgumentException("Could not find the parameter-less constructor for ", typeof(T).FullName);
@@ -179,7 +183,7 @@ namespace Multitool.Optimisation
                 T o = (T)sender;
                 if (o.InUse)
                 {
-                    throw new InvalidOperationException("Object is not in a valid state (still in use)");
+                    throw new InvalidOperationException($"Object is not in a valid state (still in use) : {o}");
                 }
                 freePool.Push(o);
             }

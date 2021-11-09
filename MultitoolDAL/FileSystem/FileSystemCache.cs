@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -20,12 +21,15 @@ namespace Multitool.DAL.FileSystem
     {
         private static readonly object _lock = new();
         private static readonly List<string> watchedPaths = new();
-        //private readonly DirectorySizeCalculator calculator = new();
+
+        private readonly DirectorySizeCalculator calculator = new();
         private readonly List<FileSystemEntry> watchedItems;
         private readonly FileSystemWatcher watcher;
         private readonly ObjectPool<CacheChangedEventArgs> cacheChangedPool = new(7);
-        private Timer timer;
+        private System.Timers.Timer timer;
         private double ttl;
+
+        private long _frozen;
 
         /// <summary>Constuctor.</summary>
         /// <param name="path">File path to monitor</param>
@@ -74,7 +78,13 @@ namespace Multitool.DAL.FileSystem
         public int Count => watchedItems.Count;
 
         /// <summary>Tells if the cache allow operations on it or not (true if no operation are allowed).</summary>
-        public bool Frozen { get; private set; }
+        public bool Frozen
+        {
+            get
+            {
+                return Interlocked.Read(ref _frozen) == 1;
+            }
+        }
 
         /// <summary>True when the cache is not complete.</summary>
         public bool Partial { get; set; }
@@ -119,7 +129,7 @@ namespace Multitool.DAL.FileSystem
             {
                 timer.Interval = ttl;
             }
-            Frozen = false;
+            Interlocked.Exchange(ref _frozen, 0);
         }
 
         /// <summary>
@@ -190,7 +200,7 @@ namespace Multitool.DAL.FileSystem
         /// </summary>
         public void Delete()
         {
-            Frozen = true;
+            Interlocked.Exchange(ref _frozen, 1);
             watcher.EnableRaisingEvents = false;
             lock (_lock)
             {
@@ -239,7 +249,7 @@ namespace Multitool.DAL.FileSystem
 
         private void CheckIfFrozen()
         {
-            if (Frozen)
+            if (Interlocked.Read(ref _frozen) == 1)
             {
                 throw new InvalidOperationException("Cache is frozen.");
             }
@@ -247,7 +257,7 @@ namespace Multitool.DAL.FileSystem
 
         private void CreateTimer()
         {
-            timer = new Timer(ttl);
+            timer = new System.Timers.Timer(ttl);
             timer.Elapsed += OnTimerElapsed;
             timer.AutoReset = true;
         }
@@ -296,7 +306,7 @@ namespace Multitool.DAL.FileSystem
         #region events handlers
         private void OnTimerElapsed(object sender, ElapsedEventArgs e)
         {
-            Frozen = true;
+            Interlocked.Exchange(ref _frozen, 0);
             timer.Stop();
 #if DEBUG
             string path = string.Empty;
@@ -305,6 +315,7 @@ namespace Multitool.DAL.FileSystem
                 path = Path[0..10] + "..." + Path[^11..];
             }
             Trace.TraceInformation("Cache [" + path + "] TTL reached, elapsed " + e.SignalTime.Minute + ":" + e.SignalTime.Second + ":" + e.SignalTime.Millisecond);
+#else
             Trace.TraceInformation("Cache TTL reached, updating " + Path);
 #endif
 
@@ -313,7 +324,6 @@ namespace Multitool.DAL.FileSystem
             for (int i = 0; i < watchedItems.Count; i++)
             {
                 FileSystemEntry item = watchedItems[i];
-                Trace.TraceInformation("\tupdating " + item.Name);
                 item.RefreshInfos();
             }
 
@@ -330,8 +340,15 @@ namespace Multitool.DAL.FileSystem
                     ResetTimer();
                 }
                 FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
-                item.RefreshInfos();
-                timer.Start();
+                if (item is not null)
+                {
+                    item.RefreshInfos();
+                }
+                
+                if (timer != null)
+                {
+                    timer.Start();
+                }
             }
         }
 

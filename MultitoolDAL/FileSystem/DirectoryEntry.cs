@@ -41,8 +41,6 @@ namespace Multitool.DAL
             }
         }
 
-        internal List<FileSystemEntry> Childs { get; } = new();
-
         #region public methods
 
         /// <inheritdoc/>

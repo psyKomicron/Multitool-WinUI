@@ -9,7 +9,7 @@ namespace Multitool.DAL.FileSystem.Events
     public class ChangeEventArgs : EventArgs
     {
         /// <summary>
-        /// Default constructor
+        /// Default constructor.
         /// </summary>
         public ChangeEventArgs() : base()
         {
@@ -18,16 +18,20 @@ namespace Multitool.DAL.FileSystem.Events
         }
 
         /// <summary>
-        /// Constructor
+        /// Constructor.
         /// </summary>
         /// <param name="entry"></param>
-        /// <param name="changeTypes"></param>
+        /// <param name="changeTypes">Change types</param>
         public ChangeEventArgs(FileSystemEntry entry, ChangeTypes changeTypes) : base()
         {
             Entry = entry;
             ChangeTypes = changeTypes;
         }
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="changeTypes">Change types</param>
         public ChangeEventArgs(ChangeTypes changeTypes) : base()
         {
             ChangeTypes = changeTypes;
