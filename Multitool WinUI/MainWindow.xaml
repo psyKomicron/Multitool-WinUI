@@ -4,7 +4,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:MultitoolWinUI.Controls"
-    Closed="Window_Closed">
+    Closed="Window_Closed"
+    Activated="Window_Activated">
     <Grid>
         <NavigationView 
             Loaded="NavigationView_Loaded"
@@ -68,6 +69,7 @@
             <controls:TraceControl
                 x:Name="MessageDisplay"
                 x:FieldModifier="public"
+                Interval="1500"
                 Height="Auto"
                 HorizontalAlignment="Stretch"
                 Background="{StaticResource DarkDevBlue}"
