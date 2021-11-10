@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -13,11 +14,12 @@ namespace Multitool.Net.Irc
     {
         private readonly CancellationTokenSource rootCancelToken = new();
         private Thread receiveThread;
+        private long disconnected;
         private bool disposed;
 
         public IrcClient()
         {
-            receiveThread = new(new ParameterizedThreadStart(ReceiveData));
+            receiveThread = new(ReceiveData);
         }
 
         public event TypedEventHandler<IIrcClient, string> MessageReceived;
@@ -27,11 +29,15 @@ namespace Multitool.Net.Irc
 
         public WebSocketState ClientState => Socket.State;
 
+        public bool Connected { get; protected set; }
+
         public string NickName { get; set; }
 
         protected bool Disposed => disposed;
 
         protected ClientWebSocket Socket { get; } = new();
+
+        protected Thread ReceiveThread => receiveThread;
         #endregion
 
         #region public methods
@@ -43,10 +49,9 @@ namespace Multitool.Net.Irc
         public abstract Task Part(string channel);
 
         /// <inheritdoc/>
-        public virtual async Task Connect(Uri channel)
+        public virtual async Task Connect(Uri uri)
         {
-            await Socket.ConnectAsync(channel, CancellationToken.Token);
-            Debug.WriteLine(Socket.State);
+            await Socket.ConnectAsync(uri, CancellationToken.Token);
         }
 
         /// <inheritdoc/>
@@ -57,14 +62,15 @@ namespace Multitool.Net.Irc
 
         public async Task Disconnect()
         {
-            if (ClientState == WebSocketState.Open)
+            if (ClientState != WebSocketState.Closed)
             {
+                Interlocked.Exchange(ref disconnected, 1);
                 await Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "User closed the connection", CancellationToken.Token);
                 Trace.TraceInformation("Irc client disconnected");
             }
             else
             {
-                throw new InvalidOperationException($"Cannot close client's connection (connection not open : {ClientState}");
+                Trace.TraceWarning("Client already disconnected.");
             }
         }
 
@@ -85,7 +91,9 @@ namespace Multitool.Net.Irc
         #endregion
 
         #region protected methods
-        protected bool AssertConnectionValid()
+        protected abstract void OnMessageReceived(string message);
+
+        protected void AssertConnectionValid()
         {
             if (ClientState != WebSocketState.Open)
             {
@@ -107,9 +115,13 @@ namespace Multitool.Net.Irc
                         throw new ArgumentException($"Unkown WebSocketState state, argument name : {nameof(ClientState)}");
                 }
             }
-            else
+        }
+
+        protected void AssertChannelNameValid(string channel)
+        {
+            if (string.IsNullOrWhiteSpace(channel))
             {
-                return true;
+                throw new ArgumentException("Channel name cannot be empty", nameof(channel));
             }
         }
 
@@ -130,21 +142,25 @@ namespace Multitool.Net.Irc
 
         private async void ReceiveData(object obj)
         {
-            if (obj is ClientWebSocket socket)
+            ArraySegment<byte> data = new(new byte[1024]);
+            CancellationTokenSource tokenSource = GetCancellationToken();
+            do
             {
-                ArraySegment<byte> data = new();
-                CancellationTokenSource tokenSource = GetCancellationToken();
-                do
+                if (Interlocked.Read(ref disconnected) == 1)
                 {
-                    await socket.ReceiveAsync(data, tokenSource.Token);
-                    if (data.Count != 0)
-                    {
-                        string stringData = Encoding.UTF8.GetString(data);
-                        Debug.WriteLine(stringData);
-                    }
+                    break;
                 }
-                while (true);
+                await Socket.ReceiveAsync(data, tokenSource.Token);
+                if (data.Count != 0)
+                {
+                    OnMessageReceived(Encoding.UTF8.GetString(data));
+                }
+                for (int i = 0; i < data.Count; i++)
+                {
+                    data[i] = default;
+                }
             }
+            while (true);
         }
         #endregion
     }

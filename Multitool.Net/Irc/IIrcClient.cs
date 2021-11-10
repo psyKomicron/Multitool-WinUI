@@ -15,6 +15,7 @@ namespace Multitool.Net.Irc
 
         string NickName { get; set; }
         WebSocketState ClientState { get; }
+        bool Connected { get; }
         CancellationTokenSource CancellationToken { get; }
 
 
@@ -34,10 +35,10 @@ namespace Multitool.Net.Irc
         /// Connects to an IRC server passing the <paramref name="cancellationToken"/>
         /// to the internal <see cref="WebSocket"/> connect method.
         /// </summary>
-        /// <param name="channel">IRC server to connect to</param>
+        /// <param name="uri">IRC server to connect to</param>
         /// <param name="cancellationToken">To cancel the operation</param>
         /// <returns>The task object representing the asynchronous operation</returns>
-        Task Connect(Uri channel, CancellationToken cancellationToken);
+        Task Connect(Uri uri, CancellationToken cancellationToken);
         CancellationTokenSource GetCancellationToken();
         Task Join(string channel);
         Task Part(string channel);

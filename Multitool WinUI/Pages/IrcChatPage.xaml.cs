@@ -35,7 +35,7 @@ namespace MultitoolWinUI.Pages
             Interval = 1000,
             AutoReset = true
         };
-        private readonly TwitchIrcClient ircClient = new(@"oauth:")
+        private readonly TwitchIrcClient ircClient = new(@"oauth:9ifgfq8t1jvq82kgp39y18nndaxi7b")
         {
             NickName = "psykomicron"
         };
@@ -102,7 +102,7 @@ namespace MultitoolWinUI.Pages
             return builder.ToString();
         }
 
-        private void NavigateTo(string uri)
+        private async void NavigateTo(string uri)
         {
             try
             {
@@ -121,27 +121,40 @@ namespace MultitoolWinUI.Pages
                 }
 #endif
             }
+            try
+            {
+                if (ircClient.ClientState == System.Net.WebSockets.WebSocketState.Open)
+                {
+                    await ircClient.Join(uri);
+                }
+            }
+            catch (ArgumentException) { }
         }
         #endregion
 
         #region event handlers
         private void IrcClient_MessageReceived(IIrcClient sender, string args)
         {
-            DispatcherQueue.TryEnqueue(() =>
+            if (DispatcherQueue != null)
             {
-                lock (_lock)
+                DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (Chat.Count > 0 && Chat.Count > MaxNumberOfMessages)
+                    lock (_lock)
                     {
-                        for (int i = 0; i < DeleteChunk && Chat.Count > 0; i++)
+#if false
+                        if (Chat.Count > 0 && Chat.Count > MaxNumberOfMessages)
                         {
-                            Chat.RemoveAt(0);
+                            for (int i = 0; i < DeleteChunk && Chat.Count > 0; i++)
+                            {
+                                Chat.RemoveAt(0);
+                            }
                         }
+#endif
+                        Chat.Add(DateTime.Now.ToString() + " : " + args);
                     }
-                    Chat.Add(DateTime.Now.ToString() + " : " + args);
-                }
-                Interlocked.Increment(ref messages);
-            });
+                    Interlocked.Increment(ref messages);
+                });
+            }
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -156,7 +169,7 @@ namespace MultitoolWinUI.Pages
 
         private void Chat_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            DispatcherQueue.TryEnqueue(() => NoMTextBlock.Text = Chat.Count.ToString());
+            DispatcherQueue?.TryEnqueue(() => NoMTextBlock.Text = Chat.Count.ToString());
         }
 
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
@@ -173,14 +186,22 @@ namespace MultitoolWinUI.Pages
 }
 
             await ircClient.Connect(new(@"wss://irc-ws.chat.twitch.tv:443"));
-            await ircClient.Join(LastStream);
+            if (!string.IsNullOrEmpty(LastStream))
+            {
+                await ircClient.Join(LastStream);
+            }
         }
 
-        private void OnMainWindowClose(object sender, WindowEventArgs args)
+        private async void OnMainWindowClose(object sender, WindowEventArgs args)
         {
-            _ = ircClient.Disconnect();
-            _ = ircClient.Part(LastStream);
-
+            ircClient.MessageReceived -= IrcClient_MessageReceived;
+#if false
+            if (ircClient.Connected)
+            {
+                await ircClient.Part(LastStream);
+            }
+#endif
+            await ircClient.Disconnect();
             Chat.Clear();
             SavePage();
         }
@@ -197,6 +218,11 @@ namespace MultitoolWinUI.Pages
             Chat.Clear();
             Interlocked.Exchange(ref messages, 0);
             Trace.TraceInformation("Cleared chat");
+        }
+
+        private async void LeaveChat_Click(object sender, RoutedEventArgs e)
+        {
+            await ircClient.Part(LastStream);
         }
 
         private void ChatListView_PointerWheelChanged(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)

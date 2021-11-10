@@ -35,46 +35,9 @@ namespace MultitoolWinUI.Controls
             closed = false;
         }
 
+        public event TypedEventHandler<TraceControl, Visibility> VisibilityChanged;
+
         #region properties
-#if false
-        public double Interval
-        {
-            get => messageTimer.Interval;
-            set => messageTimer.Interval = value;
-        }
-        /// <summary>
-        /// Glyph to append to the title.
-        /// </summary>
-        public string TitleGlyph
-        {
-            get => Icon.Glyph;
-            set => Icon.Glyph = value;
-        }
-
-        /// <summary>
-        /// Title of the control.
-        /// </summary>
-        public string Title
-        {
-            get => TitleTextBlock.Text;
-            set => TitleTextBlock.Text = value;
-        }
-
-        /// <summary>
-        /// Header of the optional control's content.
-        /// </summary>
-        public string Header
-        {
-            get => HeaderTextBlock.Text;
-            set => HeaderTextBlock.Text = value;
-        }
-
-        public string Message
-        {
-            get => ContentTextBlock.Text;
-            set => ContentTextBlock.Text = value;
-        }
-#else
         #region dependency properties
         public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(nameof(Header), typeof(string), typeof(TraceControl), new(string.Empty));
 
@@ -117,12 +80,9 @@ namespace MultitoolWinUI.Controls
             get => GetValue(MessageProperty);
             set => SetValue(MessageProperty, value);
         }
-#endif
 
         public bool Sync { get; set; } = true;
         #endregion
-
-        public event TypedEventHandler<TraceControl, Visibility> VisibilityChanged;
 
         public void QueueMessage(string title, string header, string message, Brush background)
         {
