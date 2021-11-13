@@ -13,7 +13,7 @@ namespace Multitool.Net.Irc
 {
     public abstract class IrcClient : IIrcClient
     {
-        private const int bufferSize = 700;
+        private const int bufferSize = 5000;
         private readonly CancellationTokenSource rootCancelToken = new();
         private readonly Thread receiveThread;
         private bool disposed;
@@ -156,7 +156,7 @@ namespace Multitool.Net.Irc
 
         private async void ReceiveData(object obj)
         {
-            ArraySegment<byte> data = new(new byte[700]);
+            ArraySegment<byte> data = new(new byte[bufferSize]);
             do
             {
                 try
@@ -176,11 +176,10 @@ namespace Multitool.Net.Irc
                     {
                         string message = Encoding.GetString(data.Slice(0, i));
                         OnMessageReceived(new(message.ToCharArray()));
-
 #if false
                         Debug.WriteLine(dataAsString.ToString());
 #endif
-#if DEBUG
+#if false
                         Debug.WriteLine(message);
                         // clear buffer
 #endif

@@ -1,5 +1,7 @@
 ﻿using Microsoft.UI.Dispatching;
 
+using Multitool.Optimisation;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,16 +20,17 @@ namespace Multitool.Net.Irc
 {
     public class TwitchIrcClient : IrcClient
     {
-        private static readonly Regex oauthRegex = new(@"^oauth:.+", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex ircCommandRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv [A-Z]+))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex ircMessage = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv PRIVMSG", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private readonly string login;
+        private readonly CircularBag<string> history = new(5000);
         private bool loggedIn;
         private bool hasJoined;
 
         #region constructors
         public TwitchIrcClient(string login)
         {
+            Regex oauthRegex = new(@"^oauth:.+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (oauthRegex.IsMatch(login))
             {
                 this.login = login;
@@ -75,9 +78,16 @@ namespace Multitool.Net.Irc
         {
             AssertConnectionValid();
             AssertChannelNameValid(channel);
-
-            await Socket.SendAsync(GetBytes($"PART #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
-            Trace.TraceInformation("> Left " + channel);
+            if (hasJoined)
+            {
+                await Socket.SendAsync(GetBytes($"PART #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+                hasJoined = false;
+                Trace.TraceInformation("> Left " + channel);
+            }
+            else
+            {
+                Trace.TraceInformation("> Already left channel");
+            }
         }
 
         public override async Task Connect(Uri uri)
@@ -121,25 +131,29 @@ namespace Multitool.Net.Irc
             int i = 1;
             if (message[0] == ':')
             {
+                int nameLength = 0;
                 for (; i < message.Length; i++)
                 {
                     if (message[i] == '@')
                     {
                         break;
                     }
+                    else if (message[i] == '!')
+                    {
+                        nameLength = i;
+                    }
                 }
-                Span<char> name = message.Slice(1, i - 1);
-
+                Span<char> name = message.Slice(1, nameLength);
                 builder.Append(name).Append(' ').Append(':').Append(' ');
 
                 while (i < message.Length && message[i] != ':')
                 {
                     i++;
                 }
-
                 builder.Append(message.Slice(i + 1));
-
-                InvokeMessageReceived(builder.ToString());
+                string s = builder.ToString();
+                history.Add(s);
+                InvokeMessageReceived(s);
             }
         }
 
@@ -151,11 +165,6 @@ namespace Multitool.Net.Irc
         private ArraySegment<byte> GetBytes(Span<char> text)
         {
             return new(Encoding.GetBytes(text.ToArray()));
-        }
-
-        private string GetString(ArraySegment<byte> buffer)
-        {
-            return Encoding.GetString(buffer);
         }
 
         /*private async Task<string> ReceiveAsync()

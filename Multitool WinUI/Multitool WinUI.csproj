@@ -13,7 +13,7 @@
     <Authors>Julien Marquet</Authors>
     <PackageReleaseNotes>Continuing on fixing bugs and implementing new features. :)</PackageReleaseNotes>
     <ApplicationIcon>multitool.ico</ApplicationIcon>
-    <Version>1.0.12</Version>
+    <Version>1.0.14</Version>
     <FileVersion>1.0.12.0</FileVersion>
     <PackageId>MultitoolWinUI</PackageId>
   </PropertyGroup>
@@ -59,7 +59,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Multitool BL\Multitool BL.csproj" />
+    <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
     <ProjectReference Include="..\Multitool.Net\Multitool.Net.csproj" />
     <ProjectReference Include="..\MultitoolDAL\Multitool.DAL.csproj" />
   </ItemGroup>

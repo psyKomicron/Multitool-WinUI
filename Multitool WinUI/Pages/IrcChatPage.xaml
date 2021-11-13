@@ -40,44 +40,63 @@
                 <RowDefinition Height="10*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel
-                Orientation="Horizontal"
+            <Grid
+                Margin="5"
+                ColumnSpacing="5"
                 Grid.Row="0">
-                <StackPanel.Resources>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="8*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                    </Style>
                     <Style TargetType="TextBox">
+                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                         <Setter Property="VerticalContentAlignment" Value="Center"/>
                         <Setter Property="VerticalAlignment" Value="Center"/>
                         <Setter Property="BorderThickness" Value="0"/>
                     </Style>
                     <Style TargetType="TextBlock">
+                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
                         <Setter Property="VerticalAlignment" Value="Center"/>
                     </Style>
-                </StackPanel.Resources>
+                </Grid.Resources>
                 <Button
                     x:Name="ClearChat"
                     Content="Clear"
+                    Grid.Column="0"
                     Click="ClearChat_Click"/>
 
                 <Button
                     x:Name="LeaveChat"
-                    Content="Leave chat"
-                    Click="LeaveChat_Click"/>
+                    Grid.Column="1"
+                    Click="LeaveChat_Click">
+                    <TextBlock
+                        Text="Leave chat"
+                        TextWrapping="WrapWholeWords"/>
+                </Button>
 
                 <TextBlock
-                    x:Name="NoMTextBlock"/>
+                    x:Name="NoMTextBlock"
+                    Grid.Column="2"/>
 
                 <TextBlock
-                    x:Name="MPSTextBlock"/>
+                    x:Name="MPSTextBlock"
+                    Grid.Column="3"/>
 
                 <TextBox
-                    Text="{x:Bind MaxNumberOfMessages, Mode=TwoWay}"
-                    PlaceholderText="Max messages"/>
-
-                <TextBox
-                    Text="{x:Bind DeleteChunk, Mode=TwoWay}"
-                    PlaceholderText="Delete chunk"/>
-            </StackPanel>
+                    Text="{x:Bind Login, Mode=TwoWay}"
+                    PlaceholderText="Login"
+                    TextWrapping="Wrap"
+                    Grid.Column="4"/>
+            </Grid>
 
             <ListView
                 x:Name="ChatListView"
@@ -85,21 +104,41 @@
                 Background="{ThemeResource AppBarBorderThemeBrush}"
                 Grid.Row="1"
                 HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                PointerWheelChanged="ChatListView_PointerWheelChanged">
+                VerticalAlignment="Stretch">
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <ItemsStackPanel
                             VerticalAlignment="Bottom"
-                            ItemsUpdatingScrollMode="KeepLastItemInView"/>
+                            ItemsUpdatingScrollMode="KeepLastItemInView"
+                            CacheLength="200"/>
                     </ItemsPanelTemplate>
                 </ListView.ItemsPanel>
 
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock 
-                            Text="{Binding}"
-                            TextWrapping="WrapWholeWords"/>
+
+                        <Grid Width="Auto" ColumnSpacing="3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="35px"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="10*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock 
+                                Text="{Binding Timestamp, Mode=OneWay}"
+                                Opacity="0.8"
+                                Grid.Column="0"/>
+
+                            <TextBlock 
+                                Text="{Binding UserName, Mode=OneWay}"
+                                TextWrapping="Wrap"
+                                Grid.Column="1"/>
+
+                            <TextBlock 
+                                Text="{Binding Message, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords"
+                                Grid.Column="2"/>
+                        </Grid>
+
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

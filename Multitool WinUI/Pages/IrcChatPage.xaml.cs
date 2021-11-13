@@ -6,6 +6,8 @@ using Microsoft.Web.WebView2.Core;
 using Multitool.DAL;
 using Multitool.Net.Irc;
 
+using MultitoolWinUI.Models;
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,8 +17,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
-
-using Windows.Media.Protection.PlayReady;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -32,14 +32,10 @@ namespace MultitoolWinUI.Pages
         private readonly object _lock = new();
         private readonly System.Timers.Timer timer = new()
         {
-            Interval = 1000,
+            Interval = 5000,
             AutoReset = true
         };
-        private readonly TwitchIrcClient ircClient = new(@"oauth:9ifgfq8t1jvq82kgp39y18nndaxi7b")
-        {
-            NickName = "psykomicron",
-            Encoding = Encoding.UTF8
-        };
+        private readonly TwitchIrcClient ircClient;
         private bool saved;
         private long messages;
 
@@ -49,6 +45,13 @@ namespace MultitoolWinUI.Pages
             try
             {
                 ISettings settings = App.Settings;
+                Login = settings.GetSetting<string>(nameof(IrcChatPage), nameof(Login));
+                ircClient = new(Login)
+                {
+                    NickName = "psykomicron",
+                    Encoding = Encoding.UTF8
+                };
+                ircClient.MessageReceived += IrcClient_MessageReceived;
                 LastStream = settings.GetSetting<string>(nameof(IrcChatPage), nameof(LastStream));
             }
             catch (SettingNotFoundException) 
@@ -61,21 +64,17 @@ namespace MultitoolWinUI.Pages
             App.MainWindow.Closed += OnMainWindowClose;
             Chat.CollectionChanged += Chat_CollectionChanged;
             timer.Elapsed += Timer_Elapsed;
-            ircClient.MessageReceived += IrcClient_MessageReceived;
         }
-
-        #region public
 
         #region properties
         public string LastStream { get; set; }
 
-        public ObservableCollection<string> Chat { get; set; } = new();
+        public ObservableCollection<ChatMessageModel> Chat { get; set; } = new();
 
-        public int MaxNumberOfMessages { get; set; }
-
-        public int DeleteChunk { get; set; }
+        public string Login { get; set; }
         #endregion
 
+        #region public
         public void Dispose()
         {
             ircClient.Dispose();
@@ -89,19 +88,9 @@ namespace MultitoolWinUI.Pages
             {
                 ISettings settings = App.Settings;
                 settings.SaveSetting(nameof(IrcChatPage), nameof(LastStream), LastStream);
+                settings.SaveSetting(nameof(IrcChatPage), nameof(Login), Login);
                 saved = true;
             }
-        }
-
-        private string StringifyHeaders(CoreWebView2HttpRequestHeaders requestHeaders)
-        {
-            StringBuilder builder = new();
-            foreach (KeyValuePair<string, string> header in requestHeaders)
-            {
-                builder.Append('[').Append(header.Key).Append(" | ").Append(header.Value).Append(']').Append('\n');
-            }
-            builder.Length--;
-            return builder.ToString();
         }
 
         private async void NavigateTo(string uri)
@@ -125,7 +114,7 @@ namespace MultitoolWinUI.Pages
             }
             try
             {
-                if (ircClient.ClientState == System.Net.WebSockets.WebSocketState.Open)
+                if (ircClient != null && ircClient.ClientState == System.Net.WebSockets.WebSocketState.Open)
                 {
                     await ircClient.Part(LastStream);
                     await ircClient.Join(uri);
@@ -135,6 +124,34 @@ namespace MultitoolWinUI.Pages
             {
                 Trace.TraceError(ex.ToString());
             }
+        }
+
+        private string StringifyHeaders(CoreWebView2HttpRequestHeaders requestHeaders)
+        {
+            StringBuilder builder = new();
+            foreach (KeyValuePair<string, string> header in requestHeaders)
+            {
+                builder.Append('[').Append(header.Key).Append(" | ").Append(header.Value).Append(']').Append('\n');
+            }
+            builder.Length--;
+            return builder.ToString();
+        }
+
+        private async Task ExitPage()
+        {
+            timer.Stop();
+            if (ircClient != null)
+            {
+                ircClient.MessageReceived -= IrcClient_MessageReceived;
+#if true
+                if (ircClient.Connected)
+                {
+                    await ircClient.Part(LastStream);
+                }
+#endif
+                await ircClient.Disconnect();
+            }
+            SavePage();
         }
         #endregion
 
@@ -147,7 +164,7 @@ namespace MultitoolWinUI.Pages
                 {
                     lock (_lock)
                     {
-#if !DEBUG
+#if false
                         if (Chat.Count > 0 && Chat.Count > MaxNumberOfMessages)
                         {
                             for (int i = 0; i < DeleteChunk && Chat.Count > 0; i++)
@@ -156,7 +173,7 @@ namespace MultitoolWinUI.Pages
                             }
                         }
 #endif
-                        Chat.Add(DateTime.Now.ToString() + " : " + args);
+                        Chat.Add(new(string.Empty, args));
                     }
                 });
             }
@@ -167,7 +184,7 @@ namespace MultitoolWinUI.Pages
         {
             if (Interlocked.Read(ref messages) > 0)
             {
-                long copy = Interlocked.Read(ref messages);
+                long copy = Interlocked.Read(ref messages) / 5L;
                 Interlocked.Exchange(ref messages, 0);
                 _ = DispatcherQueue.TryEnqueue(() => MPSTextBlock.Text = copy.ToString());
             }
@@ -191,43 +208,22 @@ namespace MultitoolWinUI.Pages
                 Trace.TraceError(ex.ToString());
             }
 
-            await ircClient.Connect(new(@"wss://irc-ws.chat.twitch.tv:443"));
-
-            if (!string.IsNullOrEmpty(LastStream))
+            if (ircClient != null)
             {
-                await ircClient.Join(LastStream);
+                await ircClient.Connect(new(@"wss://irc-ws.chat.twitch.tv:443"));
+                if (!string.IsNullOrEmpty(LastStream))
+                {
+                    await ircClient.Join(LastStream);
+                }
             }
         }
 
-        private async void OnPageUnloaded(object sender, RoutedEventArgs e)
-        {
-            ircClient.MessageReceived -= IrcClient_MessageReceived;
-#if true
-            if (ircClient.Connected)
-            {
-                await ircClient.Part(LastStream);
-            }
-#endif
-            await ircClient.Disconnect();
-            SavePage();
-        }
+        private async void OnPageUnloaded(object sender, RoutedEventArgs e) => await ExitPage();
 
-        private async void OnMainWindowClose(object sender, WindowEventArgs args)
-        {
-            ircClient.MessageReceived -= IrcClient_MessageReceived;
-#if true
-            if (ircClient.Connected)
-            {
-                await ircClient.Part(LastStream);
-            }
-#endif
-            await ircClient.Disconnect();
-            SavePage();
-        }
+        private async void OnMainWindowClose(object sender, WindowEventArgs args) => await ExitPage();
 
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            //Trace.TraceInformation("Query submitted : " + args.QueryText);
             NavigateTo(args.QueryText);
             LastStream = args.QueryText;
         }
@@ -250,26 +246,6 @@ namespace MultitoolWinUI.Pages
                 Trace.TraceError(ex.ToString());
             }
             //await ircClient.Part(LastStream);
-        }
-
-        private void ChatListView_PointerWheelChanged(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            Debug.WriteLine("Scrolling");
-        }
-
-        private void PageWebView_NavigationStarting(WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
-        {
-            //Debug.WriteLine($"/!\\Navigation started\nnavigation id : {args.NavigationId}\nuri : {args.Uri}\nrequest headers : \n{StringifyHeaders(args.RequestHeaders)}\nis redirected : {args.IsRedirected}\nis user initialiased : {args.IsUserInitiated}\n");
-        }
-
-        private void PageWebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
-        {
-            //Debug.WriteLine($"/!\\Navigation completed\nnavigation id : {args.NavigationId}\nsuccess : {args.IsSuccess}\nerror status : {args.WebErrorStatus}\n");
-        }
-
-        private void PageWebView_WebMessageReceived(WebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
-        {
-            //Debug.WriteLine($"Message received, source {args.Source} : \n{args.WebMessageAsJson}\n");
         }
         #endregion
     }

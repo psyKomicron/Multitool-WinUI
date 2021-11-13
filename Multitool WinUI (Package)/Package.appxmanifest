@@ -11,7 +11,7 @@
   <Identity
     Name="a34c0c86-c628-4f8e-9e06-1af20315e557"
     Publisher="CN=MonsieurJ"
-    Version="1.0.11.0" />
+    Version="1.0.14.0" />
 
   <Properties>
     <DisplayName>Multitool WinUI (Package)</DisplayName>
@@ -40,6 +40,8 @@
         Square44x44Logo="Images\Square44x44Logo.png">
         <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png"  Square71x71Logo="Images\SmallTile.png" Square310x310Logo="Images\LargeTile.png"/>
         <uap:SplashScreen Image="Images\SplashScreen.png" />
+        <uap:InitialRotationPreference>
+          <uap:Rotation Preference="landscape"/></uap:InitialRotationPreference>
       </uap:VisualElements>
     </Application>
   </Applications>
