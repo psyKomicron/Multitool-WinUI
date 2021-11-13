@@ -37,7 +37,8 @@ namespace MultitoolWinUI.Pages
         };
         private readonly TwitchIrcClient ircClient = new(@"oauth:9ifgfq8t1jvq82kgp39y18nndaxi7b")
         {
-            NickName = "psykomicron"
+            NickName = "psykomicron",
+            Encoding = Encoding.UTF8
         };
         private bool saved;
         private long messages;
@@ -56,6 +57,7 @@ namespace MultitoolWinUI.Pages
             }
 
             Loaded += OnPageLoaded;
+            Unloaded += OnPageUnloaded;
             App.MainWindow.Closed += OnMainWindowClose;
             Chat.CollectionChanged += Chat_CollectionChanged;
             timer.Elapsed += Timer_Elapsed;
@@ -125,10 +127,14 @@ namespace MultitoolWinUI.Pages
             {
                 if (ircClient.ClientState == System.Net.WebSockets.WebSocketState.Open)
                 {
+                    await ircClient.Part(LastStream);
                     await ircClient.Join(uri);
                 }
             }
-            catch (ArgumentException) { }
+            catch (ArgumentException ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
         }
         #endregion
 
@@ -141,7 +147,7 @@ namespace MultitoolWinUI.Pages
                 {
                     lock (_lock)
                     {
-#if false
+#if !DEBUG
                         if (Chat.Count > 0 && Chat.Count > MaxNumberOfMessages)
                         {
                             for (int i = 0; i < DeleteChunk && Chat.Count > 0; i++)
@@ -152,9 +158,9 @@ namespace MultitoolWinUI.Pages
 #endif
                         Chat.Add(DateTime.Now.ToString() + " : " + args);
                     }
-                    Interlocked.Increment(ref messages);
                 });
             }
+            Interlocked.Increment(ref messages);
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -174,7 +180,7 @@ namespace MultitoolWinUI.Pages
 
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            //timer.Start();
+            timer.Start();
             try
             {
                 LastStream = App.Settings.GetSetting<string>(nameof(IrcChatPage), nameof(LastStream));
@@ -183,34 +189,47 @@ namespace MultitoolWinUI.Pages
             catch (SettingNotFoundException ex)
             {
                 Trace.TraceError(ex.ToString());
-}
+            }
 
             await ircClient.Connect(new(@"wss://irc-ws.chat.twitch.tv:443"));
+
             if (!string.IsNullOrEmpty(LastStream))
             {
                 await ircClient.Join(LastStream);
             }
         }
 
-        private async void OnMainWindowClose(object sender, WindowEventArgs args)
+        private async void OnPageUnloaded(object sender, RoutedEventArgs e)
         {
             ircClient.MessageReceived -= IrcClient_MessageReceived;
-#if false
+#if true
             if (ircClient.Connected)
             {
                 await ircClient.Part(LastStream);
             }
 #endif
             await ircClient.Disconnect();
-            Chat.Clear();
+            SavePage();
+        }
+
+        private async void OnMainWindowClose(object sender, WindowEventArgs args)
+        {
+            ircClient.MessageReceived -= IrcClient_MessageReceived;
+#if true
+            if (ircClient.Connected)
+            {
+                await ircClient.Part(LastStream);
+            }
+#endif
+            await ircClient.Disconnect();
             SavePage();
         }
 
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             //Trace.TraceInformation("Query submitted : " + args.QueryText);
-            LastStream = args.QueryText;
             NavigateTo(args.QueryText);
+            LastStream = args.QueryText;
         }
 
         private void ClearChat_Click(object sender, RoutedEventArgs e)
@@ -222,7 +241,15 @@ namespace MultitoolWinUI.Pages
 
         private async void LeaveChat_Click(object sender, RoutedEventArgs e)
         {
-            await ircClient.Part(LastStream);
+            try
+            {
+                await ircClient.Part(LastStream);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
+            //await ircClient.Part(LastStream);
         }
 
         private void ChatListView_PointerWheelChanged(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)

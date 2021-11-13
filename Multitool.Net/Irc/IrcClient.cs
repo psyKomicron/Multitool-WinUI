@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -12,26 +13,32 @@ namespace Multitool.Net.Irc
 {
     public abstract class IrcClient : IIrcClient
     {
+        private const int bufferSize = 700;
         private readonly CancellationTokenSource rootCancelToken = new();
-        private Thread receiveThread;
-        private long disconnected;
+        private readonly Thread receiveThread;
         private bool disposed;
+        protected long disconnected;
 
         public IrcClient()
         {
-            receiveThread = new(ReceiveData);
+            receiveThread = new(ReceiveData)
+            {
+                IsBackground = true
+            };
         }
 
         public event TypedEventHandler<IIrcClient, string> MessageReceived;
 
         #region properties
-        public CancellationTokenSource CancellationToken => rootCancelToken;
+        public CancellationTokenSource RootCancellationToken => rootCancelToken;
 
         public WebSocketState ClientState => Socket.State;
 
         public bool Connected { get; protected set; }
 
         public string NickName { get; set; }
+
+        public Encoding Encoding { get; set; }
 
         protected bool Disposed => disposed;
 
@@ -51,7 +58,8 @@ namespace Multitool.Net.Irc
         /// <inheritdoc/>
         public virtual async Task Connect(Uri uri)
         {
-            await Socket.ConnectAsync(uri, CancellationToken.Token);
+            await Socket.ConnectAsync(uri, RootCancellationToken.Token);
+            Connected = true;
         }
 
         /// <inheritdoc/>
@@ -62,15 +70,17 @@ namespace Multitool.Net.Irc
 
         public async Task Disconnect()
         {
-            if (ClientState != WebSocketState.Closed)
+            if (Interlocked.Read(ref disconnected) == 0)
             {
                 Interlocked.Exchange(ref disconnected, 1);
-                await Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "User closed the connection", CancellationToken.Token);
-                Trace.TraceInformation("Irc client disconnected");
+                RootCancellationToken.Cancel();
+                await Socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
+                await Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
+                Trace.TraceInformation("IRC client disconnected");
             }
             else
             {
-                Trace.TraceWarning("Client already disconnected.");
+                Trace.TraceWarning($"IRC client already disconnected. Client status : {ClientState}");
             }
         }
 
@@ -91,7 +101,7 @@ namespace Multitool.Net.Irc
         #endregion
 
         #region protected methods
-        protected abstract void OnMessageReceived(string message);
+        protected abstract void OnMessageReceived(Span<char> message);
 
         protected void AssertConnectionValid()
         {
@@ -117,7 +127,7 @@ namespace Multitool.Net.Irc
             }
         }
 
-        protected void AssertChannelNameValid(string channel)
+        protected static void AssertChannelNameValid(string channel)
         {
             if (string.IsNullOrWhiteSpace(channel))
             {
@@ -127,7 +137,11 @@ namespace Multitool.Net.Irc
 
         protected void InvokeMessageReceived(string message)
         {
+#if !DEBUG
             Task.Run(() => MessageReceived?.Invoke(this, message));
+#else
+            MessageReceived?.Invoke(this, message);
+#endif
         }
         #endregion
 
@@ -136,31 +150,66 @@ namespace Multitool.Net.Irc
         {
             if (disposed)
             {
-                throw new ObjectDisposedException(string.Empty);
+                throw new ObjectDisposedException(GetType().FullName);
             }
         }
 
         private async void ReceiveData(object obj)
         {
-            ArraySegment<byte> data = new(new byte[1024]);
-            CancellationTokenSource tokenSource = GetCancellationToken();
+            ArraySegment<byte> data = new(new byte[700]);
             do
             {
-                if (Interlocked.Read(ref disconnected) == 1)
+                try
                 {
-                    break;
+                    await Socket.ReceiveAsync(data, CancellationToken.None);
+                    StringBuilder dataAsString = new();
+                    int i = 0;
+                    for (; i < data.Count; i++)
+                    {
+                        if (data[i] == 0x0)
+                        {
+                            break;
+                        }
+                        dataAsString.Append(data[i] + " ");
+                    }
+                    if (data.Count != 0)
+                    {
+                        string message = Encoding.GetString(data.Slice(0, i));
+                        OnMessageReceived(new(message.ToCharArray()));
+
+#if false
+                        Debug.WriteLine(dataAsString.ToString());
+#endif
+#if DEBUG
+                        Debug.WriteLine(message);
+                        // clear buffer
+#endif
+                        for (i = 0; i < data.Count; i++)
+                        {
+                            if (data[i] != 0)
+                            {
+                                data[i] = default;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
                 }
-                await Socket.ReceiveAsync(data, tokenSource.Token);
-                if (data.Count != 0)
+                catch (WebSocketException ex)
                 {
-                    OnMessageReceived(Encoding.UTF8.GetString(data));
+                    Interlocked.Exchange(ref disconnected, 1);
+                    Trace.TraceError("WebSocket exception occured, exiting receive thread.\n" + ex.ToString());
+                    throw;
                 }
-                for (int i = 0; i < data.Count; i++)
+                catch (Exception ex)
                 {
-                    data[i] = default;
+                    Trace.TraceError(ex.ToString());
                 }
             }
-            while (true);
+            while (Interlocked.Read(ref disconnected) == 0);
+            Trace.TraceInformation($"IrcClient '{NickName}' receive thread exiting");
         }
         #endregion
     }

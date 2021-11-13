@@ -2,6 +2,7 @@
 using System;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,7 +17,8 @@ namespace Multitool.Net.Irc
         string NickName { get; set; }
         WebSocketState ClientState { get; }
         bool Connected { get; }
-        CancellationTokenSource CancellationToken { get; }
+        CancellationTokenSource RootCancellationToken { get; }
+        Encoding Encoding { get; set; }
 
 
         /// <summary>
@@ -24,7 +26,7 @@ namespace Multitool.Net.Irc
         /// <para>
         ///     The <see cref="System.Threading.CancellationToken"/> given to 
         ///     <see cref="ClientWebSocket.ConnectAsync(Uri, System.Threading.CancellationToken)"/> 
-        ///     is <see cref="CancellationToken"/>, allowing to cancel all pending operations when 
+        ///     is <see cref="RootCancellationToken"/>, allowing to cancel all pending operations when 
         ///     the object is closed or disposed.
         /// </para>
         /// </summary>

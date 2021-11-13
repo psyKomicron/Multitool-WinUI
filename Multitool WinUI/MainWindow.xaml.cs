@@ -28,6 +28,7 @@ namespace MultitoolWinUI
     public sealed partial class MainWindow : Window
     {
         private Type lastPage;
+        private bool closed;
 
         public MainWindow()
         {
@@ -88,7 +89,6 @@ namespace MultitoolWinUI
         public bool IsPaneOpen { get; set; }
 
         #region navigation events
-
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
             if (lastPage != null)
@@ -155,11 +155,9 @@ namespace MultitoolWinUI
                 ContentFrame.GoBack();
             }
         }
-
         #endregion
 
         #region window events
-
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             _ = DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
@@ -168,6 +166,7 @@ namespace MultitoolWinUI
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
+            closed = true;
             IEnumerable<WindowTrace> tracers = Trace.Listeners.OfType<WindowTrace>();
             for (int i = 0; i < Trace.Listeners.Count; i++)
             {
@@ -185,7 +184,10 @@ namespace MultitoolWinUI
 
         private void MessageDisplay_VisibilityChanged(TraceControl sender, Visibility args)
         {
-            ContentPopup.IsOpen = args == Visibility.Visible;
+            if (!closed)
+            {
+                ContentPopup.IsOpen = args == Visibility.Visible;
+            }
         }
 
         #endregion
