@@ -13,14 +13,17 @@ namespace Multitool.Net.Irc
 {
     public abstract class IrcClient : IIrcClient
     {
-        private const int bufferSize = 5000;
+        private readonly int bufferSize;
+        private readonly bool silentExit;
         private readonly CancellationTokenSource rootCancelToken = new();
         private readonly Thread receiveThread;
         private bool disposed;
-        protected long disconnected;
+        protected long disconnected = 1;
 
-        public IrcClient()
+        protected IrcClient(int bufferSize, bool silentExit)
         {
+            this.bufferSize = bufferSize;
+            this.silentExit = silentExit;
             receiveThread = new(ReceiveData)
             {
                 IsBackground = true
@@ -31,19 +34,13 @@ namespace Multitool.Net.Irc
 
         #region properties
         public CancellationTokenSource RootCancellationToken => rootCancelToken;
-
         public WebSocketState ClientState => Socket.State;
-
-        public bool Connected { get; protected set; }
-
+        public bool Connected => Interlocked.Read(ref disconnected) == 0;
         public string NickName { get; set; }
-
         public Encoding Encoding { get; set; }
 
         protected bool Disposed => disposed;
-
         protected ClientWebSocket Socket { get; } = new();
-
         protected Thread ReceiveThread => receiveThread;
         #endregion
 
@@ -59,13 +56,14 @@ namespace Multitool.Net.Irc
         public virtual async Task Connect(Uri uri)
         {
             await Socket.ConnectAsync(uri, RootCancellationToken.Token);
-            Connected = true;
+            Interlocked.Exchange(ref disconnected, 0);
         }
 
         /// <inheritdoc/>
         public async Task Connect(Uri channel, CancellationToken cancellationToken)
         {
             await Socket.ConnectAsync(channel, cancellationToken);
+            Interlocked.Exchange(ref disconnected, 0);
         }
 
         public async Task Disconnect()
@@ -90,8 +88,11 @@ namespace Multitool.Net.Irc
             CheckDisposed();
             rootCancelToken.Cancel();
             Disconnect()
-                .ContinueWith((Task t) => Socket.Dispose());
-            disposed = true;
+                .ContinueWith((Task t) =>
+                {
+                    Socket.Dispose();
+                    disposed = true;
+                });
         }
 
         public CancellationTokenSource GetCancellationToken()
@@ -103,8 +104,14 @@ namespace Multitool.Net.Irc
         #region protected methods
         protected abstract void OnMessageReceived(Span<char> message);
 
+        /// <summary>
+        /// Asserts that the connection is not disposed and open.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if the socket is not open (<see cref="WebSocketState.Open"/>)</exception>
+        /// <exception cref="ArgumentException">Thrown when the socket state is not recognized (default clause in the switch)</exception>
         protected void AssertConnectionValid()
         {
+            CheckDisposed();
             if (ClientState != WebSocketState.Open)
             {
                 switch (ClientState)
@@ -127,11 +134,16 @@ namespace Multitool.Net.Irc
             }
         }
 
+        /// <summary>
+        /// Asserts that the channel name is valid.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <exception cref="ArgumentException">Thrown if the channel name is not valid (will carry the value of <paramref name="channel"/>)</exception>
         protected static void AssertChannelNameValid(string channel)
         {
             if (string.IsNullOrWhiteSpace(channel))
             {
-                throw new ArgumentException("Channel name cannot be empty", nameof(channel));
+                throw new ArgumentException($"Channel name cannot be empty (value: \"{channel}\")", nameof(channel));
             }
         }
 
@@ -146,7 +158,7 @@ namespace Multitool.Net.Irc
         #endregion
 
         #region private methods
-        protected void CheckDisposed()
+        private void CheckDisposed()
         {
             if (disposed)
             {
@@ -156,34 +168,41 @@ namespace Multitool.Net.Irc
 
         private async void ReceiveData(object obj)
         {
+            Trace.TraceInformation("Starting IRC client receive background thread");
+
             ArraySegment<byte> data = new(new byte[bufferSize]);
             do
             {
                 try
                 {
                     await Socket.ReceiveAsync(data, CancellationToken.None);
-                    StringBuilder dataAsString = new();
-                    int i = 0;
-                    for (; i < data.Count; i++)
-                    {
-                        if (data[i] == 0x0)
-                        {
-                            break;
-                        }
-                        dataAsString.Append(data[i] + " ");
-                    }
                     if (data.Count != 0)
                     {
-                        string message = Encoding.GetString(data.Slice(0, i));
-                        OnMessageReceived(new(message.ToCharArray()));
+#if DEBUG
+                        StringBuilder dataAsString = new();
+#endif
+                        int max = 0;
+                        for (; max < data.Count; max++)
+                        {
+                            if (data[max] == 0x0)
+                            {
+                                break;
+                            }
+#if DEBUG
+                            dataAsString.Append(data[max] + " ");
+#endif
+                        }
+                        ArraySegment<byte> sliced = data.Slice(0, max);
+                        string message = Encoding.GetString(sliced);
 #if false
                         Debug.WriteLine(dataAsString.ToString());
 #endif
-#if false
+#if DEBUG
                         Debug.WriteLine(message);
                         // clear buffer
 #endif
-                        for (i = 0; i < data.Count; i++)
+                        OnMessageReceived(new(message.ToCharArray()));
+                        for (int i = 0; i < max; i++)
                         {
                             if (data[i] != 0)
                             {
@@ -196,11 +215,18 @@ namespace Multitool.Net.Irc
                         }
                     }
                 }
-                catch (WebSocketException ex)
+                catch (WebSocketException ex) // thread will exit (and break the application) when a websocket exception occur.
                 {
                     Interlocked.Exchange(ref disconnected, 1);
-                    Trace.TraceError("WebSocket exception occured, exiting receive thread.\n" + ex.ToString());
-                    throw;
+                    if (!silentExit)
+                    {
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread.\n" + ex.ToString());
+                        throw;
+                    }
+                    else
+                    {
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread silently.\n" + ex.ToString());
+                    }
                 }
                 catch (Exception ex)
                 {
