@@ -10,7 +10,7 @@ using Multitool.DAL.Completion;
 using Multitool.DAL.FileSystem;
 using Multitool.DAL.FileSystem.Events;
 using Multitool.Parsers;
-using Multitool.Sorting;
+using Multitool.Collections.Sorting;
 using Multitool.Threading;
 
 using MultitoolWinUI.Controls;
@@ -341,7 +341,10 @@ namespace MultitoolWinUI.Pages.Explorer
                 }
                 else
                 {
-                    await Launcher.LaunchUriAsync(new(item.Path));
+                    if (await Launcher.LaunchUriAsync(new(item.Path)))
+                    {
+                        Trace.TraceError("Failed to start resource");
+                    }
                 }
             }
             e.Handled = true;
@@ -350,7 +353,7 @@ namespace MultitoolWinUI.Pages.Explorer
         private void MainListView_KeyDown(object sender, KeyRoutedEventArgs e)
         {
 #if DEBUG
-            if (((int)e.Key > 64 && (int)e.Key < 91) || ((int)e.Key > 47 && (int)e.Key < 58))
+            if ((int)e.Key is (> 64 and < 91) or (> 47 and < 58))
             {
                 char keyPressed = default;
                 switch (e.Key)

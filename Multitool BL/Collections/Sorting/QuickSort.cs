@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Multitool.Sorting
+namespace Multitool.Collections.Sorting
 {
     public class QuickSort
     {

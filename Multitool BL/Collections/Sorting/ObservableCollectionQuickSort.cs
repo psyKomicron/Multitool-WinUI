@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 
-namespace Multitool.Sorting
+namespace Multitool.Collections.Sorting
 {
     public class ObservableCollectionQuickSort : QuickSort
     {
