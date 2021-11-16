@@ -28,6 +28,7 @@
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Controls\ChatControl.xaml" />
     <None Remove="Controls\FileSystemEntryView.xaml" />
     <None Remove="Controls\MainPageItem.xaml" />
     <None Remove="Controls\TimerPicker.xaml" />
@@ -41,8 +42,8 @@
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
     <None Remove="Pages\IrcChatPage.xaml" />
-    <None Remove="Pages\MainPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
+    <None Remove="Pages\Test\TestPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
@@ -80,7 +81,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Pages\IrcChatPage.xaml">
+    <Page Update="Controls\ChatControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Irc\IrcChatPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -171,6 +178,12 @@
 
   <ItemGroup>
     <Page Update="Pages\HashGenerator\HashGeneratorPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Test\TestPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
