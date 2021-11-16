@@ -41,7 +41,20 @@ namespace Multitool.Net.Irc
         /// <param name="cancellationToken">To cancel the operation</param>
         /// <returns>The task object representing the asynchronous operation</returns>
         Task Connect(Uri uri, CancellationToken cancellationToken);
+        /// <summary>
+        /// Disconnects the client from the server.
+        /// </summary>
+        /// <returns>The task object representing the asynchronous operation</returns>
+        Task Disconnect();
         CancellationTokenSource GetCancellationToken();
+        /// <summary>
+        /// Joins a IRC channel.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">Thrown if the socket is not open (<see cref="WebSocketState.Open"/>)</exception>
+        /// <exception cref="ArgumentException">Thrown when the socket state is not recognized (default clause in the switch)</exception>
+        /// <exception cref="ArgumentException">Thrown if the channel name is not valid (will carry the value of <paramref name="channel"/>)</exception>
         Task Join(string channel);
         Task Part(string channel);
         Task SendMessage(string message);
