@@ -22,13 +22,14 @@ namespace Multitool.Net.Irc
     {
         private static readonly Regex ircCommandRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv [A-Z]+))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex ircMessage = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv PRIVMSG", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         private readonly string login;
         private readonly CircularBag<string> history = new(5000);
         private bool loggedIn;
         private bool hasJoined;
 
-        #region constructors
-        public TwitchIrcClient(string login)
+        #region constructor
+        public TwitchIrcClient(string login) : base(5_000, true)
         {
             Regex oauthRegex = new(@"^oauth:.+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (oauthRegex.IsMatch(login))
@@ -63,8 +64,8 @@ namespace Multitool.Net.Irc
             AssertChannelNameValid(channel);
             if (!loggedIn)
             {
-                await LogIn();
                 ReceiveThread.Start();
+                await LogIn();
             }
     
             Trace.TraceInformation("Trying to join " + channel);
@@ -144,6 +145,10 @@ namespace Multitool.Net.Irc
                     }
                 }
                 Span<char> name = message.Slice(1, nameLength);
+                if (name.ToString() == "psykomicron!")
+                {
+                    Trace.TraceError(".");
+                }
                 builder.Append(name).Append(' ').Append(':').Append(' ');
 
                 while (i < message.Length && message[i] != ':')
