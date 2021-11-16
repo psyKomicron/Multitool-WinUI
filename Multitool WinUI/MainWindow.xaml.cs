@@ -16,6 +16,7 @@ using System.Timers;
 using System.Linq;
 using System.Collections.Generic;
 using MultitoolWinUI.Controls;
+using MultitoolWinUI.Pages.Test;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -137,9 +138,13 @@ namespace MultitoolWinUI
                         lastPage = typeof(HashGeneratorPage);
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
-                    case "test":
+                    case "irc":
                         lastPage = typeof(IrcChatPage);
                         _ = ContentFrame.Navigate(typeof(IrcChatPage));
+                        break;
+                    case "test":
+                        lastPage = typeof(TestPage);
+                        _ = ContentFrame.Navigate(typeof(TestPage));
                         break;
                     default:
                         Trace.TraceWarning("Trying to navigate to : " + tag);
