@@ -186,6 +186,7 @@ namespace MultitoolWinUI.Controls
         {
             closed = true;
             busy = false;
+            messageTimer.Stop();
             _ = Task.Run(Dump);
             Trace.WriteLine("Dispatcher shutting down");
         }
