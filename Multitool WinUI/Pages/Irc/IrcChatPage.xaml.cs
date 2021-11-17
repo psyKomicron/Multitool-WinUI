@@ -8,6 +8,7 @@ using Multitool.Net.Irc;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Models;
+using MultitoolWinUI.Pages.Irc;
 
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+
+using Windows.Devices.Enumeration;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -56,6 +59,8 @@ namespace MultitoolWinUI.Pages
         public string LastStream { get; set; }
 
         public string Login { get; set; }
+
+        public ObservableCollection<object> Tabs { get; } = new();
         #endregion
 
         #region private
@@ -128,16 +133,20 @@ namespace MultitoolWinUI.Pages
 
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
-            TabViewItem tab = new();
+            TabViewItem tab = new()
+            {
+                Header = "No channel"
+            };
             IIrcClient client = new TwitchIrcClient(Login)
             {
                 NickName = "psykomicron",
                 Encoding = Encoding.UTF8
             };
-            ChatControl control = new();
+            Frame frame = new();
 
-            tab.Content = control;
-            Chats.TabItems.Add(tab);
+            tab.Content = frame;
+            frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab));
+            sender.TabItems.Add(tab);
         }
 
         private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Chats.TabItems.Remove(args.Tab);

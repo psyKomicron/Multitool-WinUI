@@ -117,7 +117,7 @@ namespace Multitool.Net.Irc
                 switch (ClientState)
                 {
                     case WebSocketState.None:
-                        throw new InvalidOperationException("Client status is unknown");
+                        throw new InvalidOperationException("Client has never connected");
                     case WebSocketState.Connecting:
                         throw new InvalidOperationException("Client is connecting");
                     case WebSocketState.CloseSent:

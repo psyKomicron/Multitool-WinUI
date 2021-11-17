@@ -8,43 +8,6 @@
     mc:Ignorable="d">
 
     <Grid>
-        <ListView
-        ItemsSource="{x:Bind Chat}"
-        Background="Orange">
-            <ListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <ItemsStackPanel
-                    VerticalAlignment="Bottom"
-                    ItemsUpdatingScrollMode="KeepLastItemInView"
-                    CacheLength="200"/>
-                </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
-
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="models:ChatMessageModel">
-                    <Grid Width="Auto" ColumnSpacing="3">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="35px"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="10*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock 
-                        Text="{Binding Timestamp, Mode=OneWay}"
-                        Opacity="0.8"
-                        Grid.Column="0"/>
-
-                        <TextBlock 
-                        Text="{Binding UserName, Mode=OneWay}"
-                        TextWrapping="Wrap"
-                        Grid.Column="1"/>
-
-                        <TextBlock 
-                        Text="{Binding Message, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords"
-                        Grid.Column="2"/>
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+        
     </Grid>
 </UserControl>

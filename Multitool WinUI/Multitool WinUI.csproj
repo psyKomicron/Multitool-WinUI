@@ -42,6 +42,7 @@
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
     <None Remove="Pages\IrcChatPage.xaml" />
+    <None Remove="Pages\Irc\ChatPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
     <None Remove="Pages\Test\TestPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
@@ -78,6 +79,12 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Irc\ChatPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>
