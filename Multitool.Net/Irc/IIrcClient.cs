@@ -12,14 +12,13 @@ namespace Multitool.Net.Irc
 {
     public interface IIrcClient : IDisposable
     {
-        event TypedEventHandler<IIrcClient, string> MessageReceived;
+        event TypedEventHandler<IIrcClient, Message> MessageReceived;
 
         string NickName { get; set; }
         WebSocketState ClientState { get; }
         bool Connected { get; }
         CancellationTokenSource RootCancellationToken { get; }
         Encoding Encoding { get; set; }
-
 
         /// <summary>
         /// Connects to a IRC server.
@@ -56,7 +55,17 @@ namespace Multitool.Net.Irc
         /// <exception cref="ArgumentException">Thrown when the socket state is not recognized (default clause in the switch)</exception>
         /// <exception cref="ArgumentException">Thrown if the channel name is not valid (will carry the value of <paramref name="channel"/>)</exception>
         Task Join(string channel);
+        /// <summary>
+        /// Leaves <paramref name="channel"/>.
+        /// </summary>
+        /// <param name="channel">Name of the channel to leave</param>
+        /// <returns>The task object representing the asynchronous operation</returns>
         Task Part(string channel);
+        /// <summary>
+        /// Sends a message through the IRC channel.
+        /// </summary>
+        /// <param name="message">Message to send</param>
+        /// <returns>The task object representing the asynchronous operation</returns>
         Task SendMessage(string message);
     }
 }

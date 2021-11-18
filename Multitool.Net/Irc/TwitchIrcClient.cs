@@ -20,26 +20,29 @@ namespace Multitool.Net.Irc
 {
     public class TwitchIrcClient : IrcClient
     {
-        private static readonly Regex ircCommandRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv [A-Z]+))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex ircMessage = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv PRIVMSG", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex ircJoinCommandRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv JOIN .))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex ircMessage = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv PRIVMSG .+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex joinRegex = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv JOIN");
+        private static readonly Regex namesRegex = new(@"^:(.+)\.tmi\.twitch\.tv 353 \1 = #[a-z0-9]+ :");
 
-        private readonly string login;
-        private readonly CircularBag<string> history = new(5000);
+        private readonly ConnectionToken login;
         private bool loggedIn;
         private bool hasJoined;
+        //private string alias;
 
         #region constructor
-        public TwitchIrcClient(string login) : base(5_000, true)
+        public TwitchIrcClient(ConnectionToken login) : base(5_000, true)
         {
-            Regex oauthRegex = new(@"^oauth:.+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (oauthRegex.IsMatch(login))
+            // assert login
+            if (login is null)
             {
-                this.login = login;
+                throw new ArgumentNullException(nameof(login));
             }
-            else
-            {
-                throw new FormatException("Login does not match twitch oauth format");
-            }
+
+            this.login = login;
+
+            Commands.Add(2, namesRegex);
+            Commands.Add(1, ircJoinCommandRegex);
         }
         #endregion
 
@@ -118,17 +121,43 @@ namespace Multitool.Net.Irc
                 {
                     ParseMessage(message);
                 }
-                else if (ircCommandRegex.IsMatch(message.ToString()))
+                else
                 {
-                    Trace.TraceInformation(message.ToString());
+                    Debug.WriteLine("> message");
                 }
+            }
+        }
+
+        protected override void OnCommandReceived(uint tag, Span<char> command)
+        {
+            switch (tag)
+            {
+                case 1:
+                    // JOIN
+                    int i = 0;
+                    for (; i < command.Length; i++)
+                    {
+                        if (command[i] == '#')
+                        {
+                            break;
+                        }
+                    }
+                    Trace.TraceInformation($"> Joined {command.Slice(command.Length - i - 1, i - 1).ToString()}");
+                    break;
+                case 2:
+                    // /NAMES
+                    Match match = namesRegex.Match(command.ToString());
+                    Trace.TraceInformation($"NAMES command: {command.ToString()}");
+
+                    break;
+                default:
+                    break;
             }
         }
 
         #region private methods
         private void ParseMessage(Span<char> message)
         {
-            StringBuilder builder = new();
             int i = 1;
             if (message[0] == ':')
             {
@@ -144,57 +173,30 @@ namespace Multitool.Net.Irc
                         nameLength = i;
                     }
                 }
-                Span<char> name = message.Slice(1, nameLength);
-                if (name.ToString() == "psykomicron!")
-                {
-                    Trace.TraceError(".");
-                }
-                builder.Append(name).Append(' ').Append(':').Append(' ');
+
+                Span<char> name = message[1..nameLength];
 
                 while (i < message.Length && message[i] != ':')
                 {
                     i++;
                 }
-                builder.Append(message.Slice(i + 1));
-                string s = builder.ToString();
-                history.Add(s);
-                InvokeMessageReceived(s);
+
+                Message m = new(message[(i + 1)..].ToString())
+                {
+                    Author = new(name.ToString())
+                };
+                InvokeMessageReceived(m);
             }
         }
-
-        private ArraySegment<byte> GetBytes(string text)
-        {
-            return new(Encoding.GetBytes(text));
-        }
-
-        private ArraySegment<byte> GetBytes(Span<char> text)
-        {
-            return new(Encoding.GetBytes(text.ToArray()));
-        }
-
-        /*private async Task<string> ReceiveAsync()
-        {
-            CancellationTokenSource cancellationToken = GetCancellationToken();
-            System.Timers.Timer t = new(3000);
-            t.Elapsed += (s, e) => cancellationToken?.Cancel();
-
-            ArraySegment<byte> buffer = new(new byte[1024]);
-            t.Start();
-            try
-            {
-                await Socket.ReceiveAsync(buffer, cancellationToken.Token);
-            }
-            catch (TaskCanceledException ex) { }
-            t.Stop();
-            cancellationToken.Dispose();
-            cancellationToken = null;
-            return GetString(buffer);
-        }*/
 
         private async Task LogIn()
         {
             // send PASS and NICK
+#if false
+            await Socket.SendAsync(GetBytes($"PASS {login}"), WebSocketMessageType.Text, false, RootCancellationToken.Token);
+#else
             await Socket.SendAsync(GetBytes($"PASS {login}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+#endif
             await Socket.SendAsync(GetBytes($"NICK {NickName}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
             loggedIn = true;
         }

@@ -1,20 +1,36 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Multitool.Net.Irc
 {
     public abstract class ConnectionToken
     {
-        public ConnectionToken(string token)
+        private readonly string token;
+        private readonly Regex validationRegex;
+
+        protected ConnectionToken(string token, Regex regex)
         {
-            StringToken = token;
+            this.token = token;
+            validationRegex = regex;
+            ValidateToken(token);
         }
 
-        protected string StringToken { get; set; }
+        public override string ToString()
+        {
+            return token;
+        }
 
-        public abstract string GetToken();
+        /// <summary>
+        /// Called when creating the token to verify that the token is valid, per the inherited classes
+        /// requirements.
+        /// </summary>
+        /// <param name="token">The token to validate</param>
+        protected virtual void ValidateToken(string token)
+        {
+            if (!validationRegex.IsMatch(token))
+            {
+                throw new FormatException($"Token is not at the right format (actual token: {token})");
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace Multitool.Net.Irc
         private readonly CancellationTokenSource rootCancelToken = new();
         private readonly Thread receiveThread;
         private bool disposed;
-        protected long disconnected = 1;
+        private long disconnected = 1;
 
         protected IrcClient(int bufferSize, bool silentExit)
         {
@@ -30,7 +31,7 @@ namespace Multitool.Net.Irc
             };
         }
 
-        public event TypedEventHandler<IIrcClient, string> MessageReceived;
+        public event TypedEventHandler<IIrcClient, Message> MessageReceived;
 
         #region properties
         public CancellationTokenSource RootCancellationToken => rootCancelToken;
@@ -42,6 +43,7 @@ namespace Multitool.Net.Irc
         protected bool Disposed => disposed;
         protected ClientWebSocket Socket { get; } = new();
         protected Thread ReceiveThread => receiveThread;
+        protected Dictionary<uint, Regex> Commands { get; set; } = new();
         #endregion
 
         #region public methods
@@ -104,6 +106,8 @@ namespace Multitool.Net.Irc
         #region protected methods
         protected abstract void OnMessageReceived(Span<char> message);
 
+        protected abstract void OnCommandReceived(uint tag, Span<char> command);
+
         /// <summary>
         /// Asserts that the connection is not disposed and open.
         /// </summary>
@@ -147,13 +151,23 @@ namespace Multitool.Net.Irc
             }
         }
 
-        protected void InvokeMessageReceived(string message)
+        protected void InvokeMessageReceived(Message message)
         {
 #if !DEBUG
             Task.Run(() => MessageReceived?.Invoke(this, message));
 #else
             MessageReceived?.Invoke(this, message);
 #endif
+        }
+
+        protected ArraySegment<byte> GetBytes(string text)
+        {
+            return new(Encoding.GetBytes(text));
+        }
+
+        protected ArraySegment<byte> GetBytes(Span<char> text)
+        {
+            return new(Encoding.GetBytes(text.ToArray()));
         }
         #endregion
 
@@ -171,16 +185,16 @@ namespace Multitool.Net.Irc
             Trace.TraceInformation("Starting IRC client receive background thread");
 
             ArraySegment<byte> data = new(new byte[bufferSize]);
+            bool isCommand;
+
             do
             {
                 try
                 {
+                    isCommand = false;
                     await Socket.ReceiveAsync(data, CancellationToken.None);
                     if (data.Count != 0)
                     {
-#if DEBUG
-                        StringBuilder dataAsString = new();
-#endif
                         int max = 0;
                         for (; max < data.Count; max++)
                         {
@@ -188,23 +202,38 @@ namespace Multitool.Net.Irc
                             {
                                 break;
                             }
-#if DEBUG
-                            dataAsString.Append(data[max] + " ");
-#endif
                         }
                         ArraySegment<byte> sliced = data.Slice(0, max);
                         string message = Encoding.GetString(sliced);
 #if false
-                        Debug.WriteLine(dataAsString.ToString());
-#endif
-#if DEBUG
                         Debug.WriteLine(message);
-                        // clear buffer
 #endif
-                        OnMessageReceived(new(message.ToCharArray()));
+                        foreach (var command in Commands)
+                        {
+                            if (command.Value.IsMatch(message))
+                            {
+                                isCommand = true;
+#if false
+                                _ = Task.Run(() => OnCommandReceived(command.Key, new(message.ToCharArray())));
+#else
+                                OnCommandReceived(command.Key, new(message.ToCharArray()));
+#endif
+                                break;
+                            }
+                        }
+                        if (!isCommand)
+                        {
+#if false
+                            _ = Task.Run(() => OnMessageReceived(new(message.ToCharArray())));
+#else
+                            OnMessageReceived(new(message.ToCharArray()));
+#endif
+                        }
+
+                        // clear buffer
                         for (int i = 0; i < max; i++)
                         {
-                            if (data[i] != 0)
+                            if (data[i] != 0x0)
                             {
                                 data[i] = default;
                             }
@@ -220,12 +249,12 @@ namespace Multitool.Net.Irc
                     Interlocked.Exchange(ref disconnected, 1);
                     if (!silentExit)
                     {
-                        Trace.TraceError("WebSocket exception occured, exiting receive thread.\n" + ex.ToString());
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread." + ex.ToString());
                         throw;
                     }
                     else
                     {
-                        Trace.TraceError("WebSocket exception occured, exiting receive thread silently.\n" + ex.ToString());
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread silently." + ex.ToString());
                     }
                 }
                 catch (Exception ex)
@@ -235,6 +264,10 @@ namespace Multitool.Net.Irc
             }
             while (Interlocked.Read(ref disconnected) == 0);
             Trace.TraceInformation($"IrcClient '{NickName}' receive thread exiting");
+            InvokeMessageReceived(new("Client disconnected")
+            {
+                Author = User.CreateSystemUser()
+            });
         }
         #endregion
     }
