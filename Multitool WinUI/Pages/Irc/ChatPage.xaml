@@ -22,19 +22,20 @@
 
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:ChatMessageModel">
-                    <Grid Width="Auto" ColumnSpacing="3">
+                    <Grid Width="Auto" ColumnSpacing="7">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="35px"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="10*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock 
                             Text="{Binding Timestamp, Mode=OneWay}"
-                            Opacity="0.8"
+                            Opacity="0.5"
                             Grid.Column="0"/>
 
                         <TextBlock 
                             Text="{Binding UserName, Mode=OneWay}"
+                            Foreground="{Binding NameColor, Mode=OneWay}"
                             TextWrapping="Wrap"
                             Grid.Column="1"/>
 

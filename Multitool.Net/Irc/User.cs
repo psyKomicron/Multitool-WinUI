@@ -1,7 +1,9 @@
-﻿using Microsoft.UI.Xaml.Media.Imaging;
+﻿using Microsoft.UI;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 using System.Collections.Generic;
-using System.Drawing;
+
+using Windows.UI;
 
 namespace Multitool.Net.Irc
 {
@@ -12,6 +14,7 @@ namespace Multitool.Net.Irc
         public User(string userName)
         {
             Name = userName;
+            NameColor = Colors.White;
         }
 
         public List<BitmapImage> Badges { get; set; }
@@ -30,7 +33,7 @@ namespace Multitool.Net.Irc
                 Id = string.Empty,
                 IsMod = false,
                 Name = "system",
-                NameColor = Color.Red,
+                NameColor = Colors.Red,
             };
         }
     }

@@ -1,4 +1,6 @@
-﻿using Multitool.Net.Irc;
+﻿using Microsoft.UI.Xaml.Media;
+
+using Multitool.Net.Irc;
 
 namespace MultitoolWinUI.Models
 {
@@ -18,10 +20,12 @@ namespace MultitoolWinUI.Models
             Timestamp = message.ServerTimestamp.ToString(dateTimeFormat);
             UserName = message.Author.DisplayName;
             Message = message.ToString();
+            NameColor = new(message.Author.NameColor);
         }
 
         public string Timestamp { get; }
         public string Message { get; }
         public string UserName { get; }
+        public SolidColorBrush NameColor { get; }
     }
 }
