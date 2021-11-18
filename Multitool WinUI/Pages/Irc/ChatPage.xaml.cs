@@ -32,6 +32,7 @@ namespace MultitoolWinUI.Pages.Irc
     public sealed partial class ChatPage : Page
     {
         private const string wssUri = @"wss://irc-ws.chat.twitch.tv:443";
+        private readonly User thisUser = User.CreateSystemUser();
         private IIrcClient client;
         private TabViewItem tab;
         private bool joined;
@@ -47,6 +48,8 @@ namespace MultitoolWinUI.Pages.Irc
         public ObservableCollection<ChatMessageModel> Chat { get; } = new();
 
         public string Channel { get; set; }
+
+        public int MaxMessages { get; set; } = 5_000;
 
         public void Dispose()
         {
@@ -84,12 +87,22 @@ namespace MultitoolWinUI.Pages.Irc
                 catch (ArgumentException ex)
                 {
                     Trace.TraceError(ex.ToString());
-                    Chat.Add(new("system", ex.Message));
+
+                    Message message = new(ex.Message)
+                    {
+                        Author = thisUser
+                    };
+                    Chat.Add(new(message));
                 }
                 catch (InvalidOperationException ex)
                 {
                     Trace.TraceError(ex.ToString());
-                    Chat.Add(new("system", "Cannot connect to twitch"));
+
+                    Message message = new($"Cannot connect: {ex.Message}")
+                    {
+                        Author = thisUser
+                    };
+                    Chat.Add(new(message));
                 }
             }
         }
@@ -104,11 +117,21 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
-        private void OnMessageReceived(IIrcClient sender, string args)
+        private void OnMessageReceived(IIrcClient sender, Message args)
         {
             if (DispatcherQueue != null)
             {
-                DispatcherQueue.TryEnqueue(() => Chat.Add(new(string.Empty, args)));
+                DispatcherQueue.TryEnqueue(() => Chat.Add(new(args)));
+                if (Chat.Count > MaxMessages)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        for (int i = 0; i < 50; i++)
+                        {
+                            Chat.RemoveAt(i);
+                        }
+                    });
+                }
             }
         }
 
