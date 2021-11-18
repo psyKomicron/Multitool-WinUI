@@ -133,20 +133,34 @@ namespace MultitoolWinUI.Pages
 
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
-            TabViewItem tab = new()
+            if (string.IsNullOrEmpty(Login))
             {
-                Header = "No channel"
-            };
-            IIrcClient client = new TwitchIrcClient(Login)
+                Trace.TraceWarning("Cannot connect to any chat without login");
+            }
+            else
             {
-                NickName = "psykomicron",
-                Encoding = Encoding.UTF8
-            };
-            Frame frame = new();
+                try
+                {
+                    TabViewItem tab = new()
+                    {
+                        Header = "No channel"
+                    };
+                    IIrcClient client = new TwitchIrcClient(new TwitchConnectionToken(Login))
+                    {
+                        NickName = "psykomicron",
+                        Encoding = Encoding.UTF8
+                    };
+                    Frame frame = new();
 
-            tab.Content = frame;
-            frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab));
-            sender.TabItems.Add(tab);
+                    tab.Content = frame;
+                    frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab));
+                    sender.TabItems.Add(tab);
+                }
+                catch (FormatException ex)
+                {
+                    Trace.TraceError(ex.ToString());
+                }
+            }
         }
 
         private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Chats.TabItems.Remove(args.Tab);
