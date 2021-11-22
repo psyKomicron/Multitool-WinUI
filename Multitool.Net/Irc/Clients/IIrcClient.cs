@@ -10,7 +10,7 @@ using Windows.Foundation;
 
 namespace Multitool.Net.Irc
 {
-    public interface IIrcClient : IDisposable
+    public interface IIrcClient : IAsyncDisposable
     {
         event TypedEventHandler<IIrcClient, Message> MessageReceived;
 
