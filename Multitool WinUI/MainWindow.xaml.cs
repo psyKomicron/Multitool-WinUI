@@ -102,9 +102,6 @@ namespace MultitoolWinUI
                 lastPage = typeof(MainPage);
                 _ = ContentFrame.Navigate(typeof(MainPage));
             }
-#if DEBUG
-            SetAppBar();
-#endif
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)

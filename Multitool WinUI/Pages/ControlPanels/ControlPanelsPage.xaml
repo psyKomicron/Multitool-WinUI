@@ -7,47 +7,6 @@
     xmlns:controlpanels="using:MultitoolWinUI.Pages.ControlPanels"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    <ScrollViewer>
-        <Grid
-            RowSpacing="20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="10*"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="3*"/>
-                <RowDefinition Height="1*"/>
-                <RowDefinition Height="12*"/>
-                <RowDefinition Height="12*"/>
-            </Grid.RowDefinitions>
-        
-            <VariableSizedWrapGrid
-                Orientation="Horizontal"
-                HorizontalAlignment="Center"
-                ItemHeight="140"
-                Grid.Row="0"
-                Grid.ColumnSpan="2">
-                <VariableSizedWrapGrid.Resources>
-                    <Style TargetType="Button">
-                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                        <Setter Property="VerticalAlignment" Value="Stretch"/>
-                        <Setter Property="CornerRadius" Value="5"/>
-                        <Setter Property="Margin" Value="7"/>
-                        <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
-                        <Setter Property="FontSize" Value="24"/>
-                    </Style>
-                </VariableSizedWrapGrid.Resources>
-                <Button 
-                    x:Name="OpenSettingsFile"
-                    Content="Open settings file location"
-                    VariableSizedWrapGrid.ColumnSpan="2"
-                    Click="LoadSettingsButton_Click"/>
-                <Button 
-                    x:Name="AddSettingsButton"
-                    Content="Add settings"
-                    VariableSizedWrapGrid.ColumnSpan="2"
-                    Click="AddSettingsButton_Click"/>
-            </VariableSizedWrapGrid>
 
     <ScrollViewer
         IsScrollInertiaEnabled="True">
