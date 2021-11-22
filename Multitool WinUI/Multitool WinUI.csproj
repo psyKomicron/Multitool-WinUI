@@ -9,12 +9,12 @@
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <Configurations>Debug;Release;Release (opti)</Configurations>
-    <AssemblyVersion>1.0.13.0</AssemblyVersion>
+    <AssemblyVersion>1.0.15.0</AssemblyVersion>
     <Authors>Julien Marquet</Authors>
     <PackageReleaseNotes>Continuing on fixing bugs and implementing new features. :)</PackageReleaseNotes>
     <ApplicationIcon>multitool.ico</ApplicationIcon>
-    <Version>1.0.13</Version>
-    <FileVersion>1.0.13.0</FileVersion>
+    <Version>1.0.15</Version>
+    <FileVersion>1.0.15.0</FileVersion>
     <PackageId>MultitoolWinUI</PackageId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -40,8 +40,10 @@
     <None Remove="Pages\ExplorerHomePage.xaml" />
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
-    <None Remove="Pages\MainPage.xaml" />
+    <None Remove="Pages\IrcChatPage.xaml" />
+    <None Remove="Pages\Irc\ChatPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
+    <None Remove="Pages\Test\TestPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
@@ -58,7 +60,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Multitool BL\Multitool BL.csproj" />
+    <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
+    <ProjectReference Include="..\Multitool.Net\Multitool.Net.csproj" />
     <ProjectReference Include="..\MultitoolDAL\Multitool.DAL.csproj" />
   </ItemGroup>
 
@@ -75,6 +78,18 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Irc\ChatPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Irc\IrcChatPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>
@@ -163,6 +178,12 @@
 
   <ItemGroup>
     <Page Update="Pages\HashGenerator\HashGeneratorPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Test\TestPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

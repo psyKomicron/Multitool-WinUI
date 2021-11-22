@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>Multitool BL</name>
+        <name>Multitool.BL</name>
     </assembly>
     <members>
         <member name="T:Multitool.NTInterop.InteropWrapper">

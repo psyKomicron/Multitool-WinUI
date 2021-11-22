@@ -66,22 +66,12 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 return;
             }
 
-            /*List<UIElement> frameworkElements = new();*/
             LoadNewElements(xmlDocument.DocumentElement);
 
             watcher = WatcherFactory.CreateWatcher(ApplicationData.Current.LocalFolder.Path, new()
             {
                 ChangedHandler = OnFileChange
             });
-            watcher.EnableRaisingEvents = false;
-
-            /*_ = DispatcherQueue.TryEnqueue(() =>
-            {
-                for (int i = 0; i < frameworkElements.Count; i++)
-                {
-                    ItemsWrapGrid.Children.Add(frameworkElements[i]);
-                }
-            });*/
         }
 
         private UIElement CreateElements(string name, Uri uri, bool isPinned)
@@ -511,7 +501,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 {
                     Trace.TraceError("IOException: Unable to parse changes from the .XML settings file.\n" + ex);
                     
-                    if (ex.HResult != -2147024864)
+                    if (ex.HResult != -0x7FF8FFE0)
                     {
                         Trace.TraceError("Unable to parse changes from the .XML settings file.");
                     }

@@ -9,23 +9,16 @@ namespace MultitoolWinUI.Models
     {
         protected Model(DispatcherQueue dispatcherQueue)
         {
-            CurrentDispatcherQueue = dispatcherQueue;
+            DispatcherQueue = dispatcherQueue;
         }
 
-        public DispatcherQueue CurrentDispatcherQueue { get; set; }
+        public DispatcherQueue DispatcherQueue { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void RaiseNotifyPropertyChanged([CallerMemberName] string propName = "")
         {
-            if (CurrentDispatcherQueue != null)
-            {
-                _ = CurrentDispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new(propName)));
-            }
-            else
-            {
-                PropertyChanged?.Invoke(this, new(propName));
-            }
+            _ = DispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)));
         }
     }
 }

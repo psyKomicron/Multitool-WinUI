@@ -16,10 +16,7 @@ using System.Timers;
 using System.Linq;
 using System.Collections.Generic;
 using MultitoolWinUI.Controls;
-using Windows.UI.ViewManagement;
-using Windows.UI;
-using Microsoft.UI;
-using Windows.UI.WindowManagement;
+using MultitoolWinUI.Pages.Test;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -32,12 +29,14 @@ namespace MultitoolWinUI
     public sealed partial class MainWindow : Window
     {
         private Type lastPage;
+        private bool closed;
 
         public MainWindow()
         {
             InitializeComponent();
             Title = "Multitool v." + Tool.GetPackageVersion();
             SizeChanged += MainWindow_SizeChanged;
+
             try
             {
                 IsPaneOpen = App.Settings.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
@@ -73,6 +72,9 @@ namespace MultitoolWinUI
                     case nameof(HashGeneratorPage):
                         lastPage = typeof(HashGeneratorPage);
                         break;
+                    case nameof(IrcChatPage):
+                        lastPage = typeof(IrcChatPage);
+                        break;
                     default:
                         Trace.TraceWarning("MainWindow:ctor: Unknown page");
                         break;
@@ -87,28 +89,6 @@ namespace MultitoolWinUI
         }
 
         public bool IsPaneOpen { get; set; }
-
-        private static void SetAppBar()
-        {
-#if false
-            ApplicationViewTitleBar bar = ApplicationView.GetForCurrentView().TitleBar;
-            // Set active window colors
-            bar.ForegroundColor = Colors.White;
-            bar.BackgroundColor = Tool.GetAppRessource<Color>("DarkBlack");
-            bar.ButtonForegroundColor = Colors.White;
-            bar.ButtonBackgroundColor = Colors.SeaGreen;
-            bar.ButtonHoverForegroundColor = Colors.White;
-            bar.ButtonHoverBackgroundColor = Colors.DarkSeaGreen;
-            bar.ButtonPressedForegroundColor = Colors.Gray;
-            bar.ButtonPressedBackgroundColor = Colors.LightGreen;
-
-            // Set inactive window colors
-            bar.InactiveForegroundColor = Colors.Gray;
-            bar.InactiveBackgroundColor = Tool.GetAppRessource<Color>("LightBlack");
-            bar.ButtonInactiveForegroundColor = Colors.Gray;
-            bar.ButtonInactiveBackgroundColor = Colors.SeaGreen;
-#endif
-        }
 
         #region navigation events
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
@@ -162,8 +142,16 @@ namespace MultitoolWinUI
                         lastPage = typeof(HashGeneratorPage);
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
+                    case "irc":
+                        lastPage = typeof(IrcChatPage);
+                        _ = ContentFrame.Navigate(typeof(IrcChatPage));
+                        break;
+                    case "test":
+                        lastPage = typeof(TestPage);
+                        _ = ContentFrame.Navigate(typeof(TestPage));
+                        break;
                     default:
-                        Trace.TraceWarning("Trying to navigate to: " + tag);
+                        Trace.TraceWarning("Trying to navigate to : " + tag);
                         break;
                 }
             }
@@ -187,6 +175,7 @@ namespace MultitoolWinUI
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
+            closed = true;
             IEnumerable<WindowTrace> tracers = Trace.Listeners.OfType<WindowTrace>();
             for (int i = 0; i < Trace.Listeners.Count; i++)
             {
@@ -202,9 +191,12 @@ namespace MultitoolWinUI
             App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
         }
 
-        private void MessageDisplay_Dismiss(TraceControl sender, Visibility args)
+        private void MessageDisplay_VisibilityChanged(TraceControl sender, Visibility args)
         {
-            ContentPopup.IsOpen = args == Visibility.Visible;
+            if (!closed)
+            {
+                ContentPopup.IsOpen = args == Visibility.Visible;
+            }
         }
         #endregion
 

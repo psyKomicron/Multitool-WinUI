@@ -29,6 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Multitool BL\Multitool BL.csproj" />
+    <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
   </ItemGroup>
 </Project>
