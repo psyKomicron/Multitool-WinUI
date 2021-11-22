@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System.Xml;
+
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
+
+using Multitool.Net;
+
+using Windows.Storage;
+using Windows.Web.Http;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -23,23 +21,55 @@ namespace MultitoolWinUI.Pages.ControlPanels
     /// </summary>
     public sealed partial class ControlPanelsFilePage : Page
     {
+        private const string customSettingsPathFileName = "custom_settings.xml";
+
         public ControlPanelsFilePage()
         {
             InitializeComponent();
         }
 
-        public string Path { get; set; } = @"c:\users\julie\documents\multitool\custom settings.xml";
-
-        public bool Valid { get; private set; }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (!string.IsNullOrEmpty(Path))
+            if (!string.IsNullOrEmpty(FilePathTextBox.Text))
             {
-                if (File.Exists(Path))
+                if (File.Exists(FilePathTextBox.Text))
                 {
-                    Valid = true;
-                    _ = Frame.Navigate(typeof(ControlPanelsPage), Path);
+                    try
+                    {
+                        XmlDocument doc = new();
+                        doc.Load(FilePathTextBox.Text);
+                        doc.Save(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+
+                        _ = Frame.Navigate(typeof(ControlPanelsPage));
+                    }
+                    catch (XmlException ex)
+                    {
+                        Trace.TraceError(ex.ToString());
+                    }
+                }
+            }
+        }
+
+        private async void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(FileLinkTextBox.Text))
+            {
+                using HttpClient client = new();
+                try
+                {
+                    HttpResponseMessage response = await client.GetAsync(new(FileLinkTextBox.Text));
+                    response.EnsureSuccessStatusCode();
+                    string data = await response.Content.ReadAsStringAsync();
+
+                    XmlDocument doc = new();
+                    doc.LoadXml(data);
+                    doc.Save(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+
+                    _ = Frame.Navigate(typeof(ControlPanelsPage));
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError(ex.ToString());
                 }
             }
         }

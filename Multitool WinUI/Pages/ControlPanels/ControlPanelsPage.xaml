@@ -8,94 +8,99 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid RowSpacing="20"
-          HorizontalAlignment="Center">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <VariableSizedWrapGrid 
-            ItemHeight="150" 
-            ItemWidth="250"
-            HorizontalAlignment="Center"
-            Orientation="Horizontal">
-            <VariableSizedWrapGrid.Resources>
-                <Style TargetType="Button">
-                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                    <Setter Property="VerticalAlignment" Value="Stretch"/>
-                    <Setter Property="CornerRadius" Value="5"/>
-                    <Setter Property="Margin" Value="7"/>
-                    <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
-                    <Setter Property="FontSize" Value="24"/>
-                </Style>
-            </VariableSizedWrapGrid.Resources>
+    <ScrollViewer
+        IsScrollInertiaEnabled="True">
+        <Grid 
+            RowSpacing="20"
+            HorizontalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <VariableSizedWrapGrid 
+                ItemHeight="150" 
+                ItemWidth="250"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal">
+                <VariableSizedWrapGrid.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                        <Setter Property="VerticalAlignment" Value="Stretch"/>
+                        <Setter Property="CornerRadius" Value="5"/>
+                        <Setter Property="Margin" Value="7"/>
+                        <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
+                        <Setter Property="FontSize" Value="24"/>
+                    </Style>
+                </VariableSizedWrapGrid.Resources>
 
-            <Button 
-                x:Name="OpenSettingsFile"
-                Content="Open settings file location"
-                VariableSizedWrapGrid.ColumnSpan="2"
-                Click="LoadSettingsButton_Click"/>
+                <Button 
+                    x:Name="OpenSettingsFile"
+                    Content="Open settings file location"
+                    VariableSizedWrapGrid.ColumnSpan="2"
+                    Click="LoadSettingsButton_Click"/>
             
-            <Button 
-                x:Name="AddSettingsButton"
-                Content="Add settings"
-                VariableSizedWrapGrid.ColumnSpan="2"
-                Click="AddSettingsButton_Click"/>
+                <Button 
+                    x:Name="AddSettingsButton"
+                    Content="Add settings"
+                    VariableSizedWrapGrid.ColumnSpan="2"
+                    Click="AddSettingsButton_Click"/>
 
-        </VariableSizedWrapGrid>
+            </VariableSizedWrapGrid>
 
-        <AutoSuggestBox 
-            x:Name="SettingsSearchBox"
-            TextChanged="SettingsSearchBox_TextChanged"
-            QuerySubmitted="SettingsSearchBox_QuerySubmitted"
-            Grid.Row="1"
-            QueryIcon="Zoom"
-            MinHeight="40"
-            MinWidth="300"
-            HorizontalAlignment="Center"/>
+            <AutoSuggestBox 
+                x:Name="SettingsSearchBox"
+                TextChanged="SettingsSearchBox_TextChanged"
+                QuerySubmitted="SettingsSearchBox_QuerySubmitted"
+                Grid.Row="1"
+                QueryIcon="Zoom"
+                MinHeight="40"
+                MinWidth="300"
+                HorizontalAlignment="Center"/>
 
-        <Button
-            x:Name="RefreshButton"
-            Click="RefreshButton_Click"
-            Margin="0, 0, 20, 0"
-            Padding="15"
-            HorizontalAlignment="Right"
-            CornerRadius="5"
-            Grid.Row="2">
-            <FontIcon
-                FontFamily="{StaticResource SymbolThemeFontFamily}"
-                Glyph="&#xe72c;"/>
-        </Button>
+            <Button
+                x:Name="RefreshButton"
+                Click="RefreshButton_Click"
+                Margin="0, 0, 20, 0"
+                Padding="15"
+                HorizontalAlignment="Right"
+                CornerRadius="5"
+                Grid.Row="2">
+                <FontIcon
+                    FontFamily="{StaticResource SymbolThemeFontFamily}"
+                    Glyph="&#xe72c;"/>
+            </Button>
 
-        <VariableSizedWrapGrid 
-            x:Name="PinnedItemsWrapGrid"
-            ItemHeight="170" 
-            ItemWidth="260"
-            Grid.Row="3"
-            Orientation="Horizontal">
-            <VariableSizedWrapGrid.Resources>
-                <Style TargetType="controlpanels:SettingPathView">
-                    <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
-                </Style>
-            </VariableSizedWrapGrid.Resources>
-        </VariableSizedWrapGrid>
+            <VariableSizedWrapGrid 
+                x:Name="PinnedItemsWrapGrid"
+                ItemHeight="170" 
+                ItemWidth="260"
+                Grid.Row="3"
+                Orientation="Horizontal">
+                <VariableSizedWrapGrid.Resources>
+                    <Style TargetType="controlpanels:SettingPathView">
+                        <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
+                    </Style>
+                </VariableSizedWrapGrid.Resources>
+            </VariableSizedWrapGrid>
 
-        <VariableSizedWrapGrid 
-            x:Name="ItemsWrapGrid"
-            ItemHeight="140" 
-            ItemWidth="260"
-            Grid.Row="4"
-            Orientation="Horizontal">
-            <VariableSizedWrapGrid.Resources>
-                <Style TargetType="controlpanels:SettingPathView">
-                    <Setter Property="Background" Value="{ThemeResource SystemBaseLowColor}"/>
-                </Style>
-            </VariableSizedWrapGrid.Resources>
-        </VariableSizedWrapGrid>
+            <VariableSizedWrapGrid 
+                x:Name="ItemsWrapGrid"
+                ItemHeight="140" 
+                ItemWidth="260"
+                Grid.Row="4"
+                Orientation="Horizontal">
+                <VariableSizedWrapGrid.Resources>
+                    <Style TargetType="controlpanels:SettingPathView">
+                        <Setter Property="Background" Value="{ThemeResource SystemBaseLowColor}"/>
+                    </Style>
+                </VariableSizedWrapGrid.Resources>
+            </VariableSizedWrapGrid>
 
-    </Grid>
+        </Grid>
+    </ScrollViewer>
+    
     
 </Page>
