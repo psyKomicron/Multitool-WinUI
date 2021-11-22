@@ -36,6 +36,7 @@ namespace MultitoolWinUI
             InitializeComponent();
             Title = "Multitool v." + Tool.GetPackageVersion();
             SizeChanged += MainWindow_SizeChanged;
+
             try
             {
                 IsPaneOpen = App.Settings.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
