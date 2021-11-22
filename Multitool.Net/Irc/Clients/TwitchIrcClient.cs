@@ -47,6 +47,7 @@ namespace Multitool.Net.Irc
         /// <inheritdoc/>
         public override async Task SendMessage(string message)
         {
+            throw new NotImplementedException();
             AssertConnectionValid();
 
             //Debug.WriteLine($"{message} -> {data}\n");
@@ -110,7 +111,7 @@ namespace Multitool.Net.Irc
                 }
                 else
                 {
-                    Debug.WriteLine("> message");
+                    Debug.WriteLine("> message : " + message.ToString());
                 }
             }
         }
@@ -184,11 +185,7 @@ namespace Multitool.Net.Irc
         private async Task LogIn()
         {
             // send PASS and NICK
-#if false
-            await Socket.SendAsync(GetBytes($"PASS {login}"), WebSocketMessageType.Text, false, RootCancellationToken.Token);
-#else
             await Socket.SendAsync(GetBytes($"PASS {login}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
-#endif
             await Socket.SendAsync(GetBytes($"NICK {NickName}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
             loggedIn = true;
         }
