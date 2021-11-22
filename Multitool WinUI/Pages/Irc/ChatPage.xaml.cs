@@ -29,7 +29,7 @@ namespace MultitoolWinUI.Pages.Irc
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class ChatPage : Page
+    public sealed partial class ChatPage : Page, IAsyncDisposable
     {
         private const string wssUri = @"wss://irc-ws.chat.twitch.tv:443";
         private readonly User thisUser = User.CreateSystemUser();
@@ -42,32 +42,32 @@ namespace MultitoolWinUI.Pages.Irc
         {
             InitializeComponent();
             Loaded += OnLoaded;
-            Unloaded += OnUnloaded;
+            App.MainWindow.Closed += MainWindow_Closed;
         }
 
         public ObservableCollection<ChatMessageModel> Chat { get; } = new();
 
         public string Channel { get; set; }
 
-        public int MaxMessages { get; set; } = 5_000;
+        public int MaxMessages { get; set; } = 500;
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            client.Dispose();
+            await client.DisposeAsync();
         }
 
         private void Load(IIrcClient client, TabViewItem tab)
         {
             this.client = client;
             this.tab = tab;
-            TextBox header = new()
+            /*TextBox header = new()
             {
                 PlaceholderText = "Channel (none)"
             };
-            this.tab.Header = header;
+            this.tab.Header = header;*/
 
             this.tab.CloseRequested += Tab_CloseRequested;
-            header.KeyDown += Header_KeyDown;
+            //header.KeyDown += Header_KeyDown;
             this.client.MessageReceived += OnMessageReceived;
         }
 
@@ -113,6 +113,7 @@ namespace MultitoolWinUI.Pages.Irc
             base.OnNavigatedTo(e);
             if (e.Parameter is ChatPageParameter param)
             {
+                Channel = param.Channel;
                 Load(param.Client, param.Tab);
             }
         }
@@ -137,10 +138,9 @@ namespace MultitoolWinUI.Pages.Irc
 
         private async void Tab_CloseRequested(TabViewItem sender, TabViewTabCloseRequestedEventArgs args)
         {
-            if (client.Connected)
-            {
-                await client.Disconnect();
-            }
+            Chat.Clear();
+            await client.DisposeAsync();
+            loaded = false;
         }
 
         private void Header_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -157,21 +157,24 @@ namespace MultitoolWinUI.Pages.Irc
 
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
-            await Join();
-            loaded = true;
+            if (!loaded)
+            {
+                await Join();
+                loaded = true;
+            }
         }
 
-        private void OnUnloaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Closed(object sender, WindowEventArgs args)
         {
-            /*if (client != null)
+            if (client != null && client.Connected)
             {
-                client.MessageReceived -= OnMessageReceived;
-                if (client.Connected)
+                try
                 {
                     await client.Part(Channel);
                 }
-                await client.Disconnect();
-            }*/
+                catch (InvalidOperationException) { }
+                await client.DisposeAsync();
+            }
         }
         #endregion
     }
