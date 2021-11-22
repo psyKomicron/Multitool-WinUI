@@ -2,15 +2,15 @@
     x:Class="MultitoolWinUI.Pages.Irc.ChatPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:MultitoolWinUI.Pages.Irc"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:controls="using:MultitoolWinUI.Controls" xmlns:models="using:MultitoolWinUI.Models"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:models="using:MultitoolWinUI.Models"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
         <ListView
-            ItemsSource="{x:Bind Chat}">
+            ItemsSource="{x:Bind Chat}"
+            SelectionMode="None">
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <ItemsStackPanel
@@ -26,23 +26,35 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="35px"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10*"/>
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
                         <TextBlock 
                             Text="{Binding Timestamp, Mode=OneWay}"
                             Opacity="0.5"
-                            Grid.Column="0"/>
+                            Grid.Column="0"
+                            Grid.Row="0"/>
 
                         <TextBlock 
                             Text="{Binding UserName, Mode=OneWay}"
+                            IsTextSelectionEnabled="True"
+                            TextDecorations="Underline"
                             Foreground="{Binding NameColor, Mode=OneWay}"
                             TextWrapping="Wrap"
-                            Grid.Column="1"/>
+                            Grid.Column="1"
+                            Grid.Row="0"/>
 
                         <TextBlock 
                             Text="{Binding Message, Mode=OneWay}"
+                            IsTextSelectionEnabled="True"
                             TextWrapping="WrapWholeWords"
-                            Grid.Column="2"/>
+                            HorizontalAlignment="Stretch"
+                            Grid.ColumnSpan="2"
+                            Grid.Column="1"
+                            Grid.Row="1"/>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
