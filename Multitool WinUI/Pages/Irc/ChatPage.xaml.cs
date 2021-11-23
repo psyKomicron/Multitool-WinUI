@@ -6,7 +6,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.Net.Irc;
+using Multitool.Net.Twitch;
 using MultitoolWinUI.Models;
 
 using System;
@@ -62,7 +62,8 @@ namespace MultitoolWinUI.Pages.Irc
             this.tab = tab;
             TextBox header = new()
             {
-                PlaceholderText = "Channel (none)"
+                PlaceholderText = "Channel (none)",
+                BorderThickness = new(0)
             };
             this.tab.Header = header;
 
