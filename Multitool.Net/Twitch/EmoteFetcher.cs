@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
-    public struct Id
+    public class EmoteFetcher
     {
-        
+
     }
 }

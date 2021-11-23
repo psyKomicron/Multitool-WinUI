@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
     public interface IIrcClient : IDisposable
     {

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 using Windows.UI;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
     public class User
     {

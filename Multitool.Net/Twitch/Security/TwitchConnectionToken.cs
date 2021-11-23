@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
     public class TwitchConnectionToken : ConnectionToken
     {

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
     public abstract class IrcClient : IIrcClient
     {
@@ -168,6 +168,11 @@ namespace Multitool.Net.Irc
         protected ArraySegment<byte> GetBytes(Span<char> text)
         {
             return new(Encoding.GetBytes(text.ToArray()));
+        }
+
+        protected async Task SendAsync(string message, WebSocketMessageType messageType = WebSocketMessageType.Text, bool end = true)
+        {
+            await Socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
         }
         #endregion
 

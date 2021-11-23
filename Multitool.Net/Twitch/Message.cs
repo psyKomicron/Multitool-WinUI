@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
 #nullable enable
     public class Message

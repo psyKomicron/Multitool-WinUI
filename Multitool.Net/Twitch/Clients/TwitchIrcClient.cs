@@ -5,7 +5,7 @@ using System.Net.WebSockets;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
     public class TwitchIrcClient : IrcClient
     {
@@ -41,6 +41,7 @@ namespace Multitool.Net.Irc
 
         #region properties
         public bool AutoConnect { get; init; }
+        public bool RequestTags { get; init; }
         #endregion
 
         #region public methods
@@ -60,7 +61,6 @@ namespace Multitool.Net.Irc
             AssertChannelNameValid(channel);
             if (!loggedIn)
             {
-                ReceiveThread.Start();
                 await LogIn();
             }
     
@@ -95,7 +95,6 @@ namespace Multitool.Net.Irc
             if (AutoConnect)
             {
                 await LogIn();
-                ReceiveThread.Start();
             }
         }
         #endregion
@@ -184,13 +183,16 @@ namespace Multitool.Net.Irc
         private async Task LogIn()
         {
             // send PASS and NICK
-#if false
-            await Socket.SendAsync(GetBytes($"PASS {login}"), WebSocketMessageType.Text, false, RootCancellationToken.Token);
-#else
-            await Socket.SendAsync(GetBytes($"PASS {login}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
-#endif
-            await Socket.SendAsync(GetBytes($"NICK {NickName}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+            if (RequestTags)
+            {
+                await SendAsync($"CAP REQ :twitch.tv/args");
+            }
+            await SendAsync($"PASS {login}");
+            await SendAsync($"NICK {NickName}");
+
             loggedIn = true;
+
+            ReceiveThread.Start();
         }
         #endregion
     }

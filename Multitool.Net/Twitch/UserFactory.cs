@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
-namespace Multitool.Net.Irc
+namespace Multitool.Net.Twitch
 {
     internal class UserFactory
     {
