@@ -27,7 +27,7 @@ namespace Multitool.Net.Twitch
             this.silentExit = silentExit;
             receiveThread = new(ReceiveData)
             {
-                IsBackground = true
+                IsBackground = false
             };
         }
 
@@ -85,16 +85,19 @@ namespace Multitool.Net.Twitch
         }
 
         /// <inheritdoc/>
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            CheckDisposed();
-            rootCancelToken.Cancel();
-            Disconnect()
-                .ContinueWith((Task t) =>
+            if (!disposed)
+            {
+                rootCancelToken.Cancel();
+                if (Interlocked.Read(ref disconnected) == 0)
                 {
-                    Socket.Dispose();
-                    disposed = true;
-                });
+                    await Disconnect();
+                }
+                Socket.Dispose();
+                disposed = true;
+                GC.SuppressFinalize(this);
+            }
         }
 
         public CancellationTokenSource GetCancellationToken()
@@ -116,6 +119,10 @@ namespace Multitool.Net.Twitch
         protected void AssertConnectionValid()
         {
             CheckDisposed();
+            if (Interlocked.Read(ref disconnected) == 1)
+            {
+                throw new InvalidOperationException("Client has disconnected");
+            }
             if (ClientState != WebSocketState.Open)
             {
                 switch (ClientState)
@@ -187,16 +194,22 @@ namespace Multitool.Net.Twitch
 
         private async void ReceiveData(object obj)
         {
+#if false
+            Trace.TraceWarning("Not starting receive thread");
+            return;
+            throw new OperationCanceledException();
+#endif
             Trace.TraceInformation("Starting IRC client receive background thread");
 
             ArraySegment<byte> data = new(new byte[bufferSize]);
             bool isCommand;
 
-            do
+            while (Interlocked.Read(ref disconnected) == 0)
             {
                 try
                 {
                     isCommand = false;
+                    AssertConnectionValid();
                     await Socket.ReceiveAsync(data, CancellationToken.None);
                     if (data.Count != 0)
                     {
@@ -252,14 +265,14 @@ namespace Multitool.Net.Twitch
                 catch (WebSocketException ex) // thread will exit (and break the application) when a websocket exception occur.
                 {
                     Interlocked.Exchange(ref disconnected, 1);
-                    if (!silentExit)
+                    if (silentExit)
                     {
-                        Trace.TraceError("WebSocket exception occured, exiting receive thread." + ex.ToString());
-                        throw;
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread silently.\n" + ex.ToString());
                     }
                     else
                     {
-                        Trace.TraceError("WebSocket exception occured, exiting receive thread silently." + ex.ToString());
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread.\n" + ex.ToString());
+                        throw;
                     }
                 }
                 catch (Exception ex)
@@ -267,8 +280,10 @@ namespace Multitool.Net.Twitch
                     Trace.TraceError(ex.ToString());
                 }
             }
-            while (Interlocked.Read(ref disconnected) == 0);
+
+
             Trace.TraceInformation($"IrcClient '{NickName}' receive thread exiting");
+
             InvokeMessageReceived(new("Client disconnected")
             {
                 Author = User.CreateSystemUser()

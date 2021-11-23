@@ -21,8 +21,9 @@ namespace MultitoolWinUI.Controls
         private readonly ConcurrentQueue<DispatcherQueueHandler> displayQueue = new();
         private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false, Interval = 3000 };
         private readonly object _lock = new();
-        private volatile bool closed;
         private volatile bool busy;
+        private bool closed;
+        private bool hasFocus;
 
         public TraceControl()
         {
@@ -31,7 +32,7 @@ namespace MultitoolWinUI.Controls
             {
                 DispatcherQueue.ShutdownStarting += DispatcherQueue_ShutdownStarting;
             }
-            messageTimer.Elapsed += Timer_Elapsed;
+            messageTimer.Elapsed += MessageTimer_Elapsed;
             closed = false;
         }
 
@@ -131,7 +132,7 @@ namespace MultitoolWinUI.Controls
         {
             if (!displayQueue.IsEmpty)
             {
-                if (displayQueue.TryDequeue(out DispatcherQueueHandler next))
+                if (DispatcherQueue != null && displayQueue.TryDequeue(out DispatcherQueueHandler next))
                 {
                     DispatcherQueue.TryEnqueue(next);
                 }
@@ -168,20 +169,6 @@ namespace MultitoolWinUI.Controls
         #endregion
 
         #region event handlers
-#if false
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            Debug.WriteLine(nameof(TraceControl) + " loaded");
-            closed = false;
-        }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e)
-        {
-            closed = true;
-            _ = Task.Run(Dump);
-        }
-#endif
-
         private void DispatcherQueue_ShutdownStarting(DispatcherQueue sender, DispatcherQueueShutdownStartingEventArgs args)
         {
             closed = true;
@@ -191,9 +178,9 @@ namespace MultitoolWinUI.Controls
             Trace.WriteLine("Dispatcher shutting down");
         }
 
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        private void MessageTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (!CheckForCallbacks())
+            if (!hasFocus && !CheckForCallbacks())
             {
                 // no messages, close + stop timer
                 busy = false;
@@ -216,6 +203,16 @@ namespace MultitoolWinUI.Controls
                 busy = false;
                 VisibilityChanged?.Invoke(this, Visibility.Collapsed);
             }
+        }
+
+        private void Control_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            hasFocus = true;
+        }
+
+        private void Control_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            hasFocus= false;
         }
         #endregion
     }

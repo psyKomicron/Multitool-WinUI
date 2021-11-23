@@ -48,6 +48,7 @@ namespace Multitool.Net.Twitch
         /// <inheritdoc/>
         public override async Task SendMessage(string message)
         {
+            throw new NotImplementedException();
             AssertConnectionValid();
 
             //Debug.WriteLine($"{message} -> {data}\n");
@@ -109,7 +110,7 @@ namespace Multitool.Net.Twitch
                 }
                 else
                 {
-                    Debug.WriteLine("> message");
+                    Debug.WriteLine("> message : " + message.ToString());
                 }
             }
         }

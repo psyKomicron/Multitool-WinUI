@@ -12,16 +12,35 @@
         ColumnSpacing="5"
         VerticalAlignment="Center">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition />
+            <ColumnDefinition/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+        
         <TextBox
-            Text="{x:Bind Path, Mode=TwoWay}"
+            x:Name="FilePathTextBox"
             PlaceholderText="Path to the file"
-            Grid.Column="0"/>
+            Grid.Column="0"
+            Grid.Row="0"/>
         <Button
             Content="Validate"
             Click="Button_Click"
-            Grid.Column="1"/>
+            Grid.Column="1"
+            Grid.Row="0"/>
+
+        <TextBox
+            x:Name="FileLinkTextBox"
+            PlaceholderText="Link to the file"
+            Grid.Column="0"
+            Grid.Row="1"/>
+        <Button
+            Content="Download"
+            Click="Button_Click_1"
+            Grid.Column="1"
+            Grid.Row="1"/>
+
     </Grid>
 </Page>

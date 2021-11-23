@@ -1,26 +1,15 @@
-﻿using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.Web.WebView2.Core;
 
 using Multitool.DAL;
 using Multitool.Net.Twitch;
 
-using MultitoolWinUI.Controls;
-using MultitoolWinUI.Models;
 using MultitoolWinUI.Pages.Irc;
 
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-
-using Windows.Devices.Enumeration;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -138,7 +127,7 @@ namespace MultitoolWinUI.Pages
                 {
                     TabViewItem tab = new()
                     {
-                        Header = "No channel"
+                        Header = LastStream
                     };
                     IIrcClient client = new TwitchIrcClient(new TwitchConnectionToken(Login))
                     {
@@ -148,8 +137,9 @@ namespace MultitoolWinUI.Pages
                     Frame frame = new();
 
                     tab.Content = frame;
-                    frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab));
+                    frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab, LastStream));
                     sender.TabItems.Add(tab);
+                    sender.SelectedItem = tab;
                 }
                 catch (FormatException ex)
                 {
