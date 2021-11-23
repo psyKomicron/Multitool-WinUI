@@ -1,6 +1,6 @@
 ﻿using Microsoft.UI.Xaml.Media;
 
-using Multitool.Net.Irc;
+using Multitool.Net.Twitch;
 
 namespace MultitoolWinUI.Models
 {

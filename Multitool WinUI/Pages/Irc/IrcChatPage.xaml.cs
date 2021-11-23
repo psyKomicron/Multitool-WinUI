@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
 
 using Multitool.DAL;
-using Multitool.Net.Irc;
+using Multitool.Net.Twitch;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Models;
@@ -124,11 +124,6 @@ namespace MultitoolWinUI.Pages
         {
             NavigateTo(args.QueryText);
             LastStream = args.QueryText;
-        }
-
-        private async void LeaveChat_Click(object sender, RoutedEventArgs e)
-        {
-            
         }
 
         private void Chats_AddTabButtonClick(TabView sender, object args)
