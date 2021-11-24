@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.Net.Twitch;
@@ -43,6 +44,19 @@ namespace MultitoolWinUI.Pages.Irc
             InitializeComponent();
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
+
+            Uri uri = new(@"C:\Users\julie\Documents\GitHub\Multitool-WinUI\Multitool WinUI\Resources\Images\catJAM-1x.gif", UriKind.Absolute);
+            var source = new BitmapImage(uri);
+            Chat.Add(new()
+            {
+                UserName = "test",
+                Message = new Image()
+                {
+                    Source = source,
+                    Height = 20,
+                    Width = 20
+                }
+            });
         }
 
         public ObservableCollection<ChatMessageModel> Chat { get; } = new();

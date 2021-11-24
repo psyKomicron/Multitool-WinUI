@@ -47,14 +47,20 @@
                             Grid.Column="1"
                             Grid.Row="0"/>
 
-                        <TextBlock 
+                        <ContentPresenter
+                            Content="{Binding Message, Mode=OneWay}"
+                            HorizontalAlignment="Stretch"
+                            Grid.ColumnSpan="2"
+                            Grid.Column="1"
+                            Grid.Row="1"/>
+                        <!--<TextBlock 
                             Text="{Binding Message, Mode=OneWay}"
                             IsTextSelectionEnabled="True"
                             TextWrapping="WrapWholeWords"
                             HorizontalAlignment="Stretch"
                             Grid.ColumnSpan="2"
                             Grid.Column="1"
-                            Grid.Row="1"/>
+                            Grid.Row="1"/>-->
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
