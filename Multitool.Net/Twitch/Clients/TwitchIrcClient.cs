@@ -1,9 +1,15 @@
 ﻿
+using Multitool.Net.Properties;
+
 using System;
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
+
+using Windows.Web.Http;
 
 namespace Multitool.Net.Twitch
 {
@@ -20,6 +26,7 @@ namespace Multitool.Net.Twitch
         private readonly UserFactory factory = new();
         private bool loggedIn;
         private bool hasJoined;
+        private User systemUser = User.CreateSystemUser();
         //private string alias;
 
         #region constructor
@@ -104,6 +111,12 @@ namespace Multitool.Net.Twitch
         {
             if (hasJoined)
             {
+#if DEBUG
+                InvokeMessageReceived(new(message.ToString())
+                {
+                    Author = systemUser
+                });
+#else
                 if (messageRegex.IsMatch(message.ToString()))
                 {
                     ParseMessage(message);
@@ -112,6 +125,7 @@ namespace Multitool.Net.Twitch
                 {
                     Debug.WriteLine("> message : " + message.ToString());
                 }
+#endif
             }
         }
 
@@ -135,7 +149,6 @@ namespace Multitool.Net.Twitch
                     // /NAMES
                     Match match = namesRegex.Match(command.ToString());
                     Trace.TraceInformation($"NAMES command: {command.ToString()}");
-
                     break;
                 case 3:
                     Trace.TraceInformation("Pong-ing twitch");
@@ -181,12 +194,33 @@ namespace Multitool.Net.Twitch
             }
         }
 
+        private async Task ValidateToken()
+        {
+            /*using HttpRequestMessage requestMessage = new(HttpMethod.Get, new(Resources.TwitchTokenValidationUrl));
+            requestMessage.Headers.Authorization = ;*/
+
+            using HttpClient client = new();
+            client.DefaultRequestHeaders.Authorization = new("Bearer", login.ToString());
+            HttpResponseMessage res = await client.GetAsync(new(Resources.TwitchTokenValidationUrl));
+
+            Debug.WriteLine(await res.Content.ReadAsStringAsync());
+        }
+
         private async Task LogIn()
         {
+            // check if token is valid
+            await ValidateToken();
+
             // send PASS and NICK
             if (RequestTags)
             {
                 await SendAsync($"CAP REQ :twitch.tv/args");
+                string rep = await ReceiveAsync();
+                if (new Regex(@"[NACK]").IsMatch(rep))
+                {
+                    await Disconnect();
+                    throw new InvalidOperationException("Unable to request tags capability from tmi.twitch.tv");
+                }
             }
             await SendAsync($"PASS {login}");
             await SendAsync($"NICK {NickName}");

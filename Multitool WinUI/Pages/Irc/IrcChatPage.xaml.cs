@@ -68,7 +68,7 @@ namespace MultitoolWinUI.Pages
         {
             try
             {
-                PageWebView.Source = new(twitchUrl + uri);
+                //PageWebView.Source = new(twitchUrl + uri);
             }
             catch (UriFormatException ex)
             {
@@ -132,7 +132,8 @@ namespace MultitoolWinUI.Pages
                     IIrcClient client = new TwitchIrcClient(new TwitchConnectionToken(Login))
                     {
                         NickName = "psykomicron",
-                        Encoding = Encoding.UTF8
+                        Encoding = Encoding.UTF8,
+                        RequestTags = false
                     };
                     Frame frame = new();
 
