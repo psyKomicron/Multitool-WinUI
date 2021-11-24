@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Media;
+﻿using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 using Multitool.Net.Twitch;
 
@@ -19,13 +20,19 @@ namespace MultitoolWinUI.Models
         {
             Timestamp = message.ServerTimestamp.ToString(dateTimeFormat);
             UserName = message.Author.DisplayName;
-            Message = message.ToString();
+            Message = new TextBlock()
+            {
+                Text = message.ToString(),
+                HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
+                IsTextSelectionEnabled = true
+            };
             NameColor = new(message.Author.NameColor);
         }
 
-        public string Timestamp { get; }
-        public string Message { get; }
-        public string UserName { get; }
-        public SolidColorBrush NameColor { get; }
+        public string Timestamp { get; set; }
+        public object Message { get; set; }
+        public string UserName { get; set; }
+        public SolidColorBrush NameColor { get; set; }
     }
 }
