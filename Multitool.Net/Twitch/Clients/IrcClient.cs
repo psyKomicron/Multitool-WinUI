@@ -19,7 +19,8 @@ namespace Multitool.Net.Twitch
         private readonly CancellationTokenSource rootCancelToken = new();
         private readonly Thread receiveThread;
         private bool disposed;
-        private long disconnected = 1;
+
+        protected long disconnected = 1;
 
         protected IrcClient(int bufferSize, bool silentExit)
         {
@@ -180,6 +181,20 @@ namespace Multitool.Net.Twitch
         protected async Task SendAsync(string message, WebSocketMessageType messageType = WebSocketMessageType.Text, bool end = true)
         {
             await Socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+        }
+
+        protected async Task<string> ReceiveAsync()
+        {
+            ArraySegment<byte> buffer = new(new byte[bufferSize]);
+            WebSocketReceiveResult res = await Socket.ReceiveAsync(buffer, CancellationToken.None);
+            if (res.MessageType == WebSocketMessageType.Text)
+            {
+                return Encoding.GetString(buffer);
+            }
+            else
+            {
+                throw new InvalidOperationException("Message type was not text, decoding not possible.");
+            }
         }
         #endregion
 
