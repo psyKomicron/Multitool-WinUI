@@ -8,15 +8,17 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.Net.Twitch
+namespace Multitool.Net.Twitch.Irc
 {
     public interface IIrcClient : IAsyncDisposable
     {
+        event TypedEventHandler<IIrcClient, EventArgs> Connected;
+        event TypedEventHandler<IIrcClient, EventArgs> Disconnected;
         event TypedEventHandler<IIrcClient, Message> MessageReceived;
 
         string NickName { get; set; }
         WebSocketState ClientState { get; }
-        bool Connected { get; }
+        bool IsConnected { get; }
         CancellationTokenSource RootCancellationToken { get; }
         Encoding Encoding { get; set; }
 
