@@ -187,4 +187,8 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Pages\Settings\" />
+  </ItemGroup>
 </Project>

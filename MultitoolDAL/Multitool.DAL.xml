@@ -12,24 +12,12 @@
             <param name="items">Reference to a list of items for the delegate</param>
             <param name="item">The new item to add</param>
         </member>
-        <member name="T:Multitool.DAL.Completion.IPathCompletor">
+        <member name="T:Multitool.DAL.FileSystem.ArrayConverter">
             <summary>
-            Defines a method to complete pathes.
+            Converts a <see cref="T:System.Collections.IList"/> to a string array.
             </summary>
         </member>
-        <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
-            <summary>
-            Completes a path by a list of possible choices.
-            </summary>
-            <param name="input">Path input</param>
-            <returns>A list of possible choices</returns>
-        </member>
-        <member name="T:Multitool.DAL.Completion.PathCompletor">
-            <summary>
-            Completes filesystem pathes
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.Completion.PathCompletor.Complete(System.String)">
+        <member name="M:Multitool.DAL.FileSystem.ArrayConverter.Convert(System.Collections.IList)">
             <inheritdoc/>
         </member>
         <member name="T:Multitool.DAL.FileSystem.Events.CacheUpdatingEventArgs">
@@ -293,6 +281,26 @@
             <summary>
             Cleans the internal cache.
             </summary>
+        </member>
+        <member name="T:Multitool.DAL.Completion.IPathCompletor">
+            <summary>
+            Defines a method to complete pathes.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
+            <summary>
+            Completes a path by a list of possible choices.
+            </summary>
+            <param name="input">Path input</param>
+            <returns>A list of possible choices</returns>
+        </member>
+        <member name="T:Multitool.DAL.Completion.PathCompletor">
+            <summary>
+            Completes filesystem pathes
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.Completion.PathCompletor.Complete(System.String)">
+            <inheritdoc/>
         </member>
         <member name="P:Multitool.DAL.DirectoryEntry.Size">
             <inheritdoc/>
@@ -770,19 +778,26 @@
             Set it to true to allow to fire the <see cref="E:Multitool.DAL.IProgressNotifier.Progress"/> event.
             </summary>
         </member>
+        <member name="M:Multitool.DAL.ISettingConverter`2.Convert(`0)">
+            <summary>
+            Converts <paramref name="toConvert"/> to a type that can be saved by an <see cref="T:Multitool.DAL.ISettings"/> instance.
+            </summary>
+            <param name="toConvert"><see cref="T:System.Object"/> to convert</param>
+            <returns>The converted <see cref="T:System.Object"/></returns>
+        </member>
         <member name="P:Multitool.DAL.ISettings.DataContainer">
             <summary>
-            The <see cref="T:Windows.Storage.ApplicationDataContainer"/> associated with this instance
+            The <see cref="T:Windows.Storage.ApplicationDataContainer"/> associated with this instance.
             </summary>
         </member>
         <member name="P:Multitool.DAL.ISettings.SettingFormat">
             <summary>
-            How the setting key will be created
+            How the setting key will be created.
             </summary>
         </member>
         <member name="M:Multitool.DAL.ISettings.GetSetting``1(System.String,System.String)">
             <summary>
-            
+            Retreives a setting.
             </summary>
             <typeparam name="T"></typeparam>
             <param name="callerName"></param>
@@ -792,10 +807,11 @@
         <member name="M:Multitool.DAL.ISettings.SaveSetting(System.String,System.String,System.Object)">
             <summary>
             <para>
-            Saves a setting to the provided <see cref="P:Multitool.DAL.ISettings.DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="P:Multitool.DAL.ISettings.SettingFormat"/>.
+                Saves a setting to the provided <see cref="P:Multitool.DAL.ISettings.DataContainer"/>, formatting <paramref name="callerName"/>
+                and <paramref name="name"/> with <see cref="P:Multitool.DAL.ISettings.SettingFormat"/>.
             </para>
             <para>
-            If the setting does not exists an entry will be created, if it does the value will be updated.
+                If the setting does not exists an entry will be created, if it does the value will be updated.
             </para>
             </summary>
             <param name="callerName">Name of the caller (should be unique)</param>
@@ -804,11 +820,42 @@
         </member>
         <member name="M:Multitool.DAL.ISettings.TryGetSetting(System.String,System.String)">
             <summary>
-            
+            Same as <see cref="M:Multitool.DAL.ISettings.GetSetting``1(System.String,System.String)"/> but instead does not throw exceptions.
             </summary>
             <param name="callerName"></param>
             <param name="name"></param>
-            <returns></returns>
+            <returns>
+            <see langword="null"/> if no setting was associated to the key (created by formatting <paramref name="callerName"/> 
+            and <paramref name="name"/> with <see cref="P:Multitool.DAL.ISettings.SettingFormat"/>) or the setting.
+            </returns>
+        </member>
+        <member name="M:Multitool.DAL.ISettings.GetAllSettings">
+            <summary>
+            Returns all settings saved.
+            </summary>
+            <returns>All settings maped by their name</returns>
+        </member>
+        <member name="M:Multitool.DAL.ISettings.SaveSetting``2(System.String,Multitool.DAL.ISettingConverter{``0,``1},``0)">
+            <summary>
+            Saves a setting using <paramref name="setting"/> as the setting key and <paramref name="converter"/>
+            as a converter to a saveable type (primitive type and primitive arrays).
+            </summary>
+            <typeparam name="TIn"><see langword="in"/> type for the converter</typeparam>
+            <typeparam name="TOut"><see langword="out"/> type for the converter</typeparam>
+            <param name="setting">Key to retreive the setting</param>
+            <param name="converter">Converter to convert <paramref name="value"/></param>
+            <param name="value">Value to save</param>
+        </member>
+        <member name="M:Multitool.DAL.Settings.#ctor">
+            <summary>
+            Default constructor.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.Settings.#ctor(Windows.Storage.ApplicationDataContainer)">
+            <summary>
+            Constructor.
+            </summary>
+            <param name="container">The <see cref="T:Windows.Storage.ApplicationDataContainer"/> to save and get settings from</param>
         </member>
         <member name="P:Multitool.DAL.Settings.DataContainer">
             <inheritdoc/>
@@ -819,10 +866,16 @@
         <member name="M:Multitool.DAL.Settings.SaveSetting(System.String,System.String,System.Object)">
             <inheritdoc/>
         </member>
+        <member name="M:Multitool.DAL.Settings.SaveSetting``2(System.String,Multitool.DAL.ISettingConverter{``0,``1},``0)">
+            <inheritdoc/>
+        </member>
         <member name="M:Multitool.DAL.Settings.GetSetting``1(System.String,System.String)">
             <inheritdoc/>
         </member>
         <member name="M:Multitool.DAL.Settings.TryGetSetting(System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.Settings.GetAllSettings">
             <inheritdoc/>
         </member>
     </members>
