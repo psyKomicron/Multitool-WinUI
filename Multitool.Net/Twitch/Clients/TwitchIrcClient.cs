@@ -1,17 +1,17 @@
 ﻿
 using Multitool.Net.Properties;
+using Multitool.Net.Twitch.Security;
 
 using System;
 using System.Diagnostics;
-using System.Net.Http.Headers;
 using System.Net.WebSockets;
+using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Windows.Web.Http;
 
-namespace Multitool.Net.Twitch
+namespace Multitool.Net.Twitch.Irc
 {
     public class TwitchIrcClient : IrcClient
     {
@@ -19,7 +19,7 @@ namespace Multitool.Net.Twitch
         private static readonly Regex joinCommandRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv JOIN .))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex namesRegex = new(@"^:(.+)\.tmi\.twitch\.tv 353 \1 = #[a-z0-9]+ :");
         private static readonly Regex pingRegex = new(@"^PING", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
+        // message
         private static readonly Regex messageRegex = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv PRIVMSG .+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private readonly ConnectionToken login;
@@ -194,40 +194,65 @@ namespace Multitool.Net.Twitch
             }
         }
 
-        private async Task ValidateToken()
-        {
-            /*using HttpRequestMessage requestMessage = new(HttpMethod.Get, new(Resources.TwitchTokenValidationUrl));
-            requestMessage.Headers.Authorization = ;*/
-
-            using HttpClient client = new();
-            client.DefaultRequestHeaders.Authorization = new("Bearer", login.ToString());
-            HttpResponseMessage res = await client.GetAsync(new(Resources.TwitchTokenValidationUrl));
-
-            Debug.WriteLine(await res.Content.ReadAsStringAsync());
-        }
-
         private async Task LogIn()
         {
-            // check if token is valid
-            await ValidateToken();
-
-            // send PASS and NICK
             if (RequestTags)
             {
-                await SendAsync($"CAP REQ :twitch.tv/args");
+                Regex nak = new(@"NAK");
+                await SendAsync(@"CAP REQ :twitch.tv/membership");
                 string rep = await ReceiveAsync();
-                if (new Regex(@"[NACK]").IsMatch(rep))
+                if (nak.IsMatch(rep))
                 {
                     await Disconnect();
                     throw new InvalidOperationException("Unable to request tags capability from tmi.twitch.tv");
                 }
+                else
+                {
+                    Trace.TraceInformation("ACK CAP REQ MEMBERSHIP");
+                }
+
+                await SendAsync(@"CAP REQ :twitch.tv/commands");
+                rep = await ReceiveAsync();
+                if (nak.IsMatch(rep))
+                {
+                    await Disconnect();
+                    throw new InvalidOperationException("Unable to request tags capability from tmi.twitch.tv");
+                }
+                else
+                {
+                    Trace.TraceInformation("ACK CAP REQ COMMANDS");
+                }
+
+                await SendAsync(@"CAP REQ :twitch.tv/tags");
+                rep = await ReceiveAsync();
+                if (nak.IsMatch(rep))
+                {
+                    await Disconnect();
+                    throw new InvalidOperationException("Unable to request tags capability from tmi.twitch.tv");
+                }
+                else
+                {
+                    Trace.TraceInformation("ACK CAP REQ TAGS");
+                }
             }
+
             await SendAsync($"PASS {login}");
             await SendAsync($"NICK {NickName}");
 
-            loggedIn = true;
+            Task<string> response = ReceiveAsync();
+            Regex authFailedRegex = new(@"^(:tmi.twitch.tv NOTICE \* :Login authentication failed)");
+            await response;
+            if (authFailedRegex.IsMatch(response.Result))
+            {
+                await Disconnect();
+                throw new InvalidOperationException("Authentication failed");
+            }
+            else
+            {
+                loggedIn = true;
 
-            ReceiveThread.Start();
+                ReceiveThread.Start();
+            }
         }
         #endregion
     }
