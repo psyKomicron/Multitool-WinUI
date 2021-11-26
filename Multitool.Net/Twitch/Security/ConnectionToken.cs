@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace Multitool.Net.Twitch
+namespace Multitool.Net.Twitch.Security
 {
     public abstract class ConnectionToken
     {
         private readonly string token;
-        private readonly Regex validationRegex;
 
         protected ConnectionToken(string token, Regex regex)
         {
             this.token = token;
-            validationRegex = regex;
-            ValidateToken(token);
+            ValidateToken(token, regex);
         }
+
+        public string Token => token;
 
         public override string ToString()
         {
@@ -25,11 +25,11 @@ namespace Multitool.Net.Twitch
         /// requirements.
         /// </summary>
         /// <param name="token">The token to validate</param>
-        protected virtual void ValidateToken(string token)
+        protected virtual void ValidateToken(string token, Regex validationRegex)
         {
             if (!validationRegex.IsMatch(token))
             {
-                throw new FormatException($"Token is not at the right format (actual token: {token})");
+                throw new FormatException($"Token does not follow the expected format (actual token: {token}, expected format: {validationRegex})");
             }
         }
     }
