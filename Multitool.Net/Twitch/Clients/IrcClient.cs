@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.Net.Twitch
+namespace Multitool.Net.Twitch.Irc
 {
     public abstract class IrcClient : IIrcClient
     {
@@ -33,11 +33,13 @@ namespace Multitool.Net.Twitch
         }
 
         public event TypedEventHandler<IIrcClient, Message> MessageReceived;
+        public event TypedEventHandler<IIrcClient, EventArgs> Connected;
+        public event TypedEventHandler<IIrcClient, EventArgs> Disconnected;
 
         #region properties
         public CancellationTokenSource RootCancellationToken => rootCancelToken;
         public WebSocketState ClientState => Socket.State;
-        public bool Connected => Interlocked.Read(ref disconnected) == 0;
+        public bool IsConnected => Interlocked.Read(ref disconnected) == 0;
         public string NickName { get; set; }
         public Encoding Encoding { get; set; }
 
@@ -69,15 +71,20 @@ namespace Multitool.Net.Twitch
             Interlocked.Exchange(ref disconnected, 0);
         }
 
+        /// <inheritdoc/>
         public async Task Disconnect()
         {
             if (Interlocked.Read(ref disconnected) == 0)
             {
                 Interlocked.Exchange(ref disconnected, 1);
+
                 RootCancellationToken.Cancel();
+
                 await Socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
                 await Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
+
                 Trace.TraceInformation("IRC client disconnected");
+                Disconnected?.Invoke(this, EventArgs.Empty);
             }
             else
             {
@@ -180,20 +187,47 @@ namespace Multitool.Net.Twitch
 
         protected async Task SendAsync(string message, WebSocketMessageType messageType = WebSocketMessageType.Text, bool end = true)
         {
-            await Socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+            try
+            {
+                await Socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+            }
+            catch (WebSocketException)
+            {
+                Interlocked.Exchange(ref disconnected, 1);
+                Disconnected?.Invoke(this, EventArgs.Empty);
+                throw;
+            }
         }
 
         protected async Task<string> ReceiveAsync()
         {
             ArraySegment<byte> buffer = new(new byte[bufferSize]);
-            WebSocketReceiveResult res = await Socket.ReceiveAsync(buffer, CancellationToken.None);
-            if (res.MessageType == WebSocketMessageType.Text)
+            try
             {
-                return Encoding.GetString(buffer);
+                WebSocketReceiveResult res = await Socket.ReceiveAsync(buffer, CancellationToken.None);
+                if (res.MessageType == WebSocketMessageType.Text)
+                {
+                    int max = 0;
+                    for (int i; max < buffer.Count; max++)
+                    {
+                        if (buffer[max] == 0x0)
+                        {
+                            break;
+                        }
+                    }
+                    buffer = buffer.Slice(0, max);
+                    return Encoding.GetString(buffer);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Message type wasn't text, decoding not possible.");
+                }
             }
-            else
+            catch (WebSocketException)
             {
-                throw new InvalidOperationException("Message type was not text, decoding not possible.");
+                Interlocked.Exchange(ref disconnected, 1);
+                Disconnected?.Invoke(this, EventArgs.Empty);
+                throw;
             }
         }
         #endregion
@@ -287,6 +321,7 @@ namespace Multitool.Net.Twitch
                     else
                     {
                         Trace.TraceError("WebSocket exception occured, exiting receive thread.\n" + ex.ToString());
+                        Disconnected?.Invoke(this, EventArgs.Empty);
                         throw;
                     }
                 }
@@ -295,14 +330,9 @@ namespace Multitool.Net.Twitch
                     Trace.TraceError(ex.ToString());
                 }
             }
-
-
             Trace.TraceInformation($"IrcClient '{NickName}' receive thread exiting");
 
-            InvokeMessageReceived(new("Client disconnected")
-            {
-                Author = User.CreateSystemUser()
-            });
+            Disconnected?.Invoke(this, EventArgs.Empty);
         }
         #endregion
     }
