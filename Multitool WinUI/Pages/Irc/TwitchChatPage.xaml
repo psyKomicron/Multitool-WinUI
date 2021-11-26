@@ -45,6 +45,7 @@
 
                 <Button
                     x:Name="LoadOAuth"
+                    Content="Load oauthentication page"
                     Click="LoadOAuth_Click"/>
             </StackPanel>
 

@@ -2,7 +2,6 @@
 using Microsoft.UI.Xaml.Controls;
 
 using Multitool.DAL;
-using Multitool.Net.Twitch;
 using Multitool.Net.Twitch.Irc;
 using Multitool.Net.Twitch.Security;
 
@@ -27,7 +26,6 @@ namespace MultitoolWinUI.Pages
     /// </summary>
     public sealed partial class TwitchChatPage : Page
     {
-        private const string twitchUrl = "https://twitch.tv/";
         private readonly object _lock = new();
         private bool saved;
 
@@ -100,7 +98,7 @@ namespace MultitoolWinUI.Pages
         {
             using HttpClient client = new();
             client.DefaultRequestHeaders.Authorization = new("Bearer", Login);
-            HttpResponseMessage res = await client.GetAsync(new(@"https://id.twitch.tv/oauth2/validate"));
+            HttpResponseMessage res = await client.GetAsync(new(Properties.Resources.TwitchOAuthValidationUrl));
             if (res.StatusCode == HttpStatusCode.Unauthorized)
             {
                 Trace.TraceError("Token to connect to Twitch is invalid, create another one to be able to connect chats.");
@@ -184,7 +182,7 @@ namespace MultitoolWinUI.Pages
 
                     if (loadWebView)
                     {
-                        PageWebView.Source = new(twitchUrl + LastStream);
+                        PageWebView.Source = new(Properties.Resources.TwitchUrl + LastStream);
                     }
                 }
                 catch (FormatException ex)
@@ -212,7 +210,7 @@ namespace MultitoolWinUI.Pages
             }
             else
             {
-
+                Trace.TraceWarning("Unable to contact twitch to get client id");
             }
         }
         #endregion
