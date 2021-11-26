@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
-namespace Multitool.Net.Twitch
+namespace Multitool.Net.Twitch.Factories
 {
     internal class UserFactory
     {
-        private static ConcurrentDictionary<string, User> cache = new();
+        private static readonly ConcurrentDictionary<string, User> cache = new();
 
         public User GetUser(string userName, Span<char> message)
         {

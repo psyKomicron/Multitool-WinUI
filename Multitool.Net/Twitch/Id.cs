@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Multitool.Net.Twitch
+﻿namespace Multitool.Net.Twitch
 {
     public struct Id
     {
-        
+        private readonly string stringId;
+
+        public Id(string id)
+        {
+            stringId = id;
+        }
+
+        public string StringId => stringId;
     }
 }
