@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
 using Multitool.Net.Twitch;
+using Multitool.Net.Twitch.Irc;
 
 namespace MultitoolWinUI.Pages.Irc
 {
