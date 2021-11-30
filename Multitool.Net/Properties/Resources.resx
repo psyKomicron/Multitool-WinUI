@@ -117,7 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="TwitchTokenValidationUrl" xml:space="preserve">
+  <data name="TwitchApiGlobalEmotesEndPoint" xml:space="preserve">
+    <value>https://api.twitch.tv/helix/chat/emotes/global</value>
+  </data>
+  <data name="TwitchOAuthValidationUrl" xml:space="preserve">
     <value>https://id.twitch.tv/oauth2/validate</value>
   </data>
 </root>
