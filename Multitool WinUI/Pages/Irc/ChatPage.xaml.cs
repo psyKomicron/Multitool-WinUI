@@ -10,6 +10,7 @@ using Multitool.Net.Twitch.Irc;
 using MultitoolWinUI.Models;
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -26,10 +27,11 @@ namespace MultitoolWinUI.Pages.Irc
     {
         private const string wssUri = @"wss://irc-ws.chat.twitch.tv:443";
         private readonly User thisUser = User.CreateSystemUser();
-        private IIrcClient client;
+        private ITwitchIrcClient client;
         private TabViewItem tab;
         private bool joined;
         private bool loaded;
+        private volatile bool emotesLoaded;
 
         public ChatPage()
         {
@@ -38,13 +40,12 @@ namespace MultitoolWinUI.Pages.Irc
             App.MainWindow.Closed += MainWindow_Closed;
 
             Uri uri = new(@"C:\Users\julie\Documents\GitHub\Multitool-WinUI\Multitool WinUI\Resources\Images\catJAM-1x.gif", UriKind.Absolute);
-            var source = new BitmapImage(uri);
             Chat.Add(new()
             {
                 UserName = "test",
                 Message = new Image()
                 {
-                    Source = source,
+                    Source = new BitmapImage(uri),
                     Height = 20,
                     Width = 20
                 }
@@ -52,6 +53,8 @@ namespace MultitoolWinUI.Pages.Irc
         }
 
         public ObservableCollection<ChatMessageModel> Chat { get; } = new();
+
+        public List<Image> Emotes { get; set; } = new();
 
         public string Channel { get; set; }
 
@@ -62,7 +65,13 @@ namespace MultitoolWinUI.Pages.Irc
             await client.DisposeAsync();
         }
 
-        private void Load(IIrcClient client, TabViewItem tab)
+        private async Task LoadEmotes()
+        {
+            EmoteFetcher emoteFetcher = new(client.ConnectionToken);
+            List<Emote> emotes = await emoteFetcher.GetAllEmotes();
+        }
+
+        private void Load(ITwitchIrcClient client, TabViewItem tab)
         {
             this.client = client;
             this.tab = tab;
@@ -76,6 +85,10 @@ namespace MultitoolWinUI.Pages.Irc
             this.tab.CloseRequested += Tab_CloseRequested;
             //header.KeyDown += Header_KeyDown;
             this.client.MessageReceived += OnMessageReceived;
+            this.client.Connected += Client_Connected;
+            this.client.Disconnected += Client_Disconnected;
+
+            _ = LoadEmotes();
         }
 
         private async Task Join()
@@ -118,14 +131,28 @@ namespace MultitoolWinUI.Pages.Irc
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is ChatPageParameter param)
+            if (e.Parameter is ChatPageParameter param && !string.IsNullOrEmpty(param.Channel))
             {
                 Channel = param.Channel;
                 Load(param.Client, param.Tab);
             }
+            else
+            {
+                Trace.TraceWarning("Channel is not set");
+            }
         }
 
-        private void OnMessageReceived(IIrcClient sender, Message args)
+        private void Client_Disconnected(ITwitchIrcClient sender, EventArgs args)
+        {
+            Trace.TraceInformation($"Disconnected from {Channel}");
+        }
+
+        private void Client_Connected(ITwitchIrcClient sender, EventArgs args)
+        {
+            Trace.TraceInformation($"Connected to {Channel}");
+        }
+
+        private void OnMessageReceived(ITwitchIrcClient sender, Message args)
         {
             if (DispatcherQueue != null)
             {
