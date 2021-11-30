@@ -120,9 +120,6 @@
   <data name="GithubUri" xml:space="preserve">
     <value>https://github.com/psyKomicron/multitool/tree/main</value>
   </data>
-  <data name="TwitchOAuthValidationUrl" xml:space="preserve">
-    <value>https://id.twitch.tv/oauth2/validate</value>
-  </data>
   <data name="TwitchUrl" xml:space="preserve">
     <value>https://twitch.tv/</value>
   </data>

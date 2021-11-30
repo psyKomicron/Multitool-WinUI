@@ -61,11 +61,20 @@ namespace Multitool.Net.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to https://api.twitch.tv/helix/chat/emotes/global.
+        /// </summary>
+        internal static string TwitchApiGlobalEmotesEndPoint {
+            get {
+                return ResourceManager.GetString("TwitchApiGlobalEmotesEndPoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to https://id.twitch.tv/oauth2/validate.
         /// </summary>
-        internal static string TwitchTokenValidationUrl {
+        internal static string TwitchOAuthValidationUrl {
             get {
-                return ResourceManager.GetString("TwitchTokenValidationUrl", resourceCulture);
+                return ResourceManager.GetString("TwitchOAuthValidationUrl", resourceCulture);
             }
         }
     }

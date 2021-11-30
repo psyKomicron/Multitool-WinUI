@@ -70,15 +70,6 @@ namespace MultitoolWinUI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to https://id.twitch.tv/oauth2/validate.
-        /// </summary>
-        internal static string TwitchOAuthValidationUrl {
-            get {
-                return ResourceManager.GetString("TwitchOAuthValidationUrl", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to https://twitch.tv/.
         /// </summary>
         internal static string TwitchUrl {
