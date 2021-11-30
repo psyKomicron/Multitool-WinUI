@@ -63,9 +63,9 @@ namespace Multitool.Net.Twitch.Security
             if (json.RootElement.TryGetProperty("client_id", out value))
             {
                 ClientId = value.ToString();
+                Validated = true;
             }
 #endif
-            Validated = true;
         }
     }
 }
