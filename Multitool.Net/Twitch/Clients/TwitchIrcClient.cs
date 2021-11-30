@@ -1,36 +1,54 @@
 ﻿
 using Multitool.Net.Properties;
+using Multitool.Net.Twitch.Factories;
 using Multitool.Net.Twitch.Security;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
+using Windows.Foundation;
 using Windows.Web.Http;
 
 namespace Multitool.Net.Twitch.Irc
 {
-    public class TwitchIrcClient : IrcClient
+    public class TwitchIrcClient : ITwitchIrcClient
     {
+        #region attributes
+        #region static regexes
         // commands
         private static readonly Regex joinCommandRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv JOIN .))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex namesRegex = new(@"^:(.+)\.tmi\.twitch\.tv 353 \1 = #[a-z0-9]+ :");
         private static readonly Regex pingRegex = new(@"^PING", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         // message
         private static readonly Regex messageRegex = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv PRIVMSG .+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        #endregion
 
-        private readonly ConnectionToken login;
-        private readonly UserFactory factory = new();
+        private readonly int bufferSize;
+        private readonly bool silentExit;
+        private readonly CancellationTokenSource rootCancelToken = new();
+        private readonly Thread receiveThread;
+        private readonly ClientWebSocket socket = new();
+        private readonly TwitchConnectionToken login;
+        private readonly MessageFactory factory = new();
+        private readonly Dictionary<uint, Regex> commands = new();
+
+        private bool disposed;
+        private long disconnected = 1;
         private bool loggedIn;
         private bool hasJoined;
-        private User systemUser = User.CreateSystemUser();
         //private string alias;
+        #endregion
 
         #region constructor
-        public TwitchIrcClient(ConnectionToken login) : base(5_000, true)
+        public TwitchIrcClient(TwitchConnectionToken login, int bufferSize, bool silentExit)
         {
             // assert login
             if (login is null)
@@ -38,22 +56,56 @@ namespace Multitool.Net.Twitch.Irc
                 throw new ArgumentNullException(nameof(login));
             }
 
+            ConnectionToken = login;
+            this.bufferSize = bufferSize;
+            this.silentExit = silentExit;
+            receiveThread = new(ReceiveData)
+            {
+                IsBackground = false
+            };
             this.login = login;
 
-            Commands.Add(1, joinCommandRegex);
-            Commands.Add(2, namesRegex);
-            Commands.Add(3, pingRegex);
+            commands.Add(1, joinCommandRegex);
+            commands.Add(2, namesRegex);
+            commands.Add(3, pingRegex);
         }
         #endregion
 
+        #region events
+        public event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
+        public event TypedEventHandler<ITwitchIrcClient, EventArgs> Connected;
+        public event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
+        #endregion
+
         #region properties
+        /// <inheritdoc/>
         public bool AutoConnect { get; init; }
+
+        /// <inheritdoc/>
         public bool RequestTags { get; init; }
+
+        /// <inheritdoc/>
+        public CancellationTokenSource RootCancellationToken => rootCancelToken;
+
+        /// <inheritdoc/>
+        public WebSocketState ClientState => socket.State;
+
+        /// <inheritdoc/>
+        public bool IsConnected => Interlocked.Read(ref disconnected) == 0;
+
+        /// <inheritdoc/>
+        public string NickName { get; set; }
+
+        /// <inheritdoc/>
+        public Encoding Encoding { get; set; }
+
+        /// <inheritdoc/>
+        public TwitchConnectionToken ConnectionToken { get; init; }
         #endregion
 
         #region public methods
         /// <inheritdoc/>
-        public override async Task SendMessage(string message)
+        public async Task SendMessage(string message)
         {
             throw new NotImplementedException();
             AssertConnectionValid();
@@ -63,7 +115,7 @@ namespace Multitool.Net.Twitch.Irc
         }
 
         /// <inheritdoc/>
-        public override async Task Join(string channel)
+        public async Task Join(string channel)
         {
             AssertConnectionValid();
             AssertChannelNameValid(channel);
@@ -73,19 +125,19 @@ namespace Multitool.Net.Twitch.Irc
             }
     
             Trace.TraceInformation("Trying to join " + channel);
-            await Socket.SendAsync(GetBytes($"JOIN #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+            await socket.SendAsync(GetBytes($"JOIN #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
             Trace.TraceInformation("> Joined " + channel);
             hasJoined = true;
         }
 
         /// <inheritdoc/>
-        public override async Task Part(string channel)
+        public async Task Part(string channel)
         {
             AssertConnectionValid();
             AssertChannelNameValid(channel);
             if (hasJoined)
             {
-                await Socket.SendAsync(GetBytes($"PART #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+                await socket.SendAsync(GetBytes($"PART #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
                 hasJoined = false;
                 Trace.TraceInformation("> Left " + channel);
             }
@@ -95,104 +147,183 @@ namespace Multitool.Net.Twitch.Irc
             }
         }
 
-        public override async Task Connect(Uri uri)
+        /// <inheritdoc/>
+        public async Task Connect(Uri uri)
         {
-            await base.Connect(uri);
+            await Connect(uri, RootCancellationToken.Token);
+        }
+
+        /// <inheritdoc/>
+        public async Task Connect(Uri channel, CancellationToken cancellationToken)
+        {
+            await socket.ConnectAsync(channel, cancellationToken);
+            Interlocked.Exchange(ref disconnected, 0);
+
             AssertConnectionValid();
 
             if (AutoConnect)
             {
                 await LogIn();
             }
+            Connected?.Invoke(this, EventArgs.Empty);
         }
-        #endregion
 
-        protected override void OnMessageReceived(Span<char> message)
+        /// <inheritdoc/>
+        public async Task Disconnect()
         {
-            if (hasJoined)
+            if (Interlocked.Read(ref disconnected) == 0)
             {
-#if DEBUG
-                InvokeMessageReceived(new(message.ToString())
-                {
-                    Author = systemUser
-                });
-#else
-                if (messageRegex.IsMatch(message.ToString()))
-                {
-                    ParseMessage(message);
-                }
-                else
-                {
-                    Debug.WriteLine("> message : " + message.ToString());
-                }
-#endif
+                Interlocked.Exchange(ref disconnected, 1);
+
+                RootCancellationToken.Cancel();
+
+                await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
+                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
+
+                Trace.TraceInformation("IRC client disconnected");
+                Disconnected?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                Trace.TraceWarning($"IRC client already disconnected. Client status : {ClientState}");
             }
         }
 
-        protected override void OnCommandReceived(uint tag, Span<char> command)
+        /// <inheritdoc/>
+        public async ValueTask DisposeAsync()
         {
-            switch (tag)
+            if (!disposed)
             {
-                case 1:
-                    // JOIN
-                    int i = 0;
-                    for (; i < command.Length; i++)
+                rootCancelToken.Cancel();
+                if (Interlocked.Read(ref disconnected) == 0)
+                {
+                    await Disconnect();
+                }
+                socket.Dispose();
+                disposed = true;
+                GC.SuppressFinalize(this);
+            }
+        }
+
+        public CancellationTokenSource GetCancellationToken()
+        {
+            return CancellationTokenSource.CreateLinkedTokenSource(rootCancelToken.Token);
+        }
+        #endregion
+
+        #region private methods
+
+        #region socket methods
+        private ArraySegment<byte> GetBytes(string text)
+        {
+            return new(Encoding.GetBytes(text));
+        }
+
+        private ArraySegment<byte> GetBytes(Memory<char> text)
+        {
+            return new(Encoding.GetBytes(text.ToArray()));
+        }
+
+        private async Task SendAsync(string message, WebSocketMessageType messageType = WebSocketMessageType.Text, bool end = true)
+        {
+            try
+            {
+                await socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+            }
+            catch (WebSocketException)
+            {
+                Interlocked.Exchange(ref disconnected, 1);
+                Disconnected?.Invoke(this, EventArgs.Empty);
+                throw;
+            }
+        }
+
+        private async Task<string> ReceiveAsync()
+        {
+            ArraySegment<byte> buffer = new(new byte[bufferSize]);
+            try
+            {
+                WebSocketReceiveResult res = await socket.ReceiveAsync(buffer, CancellationToken.None);
+                if (res.MessageType == WebSocketMessageType.Text)
+                {
+                    int max = 0;
+                    for (; max < buffer.Count; max++)
                     {
-                        if (command[i] == '#')
+                        if (buffer[max] == 0x0)
                         {
                             break;
                         }
                     }
-                    Trace.TraceInformation($"> Joined {command.Slice(command.Length - i - 1, i - 1).ToString()}");
-                    break;
-                case 2:
-                    // /NAMES
-                    Match match = namesRegex.Match(command.ToString());
-                    Trace.TraceInformation($"NAMES command: {command.ToString()}");
-                    break;
-                case 3:
-                    Trace.TraceInformation("Pong-ing twitch");
-                    command[1] = 'O';
-                    Socket.SendAsync(GetBytes(command), WebSocketMessageType.Text, true, RootCancellationToken.Token);
-                    break;
-                default:
-                    break;
+                    buffer = buffer.Slice(0, max);
+                    return Encoding.GetString(buffer);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Message type wasn't text, decoding not possible.");
+                }
             }
-        }
-
-        #region private methods
-        private void ParseMessage(Span<char> message)
-        {
-            int i = 1;
-            if (message[0] == ':')
+            catch (WebSocketException)
             {
-                int nameLength = 0;
-                for (; i < message.Length; i++)
-                {
-                    if (message[i] == '@')
-                    {
-                        break;
-                    }
-                    else if (message[i] == '!')
-                    {
-                        nameLength = i;
-                    }
-                }
-
-                Span<char> name = message[1..nameLength];
-
-                while (i < message.Length && message[i] != ':')
-                {
-                    i++;
-                }
-
-                Message m = new(message[(i + 1)..].ToString())
-                {
-                    Author = factory.GetUser(name.ToString(), message)
-                };
-                InvokeMessageReceived(m);
+                Interlocked.Exchange(ref disconnected, 1);
+                Disconnected?.Invoke(this, EventArgs.Empty);
+                throw;
             }
         }
+        #endregion
+
+        #region assertion methods
+        /// <summary>
+        /// Asserts that the connection is not disposed and open.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if the socket is not open (<see cref="WebSocketState.Open"/>)</exception>
+        /// <exception cref="ArgumentException">Thrown when the socket state is not recognized (default clause in the switch)</exception>
+        private void AssertConnectionValid()
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException(GetType().FullName);
+            }
+
+            if (Interlocked.Read(ref disconnected) == 1)
+            {
+                throw new InvalidOperationException("Client has disconnected");
+            }
+
+            if (ClientState != WebSocketState.Open)
+            {
+                switch (ClientState)
+                {
+                    case WebSocketState.None:
+                        throw new InvalidOperationException("Client has never connected");
+                    case WebSocketState.Connecting:
+                        throw new InvalidOperationException("Client is connecting");
+                    case WebSocketState.CloseSent:
+                        throw new InvalidOperationException("Client is closing it's connection");
+                    case WebSocketState.CloseReceived:
+                        throw new InvalidOperationException("Client has received close request from the connection endpoint");
+                    case WebSocketState.Closed:
+                        throw new InvalidOperationException("Client connection is closed");
+                    case WebSocketState.Aborted:
+                        throw new InvalidOperationException($"{nameof(ClientState)} == WebSocketState.Aborted");
+                    default:
+                        throw new ArgumentException($"Unkown WebSocketState state, argument name : {nameof(ClientState)}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Asserts that the channel name is valid.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <exception cref="ArgumentException">Thrown if the channel name is not valid (will carry the value of <paramref name="channel"/>)</exception>
+        private static void AssertChannelNameValid(string channel)
+        {
+            if (string.IsNullOrWhiteSpace(channel))
+            {
+                throw new ArgumentException($"Channel name cannot be empty (value: \"{channel}\")", nameof(channel));
+            }
+        }
+        #endregion
 
         private async Task LogIn()
         {
@@ -251,8 +382,186 @@ namespace Multitool.Net.Twitch.Irc
             {
                 loggedIn = true;
 
-                ReceiveThread.Start();
+                receiveThread.Start();
             }
+        }
+
+        private void InvokeMessageReceived(Message message)
+        {
+#if !DEBUG
+            Task.Run(() => MessageReceived?.Invoke(this, message));
+#else
+            MessageReceived?.Invoke(this, message);
+#endif
+        }
+
+        private void ParseMessage(Memory<char> message)
+        {
+            int i = 1;
+            if (message.Span[0] == ':')
+            {
+                int nameLength = 0;
+                for (; i < message.Length; i++)
+                {
+                    if (message.Span[i] == '@')
+                    {
+                        break;
+                    }
+                    else if (message.Span[i] == '!')
+                    {
+                        nameLength = i;
+                    }
+                }
+
+                Memory<char> name = message[1..nameLength];
+
+                while (i < message.Length && message.Span[i] != ':')
+                {
+                    i++;
+                }
+
+                Message m = factory.GetMessage(message);
+                InvokeMessageReceived(m);
+            }
+        }
+
+        private void OnMessageReceived(Memory<char> message)
+        {
+            if (hasJoined)
+            {
+#if DEBUG
+                InvokeMessageReceived(factory.GetMessage(message));
+#else
+                if (messageRegex.IsMatch(message.ToString()))
+                {
+                    ParseMessage(message);
+                }
+                else
+                {
+                    Debug.WriteLine("> message : " + message.ToString());
+                }
+#endif
+            }
+        }
+
+        private void OnCommandReceived(uint tag, Memory<char> command)
+        {
+            switch (tag)
+            {
+                case 1:
+                    // JOIN
+                    int i = 0;
+                    for (; i < command.Length; i++)
+                    {
+                        if (command.Span[i] == '#')
+                        {
+                            break;
+                        }
+                    }
+                    Trace.TraceInformation($"> Joined {command.Slice(command.Length - i - 1, i - 1)}");
+                    break;
+                case 2:
+                    // /NAMES
+                    Match match = namesRegex.Match(command.ToString());
+                    Trace.TraceInformation($"NAMES command: {command}");
+                    break;
+                case 3:
+                    Trace.TraceInformation("Pong-ing twitch");
+                    command.Span[1] = 'O';
+                    socket.SendAsync(GetBytes(command), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private async void ReceiveData(object obj)
+        {
+            Trace.TraceInformation("Starting IRC client receive background thread");
+
+            ArraySegment<byte> data = new(new byte[bufferSize]);
+            bool isCommand;
+
+            while (Interlocked.Read(ref disconnected) == 0)
+            {
+                try
+                {
+                    isCommand = false;
+                    AssertConnectionValid();
+                    await socket.ReceiveAsync(data, CancellationToken.None);
+                    if (data.Count != 0)
+                    {
+                        int max = 0;
+                        for (; max < data.Count; max++)
+                        {
+                            if (data[max] == 0x0)
+                            {
+                                break;
+                            }
+                        }
+                        ArraySegment<byte> sliced = data.Slice(0, max);
+                        string message = Encoding.GetString(sliced);
+#if false
+                        Debug.WriteLine(message);
+#endif
+                        foreach (var command in commands)
+                        {
+                            if (command.Value.IsMatch(message))
+                            {
+                                isCommand = true;
+#if false
+                                _ = Task.Run(() => OnCommandReceived(command.Key, new(message.ToCharArray())));
+#else
+                                OnCommandReceived(command.Key, new(message.ToCharArray()));
+#endif
+                                break;
+                            }
+                        }
+                        if (!isCommand)
+                        {
+#if false
+                            _ = Task.Run(() => OnMessageReceived(new(message.ToCharArray())));
+#else
+                            OnMessageReceived(new(message.ToCharArray()));
+#endif
+                        }
+
+                        // clear buffer
+                        for (int i = 0; i < max; i++)
+                        {
+                            if (data[i] != 0x0)
+                            {
+                                data[i] = default;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (WebSocketException ex) // thread will exit (and break the application) when a websocket exception occur.
+                {
+                    Interlocked.Exchange(ref disconnected, 1);
+                    if (silentExit)
+                    {
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread silently.\n" + ex.ToString());
+                    }
+                    else
+                    {
+                        Trace.TraceError("WebSocket exception occured, exiting receive thread.\n" + ex.ToString());
+                        Disconnected?.Invoke(this, EventArgs.Empty);
+                        throw;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError(ex.ToString());
+                }
+            }
+            Trace.TraceInformation($"IrcClient '{NickName}' receive thread exiting");
+
+            Disconnected?.Invoke(this, EventArgs.Empty);
         }
         #endregion
     }
