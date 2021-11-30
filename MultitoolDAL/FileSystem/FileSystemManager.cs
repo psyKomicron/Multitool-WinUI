@@ -18,15 +18,6 @@ namespace Multitool.DAL.FileSystem
     /// </summary>
     public class FileSystemManager : IFileSystemManager
     {
-        [Deprecated("Use property or build configuration", DeprecationType.Deprecate, 0)]
-#if DEBUG
-        public const double DEFAULT_CACHE_TIMEOUT = double.NaN;
-#else
-        public const double DEFAULT_CACHE_TIMEOUT = 300_000;
-#endif
-        [Deprecated("Use property or build configuration", DeprecationType.Deprecate, 0)]
-        public const bool DEFAULT_NOTIFY_STATUS = false;
-
         private static readonly Dictionary<string, FileSystemCache> cache = new();
         private readonly object _eventlock = new();
         private readonly DirectorySizeCalculator calculator = new();
@@ -39,9 +30,12 @@ namespace Multitool.DAL.FileSystem
         /// </summary>
         public FileSystemManager()
         {
-            _ttl = DEFAULT_CACHE_TIMEOUT;
-            Notify = DEFAULT_NOTIFY_STATUS;
-            calculator.Notify = DEFAULT_NOTIFY_STATUS;
+#if DEBUG
+            _ttl = double.NaN;
+#else
+            _ttl = 300_000;
+#endif
+            Notify = true;
             calculator.Progress += OnCalculatorProgress;
         }
 
