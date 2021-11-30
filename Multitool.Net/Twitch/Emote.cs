@@ -6,7 +6,7 @@ namespace Multitool.Net.Twitch
     {
         public Emote() { }
 
-        public Emote(int id, string name, byte[] image)
+        public Emote(Id id, string name, byte[] image)
         {
             Id = id;
             Name = name;
@@ -14,9 +14,9 @@ namespace Multitool.Net.Twitch
             Image = image;
         }
 
-        public int Id { get; init; }
-        public string Name { get; init; }
-        public Regex NameRegex { get; init; }
-        public byte[] Image { get; init; }
+        public Id Id { get; internal set; }
+        public string Name { get; internal set; }
+        public Regex NameRegex { get; internal set; }
+        public byte[] Image { get; internal set; }
     }
 }
