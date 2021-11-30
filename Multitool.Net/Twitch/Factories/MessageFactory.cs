@@ -10,6 +10,9 @@ namespace Multitool.Net.Twitch.Factories
     {
         private readonly UserFactory factory = new();
 
-        public Message GetMessage()
+        public Message GetMessage(Memory<char> message)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
