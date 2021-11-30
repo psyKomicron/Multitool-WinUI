@@ -17,44 +17,51 @@
             Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
-                <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="70px"/>
                 <RowDefinition Height="70px"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
 
-            <AutoSuggestBox
-                x:Name="UriTextBox"
-                PlaceholderText="Search query"
-                QuerySubmitted="UriTextBox_QuerySubmitted"
-                Grid.Row="0"
-                Grid.Column="0"/>
             <StackPanel
                 Orientation="Horizontal"
-                Grid.Column="1"
                 Grid.Row="0"
                 Margin="5">
                 <ToggleSwitch
                     x:Name="RequestTagsButton"
+                    IsOn="True"
                     Header="Request tags"/>
 
                 <ToggleSwitch
                     x:Name="LoadWebViewButton"
+                    IsOn="True"
                     Header="Load webview"/>
 
                 <Button
                     x:Name="LoadOAuth"
-                    Content="Load oauthentication page"
-                    Click="LoadOAuth_Click"/>
+                    Click="LoadOAuth_Click">
+                    <TextBlock Text="Load oauthentication page" TextWrapping="WrapWholeWords"/>
+                </Button>
+                <Button
+                    x:Name="LoadEmotesButton"
+                    Click="LoadEmotes_Click">
+                    <TextBlock Text="Load emotes" TextWrapping="WrapWholeWords"/>
+                </Button>
             </StackPanel>
+
+            <AutoSuggestBox
+                x:Name="UriTextBox"
+                PlaceholderText="Search query"
+                Text="{x:Bind LastStream, Mode=TwoWay}"
+                QuerySubmitted="UriTextBox_QuerySubmitted"
+                Grid.Row="1"/>
 
             <WebView2
                 x:Name="PageWebView"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
-                Grid.Row="1"
-                Grid.ColumnSpan="2"/>
+                Grid.Row="2"/>
         </Grid>
 
         <Grid

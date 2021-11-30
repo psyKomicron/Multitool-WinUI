@@ -2,13 +2,16 @@
 using Microsoft.UI.Xaml.Controls;
 
 using Multitool.DAL;
+using Multitool.Net.Twitch;
 using Multitool.Net.Twitch.Irc;
 using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Pages.Irc;
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -24,29 +27,21 @@ namespace MultitoolWinUI.Pages
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class TwitchChatPage : Page
+    public sealed partial class TwitchChatPage : Page, INotifyPropertyChanged
     {
         private readonly object _lock = new();
         private bool saved;
+        private TwitchConnectionToken token;
 
         public TwitchChatPage()
         {
             InitializeComponent();
-            try
-            {
-                ISettings settings = App.Settings;
-                Login = settings.GetSetting<string>(nameof(TwitchChatPage), nameof(Login));
-                LastStream = settings.GetSetting<string>(nameof(TwitchChatPage), nameof(LastStream));
-            }
-            catch (SettingNotFoundException) 
-            {
-                LastStream = string.Empty;
-            }
-
             Loaded += OnPageLoaded;
             Unloaded += OnPageUnloaded;
             App.MainWindow.Closed += OnMainWindowClose;
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
         public string LastStream { get; set; }
@@ -93,42 +88,40 @@ namespace MultitoolWinUI.Pages
         {
             SavePage();
         }
-
-        private async Task<bool> ValidateToken()
-        {
-            using HttpClient client = new();
-            client.DefaultRequestHeaders.Authorization = new("Bearer", Login);
-            HttpResponseMessage res = await client.GetAsync(new(Properties.Resources.TwitchOAuthValidationUrl));
-            if (res.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                Trace.TraceError("Token to connect to Twitch is invalid, create another one to be able to connect chats.");
-                return false;
-            }
-#if false
-            JsonElement value;
-            JsonDocument json = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
-            if (json.RootElement.TryGetProperty("login", out value) && value.ValueKind.HasFlag(JsonValueKind.String))
-            {
-                Debug.WriteLine(value.ToString());
-            }
-            if (json.RootElement.TryGetProperty("client_id", out value))
-            {
-                Debug.WriteLine(value.ToString());
-            }
-#endif
-            return true;
-        }
         #endregion
 
         #region event handlers
-        private void OnPageLoaded(object sender, RoutedEventArgs e)
+        private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
+            ISettings settings = App.Settings;
             try
             {
-                LastStream = App.Settings.GetSetting<string>(nameof(TwitchChatPage), nameof(LastStream));
+                LastStream = settings.GetSetting<string>(nameof(TwitchChatPage), nameof(LastStream));
+                PropertyChanged(this, new(nameof(LastStream)));
                 NavigateTo(LastStream);
             }
+            catch (SettingNotFoundException)
+            {
+                LastStream = string.Empty;
+            }
+
+            try
+            {
+                Login = settings.GetSetting<string>(nameof(TwitchChatPage), nameof(Login));
+                PropertyChanged(this, new(nameof(Login)));
+
+                token = new(Login);
+                await token.ValidateToken();
+            }
             catch (SettingNotFoundException ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
+            catch (FormatException ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
+            catch (InvalidOperationException ex)
             {
                 Trace.TraceError(ex.ToString());
             }
@@ -144,10 +137,11 @@ namespace MultitoolWinUI.Pages
             LastStream = args.QueryText;
         }
 
-        private async void Chats_AddTabButtonClick(TabView sender, object args)
+        private void Chats_AddTabButtonClick(TabView sender, object args)
         {
-            if (!await ValidateToken())
+            if (string.IsNullOrEmpty(LastStream))
             {
+                Trace.TraceWarning("No channel is set");
                 return;
             }
 
@@ -163,7 +157,7 @@ namespace MultitoolWinUI.Pages
             {
                 try
                 {
-                    IIrcClient client = new TwitchIrcClient(new TwitchConnectionToken(Login))
+                    ITwitchIrcClient client = new TwitchIrcClient(token, 5_000, true)
                     {
                         NickName = "psykomicron",
                         Encoding = Encoding.UTF8,
@@ -179,15 +173,15 @@ namespace MultitoolWinUI.Pages
                     frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab, LastStream));
                     sender.TabItems.Add(tab);
                     sender.SelectedItem = tab;
-
-                    if (loadWebView)
-                    {
-                        PageWebView.Source = new(Properties.Resources.TwitchUrl + LastStream);
-                    }
                 }
-                catch (FormatException ex)
+                catch (ArgumentNullException)
                 {
-                    Trace.TraceError(ex.ToString());
+                    Trace.TraceError("Login is empty");
+                }
+
+                if (loadWebView)
+                {
+                    PageWebView.Source = new(Properties.Resources.TwitchUrl + LastStream);
                 }
             }
         }
@@ -211,6 +205,16 @@ namespace MultitoolWinUI.Pages
             else
             {
                 Trace.TraceWarning("Unable to contact twitch to get client id");
+            }
+        }
+
+        private async void LoadEmotes_Click(object sender, RoutedEventArgs e)
+        {
+            EmoteFetcher emoteFetcher = new(new(Login));
+            List<Emote> emotes = await emoteFetcher.GetAllEmotes();
+            foreach (Emote emote in emotes)
+            {
+
             }
         }
         #endregion
