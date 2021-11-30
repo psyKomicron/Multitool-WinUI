@@ -1,4 +1,6 @@
 ﻿
+using Multitool.Net.Twitch.Security;
+
 using System;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -10,17 +12,20 @@ using Windows.Foundation;
 
 namespace Multitool.Net.Twitch.Irc
 {
-    public interface IIrcClient : IAsyncDisposable
+    public interface ITwitchIrcClient : IAsyncDisposable
     {
-        event TypedEventHandler<IIrcClient, EventArgs> Connected;
-        event TypedEventHandler<IIrcClient, EventArgs> Disconnected;
-        event TypedEventHandler<IIrcClient, Message> MessageReceived;
+        event TypedEventHandler<ITwitchIrcClient, EventArgs> Connected;
+        event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
+        event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
 
-        string NickName { get; set; }
+        bool AutoConnect { get; init; }
+        TwitchConnectionToken ConnectionToken { get; }
         WebSocketState ClientState { get; }
-        bool IsConnected { get; }
-        CancellationTokenSource RootCancellationToken { get; }
         Encoding Encoding { get; set; }
+        bool IsConnected { get; }
+        string NickName { get; set; }
+        bool RequestTags { get; init; }
+        CancellationTokenSource RootCancellationToken { get; }
 
         /// <summary>
         /// Connects to a IRC server.

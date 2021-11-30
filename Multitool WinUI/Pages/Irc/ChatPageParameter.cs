@@ -5,5 +5,5 @@ using Multitool.Net.Twitch.Irc;
 
 namespace MultitoolWinUI.Pages.Irc
 {
-    public record ChatPageParameter(IIrcClient Client, TabViewItem Tab, string Channel);
+    public record ChatPageParameter(ITwitchIrcClient Client, TabViewItem Tab, string Channel);
 }
