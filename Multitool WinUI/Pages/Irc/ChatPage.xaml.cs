@@ -65,12 +65,6 @@ namespace MultitoolWinUI.Pages.Irc
             await client.DisposeAsync();
         }
 
-        private async Task LoadEmotes()
-        {
-            EmoteFetcher emoteFetcher = new(client.ConnectionToken);
-            List<Emote> emotes = await emoteFetcher.GetAllEmotes();
-        }
-
         private void Load(ITwitchIrcClient client, TabViewItem tab)
         {
             this.client = client;
@@ -87,8 +81,6 @@ namespace MultitoolWinUI.Pages.Irc
             this.client.MessageReceived += OnMessageReceived;
             this.client.Connected += Client_Connected;
             this.client.Disconnected += Client_Disconnected;
-
-            _ = LoadEmotes();
         }
 
         private async Task Join()
@@ -135,6 +127,9 @@ namespace MultitoolWinUI.Pages.Irc
             {
                 Channel = param.Channel;
                 Load(param.Client, param.Tab);
+#if DEBUG
+
+#endif
             }
             else
             {

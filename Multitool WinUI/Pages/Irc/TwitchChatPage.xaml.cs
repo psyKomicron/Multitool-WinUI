@@ -17,6 +17,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+using Windows.Storage;
 using Windows.Web.Http;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -112,6 +113,9 @@ namespace MultitoolWinUI.Pages
 
                 token = new(Login);
                 await token.ValidateToken();
+
+                TwitchEmoteFetcher emoteFetcher = new(token);
+                List<Emote> emotes = await emoteFetcher.GetGlobalEmotes();
             }
             catch (SettingNotFoundException ex)
             {
@@ -210,11 +214,16 @@ namespace MultitoolWinUI.Pages
 
         private async void LoadEmotes_Click(object sender, RoutedEventArgs e)
         {
-            EmoteFetcher emoteFetcher = new(new(Login));
-            List<Emote> emotes = await emoteFetcher.GetAllEmotes();
+            TwitchEmoteFetcher emoteFetcher = new(token);
+            List<Emote> emotes = await emoteFetcher.GetGlobalEmotes();
             foreach (Emote emote in emotes)
             {
-
+                try
+                {
+                    StorageFile file = await ApplicationData.Current.LocalFolder.CreateFileAsync(emote.Name + ".png" , CreationCollisionOption.OpenIfExists);
+                    await FileIO.WriteBytesAsync(file, emote.Image);
+                }
+                catch (Exception) { }
             }
         }
         #endregion

@@ -17,6 +17,10 @@ namespace Multitool.Net.Twitch
         public Id Id { get; internal set; }
         public string Name { get; internal set; }
         public Regex NameRegex { get; internal set; }
-        public byte[] Image { get; internal set; }
+        public byte[] Image => ImageSize2;
+
+        internal byte[] ImageSize1 { get; set; }
+        internal byte[] ImageSize2 { get; set; }
+        internal byte[] ImageSize4 { get; set; }
     }
 }
