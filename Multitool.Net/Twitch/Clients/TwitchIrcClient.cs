@@ -24,11 +24,13 @@ namespace Multitool.Net.Twitch.Irc
         #region attributes
         #region static regexes
         // commands
-        private static readonly Regex joinCommandRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv JOIN .))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex joinRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv JOIN .))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex namesRegex = new(@"^:(.+)\.tmi\.twitch\.tv 353 \1 = #[a-z0-9]+ :");
         private static readonly Regex pingRegex = new(@"^PING", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         // message
-        private static readonly Regex messageRegex = new(@"^:(.+)!\1@\1\.tmi\.twitch\.tv PRIVMSG .+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex messageRegex = new(@".+ *PRIVMSG .+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex userStateRegex = new(@"USERSTATE", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex roomStateRegex = new(@"ROOMSTATE", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         #endregion
 
         private readonly int bufferSize;
@@ -65,9 +67,11 @@ namespace Multitool.Net.Twitch.Irc
             };
             this.login = login;
 
-            commands.Add(1, joinCommandRegex);
+            commands.Add(1, joinRegex);
             commands.Add(2, namesRegex);
             commands.Add(3, pingRegex);
+            commands.Add(4, userStateRegex);
+            commands.Add(5, roomStateRegex);
         }
         #endregion
 
@@ -462,7 +466,7 @@ namespace Multitool.Net.Twitch.Irc
                     break;
                 case 2:
                     // /NAMES
-                    Match match = namesRegex.Match(command.ToString());
+                    //Match match = namesRegex.Match(command.ToString());
                     Trace.TraceInformation($"NAMES command: {command}");
                     break;
                 case 3:
@@ -470,8 +474,19 @@ namespace Multitool.Net.Twitch.Irc
                     command.Span[1] = 'O';
                     socket.SendAsync(GetBytes(command), WebSocketMessageType.Text, true, RootCancellationToken.Token);
                     break;
-                default:
+                case 4:
+                    Debug.WriteLine("USERSTATE");
                     break;
+                case 5:
+                    Debug.WriteLine("ROOMSTATE");
+                    break;
+                default:
+#if DEBUG
+                    Debug.WriteLine("Dropping: " + command.ToString());
+                    break;
+#else
+                    throw new ArgumentOutOfRangeException(nameof(tag));
+#endif
             }
         }
 
@@ -480,13 +495,11 @@ namespace Multitool.Net.Twitch.Irc
             Trace.TraceInformation("Starting IRC client receive background thread");
 
             ArraySegment<byte> data = new(new byte[bufferSize]);
-            bool isCommand;
 
             while (Interlocked.Read(ref disconnected) == 0)
             {
                 try
                 {
-                    isCommand = false;
                     AssertConnectionValid();
                     await socket.ReceiveAsync(data, CancellationToken.None);
                     if (data.Count != 0)
@@ -504,26 +517,28 @@ namespace Multitool.Net.Twitch.Irc
 #if false
                         Debug.WriteLine(message);
 #endif
-                        foreach (var command in commands)
-                        {
-                            if (command.Value.IsMatch(message))
-                            {
-                                isCommand = true;
-#if false
-                                _ = Task.Run(() => OnCommandReceived(command.Key, new(message.ToCharArray())));
-#else
-                                OnCommandReceived(command.Key, new(message.ToCharArray()));
-#endif
-                                break;
-                            }
-                        }
-                        if (!isCommand)
+                        if (messageRegex.IsMatch(message))
                         {
 #if false
                             _ = Task.Run(() => OnMessageReceived(new(message.ToCharArray())));
 #else
                             OnMessageReceived(new(message.ToCharArray()));
 #endif
+                        }
+                        else
+                        {
+                            foreach (var command in commands)
+                            {
+                                if (command.Value.IsMatch(message))
+                                {
+#if false
+                                _ = Task.Run(() => OnCommandReceived(command.Key, new(message.ToCharArray())));
+#else
+                                    OnCommandReceived(command.Key, new(message.ToCharArray()));
+#endif
+                                    break;
+                                }
+                            }
                         }
 
                         // clear buffer
