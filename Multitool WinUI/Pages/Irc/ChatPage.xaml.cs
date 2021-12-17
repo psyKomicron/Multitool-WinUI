@@ -31,7 +31,6 @@ namespace MultitoolWinUI.Pages.Irc
         private TabViewItem tab;
         private bool joined;
         private bool loaded;
-        private volatile bool emotesLoaded;
 
         public ChatPage()
         {
@@ -69,15 +68,15 @@ namespace MultitoolWinUI.Pages.Irc
         {
             this.client = client;
             this.tab = tab;
-            /*TextBox header = new()
+            TextBox header = new()
             {
                 PlaceholderText = "Channel (none)",
                 BorderThickness = new(0)
             };
-            this.tab.Header = header;*/
+            this.tab.Header = header;
 
             this.tab.CloseRequested += Tab_CloseRequested;
-            //header.KeyDown += Header_KeyDown;
+            header.KeyDown += Header_KeyDown;
             this.client.MessageReceived += OnMessageReceived;
             this.client.Connected += Client_Connected;
             this.client.Disconnected += Client_Disconnected;
@@ -123,13 +122,10 @@ namespace MultitoolWinUI.Pages.Irc
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is ChatPageParameter param && !string.IsNullOrEmpty(param.Channel))
+            if (e.Parameter is ChatPageParameter param)
             {
                 Channel = param.Channel;
                 Load(param.Client, param.Tab);
-#if DEBUG
-
-#endif
             }
             else
             {
