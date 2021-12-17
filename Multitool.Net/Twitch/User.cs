@@ -17,7 +17,7 @@ namespace Multitool.Net.Twitch
             NameColor = Colors.White;
         }
 
-        public List<BitmapImage> Badges { get; set; }
+        public List<Badge> Badges { get; set; }
         public string DisplayName { get; set; }
         public string Id { get; set; }
         public bool IsMod { get; set; }
