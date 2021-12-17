@@ -12,17 +12,33 @@ namespace Multitool.Net.Twitch.Security
     {
         private readonly string token;
 
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        /// <param name="token">The <see cref="string"/> representing the connection's token (OAuth2, .</param>
         public TwitchConnectionToken(string token)
         {
             this.token = token;
         }
 
+        /// <summary>
+        /// Twitch's client id associated with this token
+        /// </summary>
+        public string ClientId { get; private set; }
+        /// <summary>
+        /// Name of the user associated with this token.
+        /// </summary>
+        public string Login { get; private set; }
+        /// <summary>
+        /// Raw token.
+        /// </summary>
+        public string Token => token;
+        /// <summary>
+        /// <see langword="true"/> if the token has been validated.
+        /// </summary>
         public bool Validated { get; private set; }
 
-        public string Token => token;
-
-        public string ClientId { get; private set; }
-
+        /// <inheritdoc/>
         public override string ToString()
         {
             return "oauth:" + token;
@@ -58,7 +74,7 @@ namespace Multitool.Net.Twitch.Security
             JsonDocument json = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
             if (json.RootElement.TryGetProperty("login", out JsonElement value))
             {
-                Debug.WriteLine("login: " + value.ToString());
+                Login = value.ToString();
             }
             if (json.RootElement.TryGetProperty("client_id", out value))
             {
