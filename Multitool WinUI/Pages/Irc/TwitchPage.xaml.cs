@@ -28,13 +28,13 @@ namespace MultitoolWinUI.Pages
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class TwitchChatPage : Page, INotifyPropertyChanged
+    public sealed partial class TwitchPage : Page, INotifyPropertyChanged
     {
         private readonly object _lock = new();
         private bool saved;
         private TwitchConnectionToken token;
 
-        public TwitchChatPage()
+        public TwitchPage()
         {
             InitializeComponent();
             Loaded += OnPageLoaded;
@@ -45,8 +45,6 @@ namespace MultitoolWinUI.Pages
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
-        public string LastStream { get; set; }
-
         public string Login { get; set; }
 
         public ObservableCollection<object> Tabs { get; } = new();
@@ -58,8 +56,8 @@ namespace MultitoolWinUI.Pages
             if (!saved)
             {
                 ISettings settings = App.Settings;
-                settings.SaveSetting(nameof(TwitchChatPage), nameof(LastStream), LastStream);
-                settings.SaveSetting(nameof(TwitchChatPage), nameof(Login), Login);
+                //settings.SaveSetting(nameof(TwitchChatPage), nameof(LastStream), LastStream);
+                settings.SaveSetting(nameof(TwitchPage), nameof(Login), Login);
                 saved = true;
             }
         }
@@ -68,7 +66,7 @@ namespace MultitoolWinUI.Pages
         {
             try
             {
-                //PageWebView.Source = new(twitchUrl + uri);
+                PageWebView.Source = new(uri);
             }
             catch (UriFormatException ex)
             {
@@ -94,28 +92,14 @@ namespace MultitoolWinUI.Pages
         #region event handlers
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            ISettings settings = App.Settings;
             try
             {
-                LastStream = settings.GetSetting<string>(nameof(TwitchChatPage), nameof(LastStream));
-                PropertyChanged(this, new(nameof(LastStream)));
-                NavigateTo(LastStream);
-            }
-            catch (SettingNotFoundException)
-            {
-                LastStream = string.Empty;
-            }
-
-            try
-            {
-                Login = settings.GetSetting<string>(nameof(TwitchChatPage), nameof(Login));
+                ISettings settings = App.Settings;
+                Login = settings.GetSetting<string>(nameof(TwitchPage), nameof(Login));
                 PropertyChanged(this, new(nameof(Login)));
 
                 token = new(Login);
                 await token.ValidateToken();
-
-                TwitchEmoteFetcher emoteFetcher = new(token);
-                List<Emote> emotes = await emoteFetcher.GetGlobalEmotes();
             }
             catch (SettingNotFoundException ex)
             {
@@ -137,21 +121,12 @@ namespace MultitoolWinUI.Pages
 
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            NavigateTo(args.QueryText);
-            LastStream = args.QueryText;
+            NavigateTo("https://www." + args.QueryText);
         }
 
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
-            if (string.IsNullOrEmpty(LastStream))
-            {
-                Trace.TraceWarning("No channel is set");
-                return;
-            }
-
-            bool requestTags, loadWebView;
-            requestTags = RequestTagsButton.IsOn;
-            loadWebView = LoadWebViewButton.IsOn;
+            bool requestTags = RequestTagsButton.IsOn;
 
             if (string.IsNullOrEmpty(Login))
             {
@@ -168,24 +143,16 @@ namespace MultitoolWinUI.Pages
                         RequestTags = requestTags,
                     };
 
-                    TabViewItem tab = new()
-                    {
-                        Header = LastStream
-                    };
+                    TabViewItem tab = new();
                     Frame frame = new();
                     tab.Content = frame;
-                    frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab, LastStream));
+                    frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab, string.Empty, null));
                     sender.TabItems.Add(tab);
                     sender.SelectedItem = tab;
                 }
                 catch (ArgumentNullException)
                 {
                     Trace.TraceError("Login is empty");
-                }
-
-                if (loadWebView)
-                {
-                    PageWebView.Source = new(Properties.Resources.TwitchUrl + LastStream);
                 }
             }
         }

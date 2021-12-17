@@ -72,8 +72,8 @@ namespace MultitoolWinUI
                     case nameof(HashGeneratorPage):
                         lastPage = typeof(HashGeneratorPage);
                         break;
-                    case nameof(TwitchChatPage):
-                        lastPage = typeof(TwitchChatPage);
+                    case nameof(TwitchPage):
+                        lastPage = typeof(TwitchPage);
                         break;
                     default:
                         Trace.TraceWarning("MainWindow:ctor: Unknown page");
@@ -140,8 +140,8 @@ namespace MultitoolWinUI
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
                     case "irc":
-                        lastPage = typeof(TwitchChatPage);
-                        _ = ContentFrame.Navigate(typeof(TwitchChatPage));
+                        lastPage = typeof(TwitchPage);
+                        _ = ContentFrame.Navigate(typeof(TwitchPage));
                         break;
                     case "test":
                         lastPage = typeof(TestPage);

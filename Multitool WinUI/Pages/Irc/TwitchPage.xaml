@@ -1,6 +1,6 @@
 ﻿<Page
     x:Name="Page"
-    x:Class="MultitoolWinUI.Pages.TwitchChatPage"
+    x:Class="MultitoolWinUI.Pages.TwitchPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -53,7 +53,6 @@
             <AutoSuggestBox
                 x:Name="UriTextBox"
                 PlaceholderText="Search query"
-                Text="{x:Bind LastStream, Mode=TwoWay}"
                 QuerySubmitted="UriTextBox_QuerySubmitted"
                 Grid.Row="1"/>
 
