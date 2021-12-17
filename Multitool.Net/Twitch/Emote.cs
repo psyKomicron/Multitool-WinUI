@@ -11,7 +11,7 @@ namespace Multitool.Net.Twitch
             Id = id;
             Name = name;
             NameRegex = new(name);
-            Image = image;
+            ImageSize2 = image;
         }
 
         public Id Id { get; internal set; }
