@@ -129,10 +129,7 @@ namespace Multitool.DAL.FileSystem
         public void Add(FileSystemEntry item)
         {
             CheckIfFrozen();
-            if (timer != null)
-            {
-                ResetTimer();
-            }
+            ResetTimer();
             lock (_lock)
             {
                 if (timer != null && !timer.Enabled)
@@ -233,8 +230,11 @@ namespace Multitool.DAL.FileSystem
 
         private void ResetTimer()
         {
-            timer.Stop();
-            timer.Interval = ttl;
+            if (timer != null)
+            {
+                timer.Stop();
+                timer.Interval = ttl;
+            }
         }
 
         private void CheckIfFrozen()
@@ -325,13 +325,13 @@ namespace Multitool.DAL.FileSystem
         {
             if (!Frozen)
             {
-                if (timer != null)
-                {
-                    ResetTimer();
-                }
+                ResetTimer();
                 FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
                 item.RefreshInfos();
-                timer.Start();
+                if (timer != null)
+                {
+                    timer.Start();
+                }
             }
         }
 
@@ -339,10 +339,7 @@ namespace Multitool.DAL.FileSystem
         {
             if (!Frozen)
             {
-                if (timer != null)
-                {
-                    ResetTimer();
-                }
+                ResetTimer();
 
                 if (Directory.Exists(e.FullPath)) // Check if the added item is a directory
                 {
@@ -364,10 +361,7 @@ namespace Multitool.DAL.FileSystem
         {
             if (!Frozen)
             {
-                if (timer != null)
-                {
-                    ResetTimer();
-                }
+                ResetTimer();
 
                 FileSystemEntry deletedItem = watchedItems.Find(v => v.Path.Equals(e.FullPath, StringComparison.OrdinalIgnoreCase));
                 _ = watchedItems.Remove(deletedItem);
@@ -379,10 +373,7 @@ namespace Multitool.DAL.FileSystem
         {
             if (!Frozen)
             {
-                if (timer != null)
-                {
-                    ResetTimer();
-                }
+                ResetTimer();
                 FileSystemEntry item = watchedItems.Find(v => v.Path.Equals(e.OldFullPath, StringComparison.OrdinalIgnoreCase));
                 if (item != null)
                 {

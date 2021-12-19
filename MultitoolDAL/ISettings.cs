@@ -1,4 +1,6 @@
-﻿using Windows.Storage;
+﻿using System;
+
+using Windows.Storage;
 
 namespace Multitool.DAL
 {
@@ -40,5 +42,6 @@ namespace Multitool.DAL
         /// <param name="name"></param>
         /// <returns></returns>
         object TryGetSetting(string callerName, string name);
+        bool TryGetSetting(Type settingType, string callerName, string name, out object value);
     }
 }

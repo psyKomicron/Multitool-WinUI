@@ -7,11 +7,11 @@ using Multitool.Net.Twitch.Irc;
 using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Pages.Irc;
+using MultitoolWinUI.Helpers;
 
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 
 using Windows.Storage;
 using Windows.Web.Http;
+using System.ComponentModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -92,10 +93,11 @@ namespace MultitoolWinUI.Pages
         #region event handlers
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
+            var settings = this.LoadSettings<TwitchPageSettings>();
             try
             {
-                ISettings settings = App.Settings;
-                Login = settings.GetSetting<string>(nameof(TwitchPage), nameof(Login));
+
+                Login = settings.Login;
                 PropertyChanged(this, new(nameof(Login)));
 
                 token = new(Login);
@@ -194,5 +196,14 @@ namespace MultitoolWinUI.Pages
             }
         }
         #endregion
+    }
+
+    public record TwitchPageSettings
+    {
+        [Multitool.ComponentModel.DefaultValue("")]
+        public string Login { get; set; }
+
+        [Multitool.ComponentModel.DefaultValue(typeof(ObservableCollection<object>))]
+        public ObservableCollection<object> Tabs { get; set; }
     }
 }

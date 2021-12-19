@@ -24,19 +24,15 @@
     <Compile Remove="JulieV2\**" />
     <Compile Remove="PerformanceMonitors\**" />
     <Compile Remove="ProcessOptions\**" />
-    <Compile Remove="Reflection\**" />
     <EmbeddedResource Remove="JulieV2\**" />
     <EmbeddedResource Remove="PerformanceMonitors\**" />
     <EmbeddedResource Remove="ProcessOptions\**" />
-    <EmbeddedResource Remove="Reflection\**" />
     <None Remove="JulieV2\**" />
     <None Remove="PerformanceMonitors\**" />
     <None Remove="ProcessOptions\**" />
-    <None Remove="Reflection\**" />
     <Page Remove="JulieV2\**" />
     <Page Remove="PerformanceMonitors\**" />
     <Page Remove="ProcessOptions\**" />
-    <Page Remove="Reflection\**" />
   </ItemGroup>
 
   <ItemGroup>

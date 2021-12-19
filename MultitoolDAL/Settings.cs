@@ -51,7 +51,6 @@ namespace Multitool.DAL
         }
 
 #nullable enable
-
         /// <inheritdoc/>
         public object? TryGetSetting(string callerName, string name)
         {
@@ -59,8 +58,40 @@ namespace Multitool.DAL
             string key = string.Format(SettingFormat, callerName, name);
             return set.TryGetValue(key, out object? value) ? value : null;
         }
-
 #nullable disable
 
+        /// <inheritdoc/>
+        public bool TryGetSetting(Type settingType, string callerName, string name, out object value)
+        {
+            IPropertySet set = DataContainer.Values;
+            string key = string.Format(SettingFormat, callerName, name);
+            if (set.TryGetValue(key, out object setting))
+            {
+                try
+                {
+                    value = Convert.ChangeType(setting, settingType);
+                    return true;
+                }
+                catch (InvalidCastException ex)
+                {
+                    Trace.TraceError(ex.ToString());
+
+                    value = null;
+                    return false;
+                }
+                catch (FormatException ex) 
+                {
+                    Trace.TraceError(ex.ToString());
+
+                    value = null;
+                    return false;
+                }
+            }
+            else
+            {
+                value = null;
+                return false;
+            }
+        }
     }
 }
