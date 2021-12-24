@@ -24,6 +24,18 @@ namespace Multitool.Net.Twitch
         public string Name { get; set; }
         public Color NameColor { get; set; }
 
+        public override string ToString()
+        {
+            if (string.IsNullOrEmpty(DisplayName))
+            {
+                return Name;
+            }
+            else
+            {
+                return DisplayName;
+            }
+        }
+
         public static User CreateSystemUser()
         {
             return new()
