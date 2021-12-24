@@ -28,7 +28,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             InitializeComponent();
         }
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (!string.IsNullOrEmpty(FilePathTextBox.Text))
             {
