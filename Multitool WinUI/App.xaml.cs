@@ -1,6 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 
-using Multitool.DAL;
+using Multitool.DAL.Settings;
 
 using System.Diagnostics;
 
@@ -28,7 +28,7 @@ namespace MultitoolWinUI
 
         public static MainWindow MainWindow { get; private set; }
 
-        public static ISettings Settings { get; private set; }
+        public static ISettingsManager Settings { get; private set; }
 
         /// <summary>
         /// Invoked when the application is launched normally by the end user.  Other entry points
@@ -38,10 +38,12 @@ namespace MultitoolWinUI
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
-            Settings = new Settings(ApplicationData.Current.LocalSettings)
+            Settings = new SettingsManager(ApplicationData.Current.LocalSettings)
             {
                 SettingFormat = "{0}/{1}"
             };
+
+            Debug.WriteLine(ApplicationData.Current.LocalFolder.Path);
 
             MainWindow = new MainWindow();
             MainWindow.Activate();
