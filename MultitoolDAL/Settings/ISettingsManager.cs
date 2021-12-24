@@ -2,9 +2,9 @@
 
 using Windows.Storage;
 
-namespace Multitool.DAL
+namespace Multitool.DAL.Settings
 {
-    public interface ISettings
+    public interface ISettingsManager
     {
         /// <summary>
         /// The <see cref="ApplicationDataContainer"/> associated with this instance
@@ -15,6 +15,8 @@ namespace Multitool.DAL
         /// </summary>
         string SettingFormat { get; set; }
 
+        void Load<T>(T toLoad, bool useSettingAttribute = true);
+        void Save<T>(T toSave, bool useSettingAttribute = true);
         /// <summary>
         /// 
         /// </summary>
@@ -23,6 +25,7 @@ namespace Multitool.DAL
         /// <param name="name"></param>
         /// <returns></returns>
         T GetSetting<T>(string callerName, string name);
+
         /// <summary>
         /// <para>
         /// Saves a setting to the provided <see cref="DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="SettingFormat"/>.
@@ -35,12 +38,6 @@ namespace Multitool.DAL
         /// <param name="name">Name of the setting</param>
         /// <param name="value">Value to save</param>
         void SaveSetting(string callerName, string name, object value);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="callerName"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
         object TryGetSetting(string callerName, string name);
         bool TryGetSetting(Type settingType, string callerName, string name, out object value);
     }
