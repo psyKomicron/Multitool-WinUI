@@ -33,4 +33,8 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Twitch\Parsers\" />
+  </ItemGroup>
 </Project>
