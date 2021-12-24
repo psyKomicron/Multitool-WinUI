@@ -52,7 +52,7 @@ namespace Multitool.Net.Twitch.Security
         /// <returns></returns>
         /// <exception cref="FormatException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-        public async virtual Task ValidateToken()
+        public async virtual Task<bool> ValidateToken()
         {
             Regex validationRegex = new(@"^([0-9A-Z-._~+/]+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (!validationRegex.IsMatch(token))
@@ -80,8 +80,10 @@ namespace Multitool.Net.Twitch.Security
             {
                 ClientId = value.ToString();
                 Validated = true;
+                return true;
             }
 #endif
+            return false;
         }
     }
 }
