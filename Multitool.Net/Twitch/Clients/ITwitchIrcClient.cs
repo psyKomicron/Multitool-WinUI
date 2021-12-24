@@ -18,7 +18,7 @@ namespace Multitool.Net.Twitch.Irc
         event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
         event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
 
-        bool AutoConnect { get; init; }
+        bool AutoLogIn { get; init; }
         TwitchConnectionToken ConnectionToken { get; }
         WebSocketState ClientState { get; }
         Encoding Encoding { get; set; }
@@ -36,9 +36,8 @@ namespace Multitool.Net.Twitch.Irc
         ///     the object is closed or disposed.
         /// </para>
         /// </summary>
-        /// <param name="channel">IRC server to connect to</param>
         /// <returns>The task object representing the asynchronous operation</returns>
-        Task Connect(Uri channel);
+        Task Connect();
         /// <summary>
         /// Connects to an IRC server passing the <paramref name="cancellationToken"/>
         /// to the internal <see cref="WebSocket"/> connect method.
