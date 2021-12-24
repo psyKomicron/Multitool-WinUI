@@ -7,5 +7,5 @@ using System.Collections.Generic;
 
 namespace MultitoolWinUI.Pages.Irc
 {
-    public record ChatPageParameter(ITwitchIrcClient Client, TabViewItem Tab, string Channel, List<Emote> emotes);
+    public record ChatPageParameter(ITwitchIrcClient Client, TabViewItem Tab, string Channel, List<Emote> Emotes);
 }

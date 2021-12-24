@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Web.Http;
 using System.ComponentModel;
+using Multitool.DAL.Settings;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -31,9 +32,10 @@ namespace MultitoolWinUI.Pages
     /// </summary>
     public sealed partial class TwitchPage : Page, INotifyPropertyChanged
     {
-        private readonly object _lock = new();
+        //private readonly object _lock = new();
         private bool saved;
         private TwitchConnectionToken token;
+        private List<Emote> emotes;
 
         public TwitchPage()
         {
@@ -46,9 +48,22 @@ namespace MultitoolWinUI.Pages
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
+        [Setting("")]
         public string Login { get; set; }
 
-        public ObservableCollection<object> Tabs { get; } = new();
+        [Setting(true)]
+        public bool RequestTags { get; set; }
+
+        [Setting]
+        public bool LoadWebView { get; set; }
+
+        [Setting("twitch.tv")]
+        public string LastVisited { get; set; }
+
+        [Setting(typeof(StringListSettingConverter))]
+        public List<string> Channels { get; set; }
+
+        public ObservableCollection<TabViewItem> Tabs { get; } = new();
         #endregion
 
         #region private
@@ -56,9 +71,18 @@ namespace MultitoolWinUI.Pages
         {
             if (!saved)
             {
-                ISettings settings = App.Settings;
-                //settings.SaveSetting(nameof(TwitchChatPage), nameof(LastStream), LastStream);
-                settings.SaveSetting(nameof(TwitchPage), nameof(Login), Login);
+                if (Channels == null)
+                {
+                    Channels = new();
+                }
+                foreach (var tab in Tabs)
+                {
+                    if (tab.Content is ChatControl control && !Channels.Contains(control.Channel))
+                    {
+                        Channels.Add(control.Channel);
+                    }
+                }
+                App.Settings.Save(this);
                 saved = true;
             }
         }
@@ -83,43 +107,66 @@ namespace MultitoolWinUI.Pages
 #endif
             }
         }
-
-        private void ExitPage()
-        {
-            SavePage();
-        }
         #endregion
 
         #region event handlers
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            var settings = this.LoadSettings<TwitchPageSettings>();
             try
             {
-
-                Login = settings.Login;
+                App.Settings.Load(this);
                 PropertyChanged(this, new(nameof(Login)));
+                PropertyChanged(this, new(nameof(RequestTags)));
+                PropertyChanged(this, new(nameof(LoadWebView)));
+                PropertyChanged(this, new(nameof(LastVisited)));
 
                 token = new(Login);
-                await token.ValidateToken();
+                if (!await token.ValidateToken())
+                {
+                    Trace.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
+                }
+                else
+                {
+                    EmoteFetcher emoteFetcher = new(token);
+                    emotes = await emoteFetcher.GetGlobalEmotes();
+
+                    foreach (var channel in Channels)
+                    {
+                        try
+                        {
+                            ITwitchIrcClient client = new TwitchIrcClient(token, 5_000, true)
+                            {
+                                NickName = "psykomicron",
+                                Encoding = Encoding.UTF8,
+                                RequestTags = RequestTags,
+                            };
+
+                            TabViewItem tab = new();
+                            ChatControl chat = new()
+                            {
+                                Client = client,
+                                Tab = tab,
+                                Channel = channel,
+                                Emotes = emotes
+                            };
+                            
+                            tab.Content = chat;
+
+                            Tabs.Add(tab);
+                        }
+                        catch { }
+                    }
+                }
             }
-            catch (SettingNotFoundException ex)
-            {
-                Trace.TraceError(ex.ToString());
-            }
-            catch (FormatException ex)
-            {
-                Trace.TraceError(ex.ToString());
-            }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 Trace.TraceError(ex.ToString());
             }
         }
 
-        private void OnPageUnloaded(object sender, RoutedEventArgs e) => ExitPage();
+        private void OnPageUnloaded(object sender, RoutedEventArgs e) => SavePage();
 
-        private void OnMainWindowClose(object sender, WindowEventArgs args) => ExitPage();
+        private void OnMainWindowClose(object sender, WindowEventArgs args) => SavePage();
 
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
@@ -128,9 +175,7 @@ namespace MultitoolWinUI.Pages
 
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
-            bool requestTags = RequestTagsButton.IsOn;
-
-            if (string.IsNullOrEmpty(Login))
+            if (token == null || !token.Validated)
             {
                 Trace.TraceWarning("Cannot connect to any chat without login");
             }
@@ -142,15 +187,21 @@ namespace MultitoolWinUI.Pages
                     {
                         NickName = "psykomicron",
                         Encoding = Encoding.UTF8,
-                        RequestTags = requestTags,
+                        RequestTags = RequestTags,
                     };
 
                     TabViewItem tab = new();
-                    Frame frame = new();
-                    tab.Content = frame;
-                    frame.Navigate(typeof(ChatPage), new ChatPageParameter(client, tab, string.Empty, null));
-                    sender.TabItems.Add(tab);
-                    sender.SelectedItem = tab;
+                    ChatControl chat = new()
+                    {
+                        Client = client,
+                        Tab = tab,
+                        Emotes = emotes
+                    };
+                    tab.Content = chat;
+
+                    Tabs.Add(tab);
+
+                    //sender.SelectedIndex = Tabs.Count - 1;
                 }
                 catch (ArgumentNullException)
                 {
@@ -159,7 +210,7 @@ namespace MultitoolWinUI.Pages
             }
         }
 
-        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Chats.TabItems.Remove(args.Tab);
+        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Tabs.Remove(args.Tab);
 
         private async void LoadOAuth_Click(object sender, RoutedEventArgs e)
         {
@@ -183,27 +234,8 @@ namespace MultitoolWinUI.Pages
 
         private async void LoadEmotes_Click(object sender, RoutedEventArgs e)
         {
-            TwitchEmoteFetcher emoteFetcher = new(token);
-            List<Emote> emotes = await emoteFetcher.GetGlobalEmotes();
-            foreach (Emote emote in emotes)
-            {
-                try
-                {
-                    StorageFile file = await ApplicationData.Current.LocalFolder.CreateFileAsync(emote.Name + ".png" , CreationCollisionOption.OpenIfExists);
-                    await FileIO.WriteBytesAsync(file, emote.Image);
-                }
-                catch (Exception) { }
-            }
+            
         }
         #endregion
-    }
-
-    public record TwitchPageSettings
-    {
-        [Multitool.ComponentModel.DefaultValue("")]
-        public string Login { get; set; }
-
-        [Multitool.ComponentModel.DefaultValue(typeof(ObservableCollection<object>))]
-        public ObservableCollection<object> Tabs { get; set; }
     }
 }

@@ -30,12 +30,12 @@
                 Margin="5">
                 <ToggleSwitch
                     x:Name="RequestTagsButton"
-                    IsOn="True"
+                    IsOn="{x:Bind RequestTags, Mode=TwoWay}"
                     Header="Request tags"/>
 
                 <ToggleSwitch
                     x:Name="LoadWebViewButton"
-                    IsOn="True"
+                    IsOn="{x:Bind LoadWebView, Mode=TwoWay}"
                     Header="Load webview"/>
 
                 <Button
@@ -52,6 +52,7 @@
 
             <AutoSuggestBox
                 x:Name="UriTextBox"
+                Text="{x:Bind LastVisited, Mode=TwoWay}"
                 PlaceholderText="Search query"
                 QuerySubmitted="UriTextBox_QuerySubmitted"
                 Grid.Row="1"/>
@@ -81,6 +82,7 @@
 
             <TabView
                 x:Name="Chats"
+                TabItemsSource="{x:Bind Tabs}"
                 VerticalAlignment="Stretch"
                 Grid.Row="1"
                 AddTabButtonClick="Chats_AddTabButtonClick"
