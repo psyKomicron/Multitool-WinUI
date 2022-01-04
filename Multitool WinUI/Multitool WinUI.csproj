@@ -10,10 +10,10 @@
     <UseWinUI>true</UseWinUI>
     <Configurations>Debug;Release;Release (opti)</Configurations>
     <AssemblyVersion>1.0.15.0</AssemblyVersion>
-    <Authors>Julien Marquet</Authors>
+    <Authors>psyKomicron</Authors>
     <PackageReleaseNotes>Continuing on fixing bugs and implementing new features. :)</PackageReleaseNotes>
     <ApplicationIcon>multitool.ico</ApplicationIcon>
-    <Version>1.0.15</Version>
+    <Version>1.0.16</Version>
     <FileVersion>1.0.15.0</FileVersion>
     <PackageId>MultitoolWinUI</PackageId>
   </PropertyGroup>
@@ -43,15 +43,18 @@
     <None Remove="Pages\IrcChatPage.xaml" />
     <None Remove="Pages\Irc\ChatControl.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
+    <None Remove="Pages\Settings\SettingsPage.xaml" />
     <None Remove="Pages\Test\TestPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ProjectReunion" Version="0.8.5" />
-    <PackageReference Include="Microsoft.ProjectReunion.Foundation" Version="0.8.5" />
-    <PackageReference Include="Microsoft.ProjectReunion.WinUI" Version="0.8.5" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.0.0-preview3" />
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+	
+  <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 
@@ -184,6 +187,12 @@
 
   <ItemGroup>
     <Page Update="Pages\Test\TestPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Pages\Settings\SettingsPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
