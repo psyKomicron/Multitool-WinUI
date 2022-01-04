@@ -19,36 +19,10 @@ namespace Multitool.Net.Twitch.Factories
 
         public bool UseLocalTimestamp { get; set; }
 
-        public Message CreateMessage(Memory<char> memory)
+        public Message CreateMessage(ReadOnlyMemory<char> memory)
         {
-            Dictionary<string, string> tags = new();
             int index = 0;
-            int lastSlice = 0;
-            while (index < memory.Length)
-            {
-                if (memory.Span[index] == ';')
-                {
-                    Memory<char> part = memory[lastSlice..index];
-                    for (int i = 0; i < part.Length; i++)
-                    {
-                        if (part.Span[i] == '=')
-                        {
-                            Memory<char> tag, value;
-                            tag = part[..i];
-                            value = part[(i + 1)..];
-
-                            tags.Add(tag.ToString(), value.ToString());
-                        }
-                    }
-                    lastSlice = index + 1;
-                }
-                else if (memory.Span[index] == ' ')
-                {
-                    index++;
-                    break;
-                }
-                index++;
-            }
+            var tags = ParseTags(memory, ref index);
 
             ReadOnlySpan<char> data = memory.Span[(index + 1)..];
             index = 0; // reset index since we are going to work with a slice of the original payload
@@ -59,12 +33,13 @@ namespace Multitool.Net.Twitch.Factories
             ReadOnlySpan<char> userName = data[..index];
             tags.Add("user-name", userName.ToString());
 
-            lastSlice = index;
+            int lastSlice = index;
             while (index < data.Length && data[index] != ':')
             {
                 index++;
             }
             index++;
+
             ReadOnlySpan<char> text = data[index..];
 
             User author = CreateUser(tags);
@@ -76,7 +51,6 @@ namespace Multitool.Net.Twitch.Factories
             if (UseLocalTimestamp)
             {
                 message.ServerTimestamp = DateTime.Now;
-
             }
             else
             {
@@ -97,6 +71,39 @@ namespace Multitool.Net.Twitch.Factories
             }
 
             return message;
+        }
+
+        public static Dictionary<string, string> ParseTags(ReadOnlyMemory<char> memory, ref int index)
+        {
+            Dictionary<string, string> tags = new();
+            index = 1;
+            int lastSlice = 1;
+            while (index < memory.Length)
+            {
+                if (memory.Span[index] == ';')
+                {
+                    ReadOnlyMemory<char> part = memory[lastSlice..index];
+                    for (int i = 0; i < part.Length; i++)
+                    {
+                        if (part.Span[i] == '=')
+                        {
+                            ReadOnlyMemory<char> tag, value;
+                            tag = part[..i];
+                            value = part[(i + 1)..];
+
+                            tags.Add(tag.ToString(), value.ToString());
+                        }
+                    }
+                    lastSlice = index + 1;
+                }
+                else if (memory.Span[index] == ' ')
+                {
+                    index++;
+                    break;
+                }
+                index++;
+            }
+            return tags;
         }
 
         public User CreateUser(Dictionary<string, string> tags)
@@ -141,6 +148,7 @@ namespace Multitool.Net.Twitch.Factories
             }
             catch
             {
+                Debug.WriteLine("Failed to convert color: " + tags["color"]);
                 nameColor = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
             }
 

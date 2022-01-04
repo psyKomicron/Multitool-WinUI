@@ -1,8 +1,6 @@
-﻿
-using Multitool.Net.Twitch.Security;
+﻿using Multitool.Net.Twitch.Security;
 
 using System;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -14,9 +12,28 @@ namespace Multitool.Net.Twitch.Irc
 {
     public interface ITwitchIrcClient : IAsyncDisposable
     {
-        event TypedEventHandler<ITwitchIrcClient, EventArgs> Connected;
+        /// <summary>
+        /// Fired when the IRC client has connected to a channel.
+        /// <para>sender: the client</para>
+        /// <para>args: the name of the joined channel</para>
+        /// </summary>
+        event TypedEventHandler<ITwitchIrcClient, string> Joined;
+        /// <summary>
+        /// Fired when the IRC client has been disconnected (from an internal error, websocket error or user request).
+        /// <para>sender: the client</para>
+        /// <para>empty event args</para>
+        /// </summary>
         event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
+        /// <summary>
+        /// Fired when a message has been received.
+        /// <para>sender: the client</para>
+        /// <para>the received message</para>
+        /// </summary>
         event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
+        /// <summary>
+        /// Fired when the room/channel underwent a change (sub-only mode...)
+        /// </summary>
+        event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
 
         bool AutoLogIn { get; init; }
         TwitchConnectionToken ConnectionToken { get; }
@@ -27,25 +44,6 @@ namespace Multitool.Net.Twitch.Irc
         bool RequestTags { get; init; }
         CancellationTokenSource RootCancellationToken { get; }
 
-        /// <summary>
-        /// Connects to a IRC server.
-        /// <para>
-        ///     The <see cref="System.Threading.CancellationToken"/> given to 
-        ///     <see cref="ClientWebSocket.ConnectAsync(Uri, System.Threading.CancellationToken)"/> 
-        ///     is <see cref="RootCancellationToken"/>, allowing to cancel all pending operations when 
-        ///     the object is closed or disposed.
-        /// </para>
-        /// </summary>
-        /// <returns>The task object representing the asynchronous operation</returns>
-        Task Connect();
-        /// <summary>
-        /// Connects to an IRC server passing the <paramref name="cancellationToken"/>
-        /// to the internal <see cref="WebSocket"/> connect method.
-        /// </summary>
-        /// <param name="uri">IRC server to connect to</param>
-        /// <param name="cancellationToken">To cancel the operation</param>
-        /// <returns>The task object representing the asynchronous operation</returns>
-        Task Connect(Uri uri, CancellationToken cancellationToken);
         /// <summary>
         /// Disconnects the client from the server.
         /// </summary>

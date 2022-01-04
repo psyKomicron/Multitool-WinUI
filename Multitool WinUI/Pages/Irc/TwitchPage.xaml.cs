@@ -21,6 +21,7 @@ using Windows.Storage;
 using Windows.Web.Http;
 using System.ComponentModel;
 using Multitool.DAL.Settings;
+using Microsoft.UI.Xaml.Navigation;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -98,7 +99,7 @@ namespace MultitoolWinUI.Pages
 #if DEBUG
                 if (_contentLoaded)
                 {
-                    Trace.TraceError(ex.ToString());
+                    App.TraceError(ex.ToString());
                 }
                 else
                 {
@@ -110,6 +111,19 @@ namespace MultitoolWinUI.Pages
         #endregion
 
         #region event handlers
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            //PageWebView;
+            //PageWebView.Close();
+            base.OnNavigatedFrom(e);
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            //PageWebView = new();
+        }
+
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             try
@@ -120,10 +134,15 @@ namespace MultitoolWinUI.Pages
                 PropertyChanged(this, new(nameof(LoadWebView)));
                 PropertyChanged(this, new(nameof(LastVisited)));
 
+                if (LoadWebView)
+                {
+                    NavigateTo($"https://{LastVisited}");
+                }
+
                 token = new(Login);
                 if (!await token.ValidateToken())
                 {
-                    Trace.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
+                    App.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
                 }
                 else
                 {
@@ -160,7 +179,7 @@ namespace MultitoolWinUI.Pages
             }
             catch (Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
             }
         }
 
@@ -173,11 +192,12 @@ namespace MultitoolWinUI.Pages
             NavigateTo("https://www." + args.QueryText);
         }
 
+        #region buttons
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
             if (token == null || !token.Validated)
             {
-                Trace.TraceWarning("Cannot connect to any chat without login");
+                App.TraceWarning("Cannot connect to any chat without login");
             }
             else
             {
@@ -205,7 +225,7 @@ namespace MultitoolWinUI.Pages
                 }
                 catch (ArgumentNullException)
                 {
-                    Trace.TraceError("Login is empty");
+                    App.TraceError("Login is empty");
                 }
             }
         }
@@ -228,14 +248,16 @@ namespace MultitoolWinUI.Pages
             }
             else
             {
-                Trace.TraceWarning("Unable to contact twitch to get client id");
+                App.TraceWarning("Unable to contact twitch to get client id");
             }
         }
 
-        private async void LoadEmotes_Click(object sender, RoutedEventArgs e)
+        private void LoadEmotes_Click(object sender, RoutedEventArgs e)
         {
             
         }
+        #endregion
+
         #endregion
     }
 }

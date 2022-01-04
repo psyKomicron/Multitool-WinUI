@@ -13,7 +13,6 @@ namespace MultitoolWinUI.Models
     public sealed class ChatMessageModel
     {
         private const string dateTimeFormat = "t";
-        private static readonly Regex linkRegex = new(@"(?:(?:https?|ftp|file):\/\/|www\.|ftp\.)(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[-A-Z0-9+&@#\/%=~_|$?!:,.])*(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[A-Z0-9+&@#\/%=~_|$])", RegexOptions.Multiline | RegexOptions.Compiled);
 
         public ChatMessageModel() { }
 

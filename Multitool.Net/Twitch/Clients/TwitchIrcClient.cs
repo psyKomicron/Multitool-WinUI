@@ -33,17 +33,16 @@ namespace Multitool.Net.Twitch.Irc
         private readonly int bufferSize;
         private readonly bool silentExit;
         private readonly CancellationTokenSource rootCancelToken = new();
-        private readonly Thread receiveThread;
         private readonly ClientWebSocket socket = new();
-        private readonly TwitchConnectionToken login;
         private readonly MessageFactory factory = new() { UseLocalTimestamp = false };
         private readonly Dictionary<uint, Regex> commands = new();
+        private readonly Thread receiveThread;
 
-        private long disconnected = 1;
-        private long loggedIn = 0;
         private bool disposed;
         private bool hasJoined;
-        //private string alias;
+        // thread safe attributes -- using 64 bits adresses because programm is compiled for x64
+        private long disconnected = 1;
+        private long loggedIn = 0;
         #endregion
 
         #region constructor
@@ -62,15 +61,13 @@ namespace Multitool.Net.Twitch.Irc
             {
                 IsBackground = false
             };
-            this.login = login;
+            ConnectionToken = login;
 
             commands.Add(1, joinRegex);
             commands.Add(2, namesRegex);
             commands.Add(3, pingRegex);
             commands.Add(4, userStateRegex);
             commands.Add(5, roomStateRegex);
-
-
         }
         #endregion
 
@@ -79,13 +76,13 @@ namespace Multitool.Net.Twitch.Irc
         public event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
 
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, EventArgs> Connected;
-
-        /// <inheritdoc/>
         public event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
 
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, EventArgs> Joined;
+        public event TypedEventHandler<ITwitchIrcClient, string> Joined;
+
+        /// <inheritdoc/>
+        public event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
         #endregion
 
         #region properties
@@ -93,13 +90,13 @@ namespace Multitool.Net.Twitch.Irc
         public bool AutoLogIn { get; init; }
 
         /// <inheritdoc/>
-        public bool RequestTags { get; init; }
-
-        /// <inheritdoc/>
-        public CancellationTokenSource RootCancellationToken => rootCancelToken;
-
-        /// <inheritdoc/>
         public WebSocketState ClientState => socket.State;
+
+        /// <inheritdoc/>
+        public TwitchConnectionToken ConnectionToken { get; set; }
+
+        /// <inheritdoc/>
+        public Encoding Encoding { get; set; }
 
         /// <inheritdoc/>
         public bool IsConnected => Interlocked.Read(ref disconnected) == 0;
@@ -108,10 +105,10 @@ namespace Multitool.Net.Twitch.Irc
         public string NickName { get; set; }
 
         /// <inheritdoc/>
-        public Encoding Encoding { get; set; }
+        public bool RequestTags { get; init; }
 
         /// <inheritdoc/>
-        public TwitchConnectionToken ConnectionToken { get; init; }
+        public CancellationTokenSource RootCancellationToken => rootCancelToken;
         #endregion
 
         #region public methods
@@ -128,17 +125,32 @@ namespace Multitool.Net.Twitch.Irc
         /// <inheritdoc/>
         public async Task Join(string channel)
         {
-            AssertConnectionValid();
             AssertChannelNameValid(channel);
+            if (Interlocked.Read(ref disconnected) == 1)
+            {
+                await Connect();
+            }
+            else
+            {
+                AssertConnectionValid();
+            }
 
             if (Interlocked.Read(ref loggedIn) == 0)
             {
                 await LogIn();
             }
     
-            Trace.TraceInformation("Trying to join " + channel);
-            await socket.SendAsync(GetBytes($"JOIN #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
-            hasJoined = true;
+            await SendStringAsync($"JOIN #{channel}");
+            string response = await ReceiveStringAsync();
+            if (!joinRegex.IsMatch(response))
+            {
+                throw new InvalidOperationException($"Failed to join {channel}");
+            }
+            else
+            {
+                hasJoined = true;
+                receiveThread.Start();
+            }
         }
 
         /// <inheritdoc/>
@@ -148,40 +160,8 @@ namespace Multitool.Net.Twitch.Irc
             AssertChannelNameValid(channel);
             if (hasJoined)
             {
-                await socket.SendAsync(GetBytes($"PART #{channel}"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+                await SendStringAsync($"PART #{channel}");
                 hasJoined = false;
-                Trace.TraceInformation("> Left " + channel);
-            }
-            else
-            {
-                Trace.TraceInformation("> Already left channel");
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task Connect()
-        {
-            await Connect(new(wssUri), RootCancellationToken.Token);
-        }
-
-        /// <inheritdoc/>
-        public async Task Connect(Uri channel, CancellationToken cancellationToken)
-        {
-            if (Interlocked.Read(ref disconnected) == 1)
-            {
-                await socket.ConnectAsync(channel, cancellationToken);
-                Interlocked.Exchange(ref disconnected, 0);
-
-                AssertConnectionValid();
-
-                if (AutoLogIn && (Interlocked.Read(ref loggedIn) == 0))
-                {
-                    await LogIn();
-                }
-            }
-            else
-            {
-                Trace.TraceInformation($"{nameof(TwitchIrcClient)} is already connected.");
             }
         }
 
@@ -345,6 +325,22 @@ namespace Multitool.Net.Twitch.Irc
         }
         #endregion
 
+        private async Task Connect()
+        {
+            if (Interlocked.Read(ref disconnected) == 1)
+            {
+                await socket.ConnectAsync(new(wssUri), RootCancellationToken.Token);
+                Interlocked.Exchange(ref disconnected, 0);
+
+                AssertConnectionValid();
+            }
+        }
+
+        /// <summary>
+        /// Do not start the receive thread before calling this method. It will cause the socket to break.
+        /// </summary>
+        /// <returns><see cref="Task"/></returns>
+        /// <exception cref="InvalidOperationException">Thrown if any of the calls to the Twitch IRC server. The exception message will be explicit.</exception>
         private async Task LogIn()
         {
             if (RequestTags)
@@ -357,10 +353,6 @@ namespace Multitool.Net.Twitch.Irc
                     await Disconnect();
                     throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
                 }
-                else
-                {
-                    Trace.TraceInformation("ACK CAP REQ MEMBERSHIP");
-                }
 
                 await SendStringAsync(@"CAP REQ :twitch.tv/commands");
                 rep = await ReceiveStringAsync();
@@ -368,10 +360,6 @@ namespace Multitool.Net.Twitch.Irc
                 {
                     await Disconnect();
                     throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
-                }
-                else
-                {
-                    Trace.TraceInformation("ACK CAP REQ COMMANDS");
                 }
 
                 await SendStringAsync(@"CAP REQ :twitch.tv/tags");
@@ -381,13 +369,9 @@ namespace Multitool.Net.Twitch.Irc
                     await Disconnect();
                     throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
                 }
-                else
-                {
-                    Trace.TraceInformation("ACK CAP REQ TAGS");
-                }
             }
 
-            await SendStringAsync($"PASS {login}");
+            await SendStringAsync($"PASS {ConnectionToken}");
             await SendStringAsync($"NICK {NickName}");
 
             Task<string> response = ReceiveStringAsync();
@@ -396,12 +380,11 @@ namespace Multitool.Net.Twitch.Irc
             if (authFailedRegex.IsMatch(response.Result))
             {
                 await Disconnect();
-                throw new InvalidOperationException("Authentication failed");
+                throw new InvalidOperationException($"Authentication failed. Twitch IRC server responded with '{response.Result}'. IRC client was disconnected");
             }
             else
             {
                 Interlocked.Exchange(ref loggedIn, 1);
-                receiveThread.Start();
             }
         }
 
@@ -414,7 +397,7 @@ namespace Multitool.Net.Twitch.Irc
 #endif
         }
 
-        private void OnMessageReceived(Memory<char> message)
+        private void OnMessageReceived(ReadOnlyMemory<char> message)
         {
             if (hasJoined)
             {
@@ -423,37 +406,57 @@ namespace Multitool.Net.Twitch.Irc
             }
         }
 
-        private void OnCommandReceived(uint tag, Memory<char> command)
+        private void OnCommandReceived(uint tag, ReadOnlyMemory<char> command)
         {
+            int index = default;
+            Dictionary<string, string> tags = MessageFactory.ParseTags(command, ref index);
+            
             switch (tag)
             {
-                case 1:
-                    // JOIN
-                    int i = command.Length - 1;
-                    for (; i >= 0; i--)
-                    {
-                        if (command.Span[i] == '#')
-                        {
-                            break;
-                        }
-                    }
-                    Trace.TraceInformation($"> Joined {command[i..]}");
-                    break;
                 case 2:
                     // /NAMES
                     //Match match = namesRegex.Match(command.ToString());
                     Trace.TraceInformation($"NAMES command: {command}");
                     break;
+
                 case 3:
-                    Trace.TraceInformation("Pong-ing twitch");
-                    command.Span[1] = 'O';
-                    socket.SendAsync(GetBytes(command), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+                    const string pong = "PONG";
+                    socket.SendAsync(GetBytes(pong), WebSocketMessageType.Text, true, RootCancellationToken.Token);
                     break;
+
                 case 4:
-                    Debug.WriteLine("> USERSTATE");
+                    StringBuilder builder = new();
+                    foreach (var t in tags)
+                    {
+                        builder.AppendLine($"@{t.Key} = {t.Value},");
+                    }
+                    Debug.WriteLine("> USERSTATE\n" + builder.ToString());
                     break;
+
                 case 5:
-                    Debug.WriteLine("> ROOMSTATE");
+                    RoomStates changes = RoomStates.None;
+                    if (tags.ContainsKey("followers-only"))
+                    {
+                        changes = tags["followers-only"] == "1" ? RoomStates.FollowersOnlyOn : RoomStates.FollowersOnlyOff;
+                    }
+                    if (tags.ContainsKey("emote-only"))
+                    {
+                        changes = tags["emote-only"] == "1" ? RoomStates.EmoteOnlyOn : RoomStates.EmoteOnlyOff;
+                    }
+                    if (tags.ContainsKey("r9k"))
+                    {
+                        changes = tags["r9k"] == "1" ? RoomStates.R9KOn : RoomStates.R9KOff;
+                    }
+                    if (tags.ContainsKey("slow"))
+                    {
+                        changes = tags["slow"] == "1" ? RoomStates.SlowModeOn : RoomStates.SlowModeOff;
+                    }
+                    if (tags.ContainsKey("subs-only"))
+                    {
+                        changes = tags["subs-only"] == "1" ? RoomStates.SubsOnlyOn : RoomStates.SubsOnlyOff;
+                    }
+
+                    RoomChanged?.Invoke(this, changes);
                     break;
                 default:
 #if DEBUG
@@ -467,10 +470,7 @@ namespace Multitool.Net.Twitch.Irc
 
         private async void ReceiveData(object obj)
         {
-            Trace.TraceInformation("Starting IRC client receive background thread");
-
             ArraySegment<byte> data = new(new byte[bufferSize]);
-
             while (Interlocked.Read(ref disconnected) == 0)
             {
                 try
@@ -494,6 +494,7 @@ namespace Multitool.Net.Twitch.Irc
 
                         ArraySegment<byte> sliced = data.Slice(0, max);
                         string message = Encoding.GetString(sliced);
+                        ReadOnlyMemory<char> readOnlyMessage = MemoryExtensions.AsMemory(message);
 #if false
                         Debug.WriteLine(message);
 #endif
@@ -501,12 +502,12 @@ namespace Multitool.Net.Twitch.Irc
                         {
                             try
                             {
-                                OnMessageReceived(new(message.ToCharArray()));
+                                OnMessageReceived(readOnlyMessage);
                             }
 #if DEBUG
                             catch (Exception ex)
                             {
-                                Trace.TraceError(ex.ToString());
+                                Trace.TraceError("\n\tOnMessageReceived > " + ex.ToString());
                             }
 #else
                             catch { }
@@ -514,23 +515,38 @@ namespace Multitool.Net.Twitch.Irc
                         }
                         else
                         {
-                            foreach (var command in commands)
+                            List<ReadOnlyMemory<char>> commandMessages = new();
+                            int sliceIndex = 0;
+                            for (int i = 0; i < readOnlyMessage.Length; i++)
                             {
-                                if (command.Value.IsMatch(message))
+                                if (readOnlyMessage.Span[i] == '\n')
                                 {
-                                    try
+                                    ReadOnlyMemory<char> c = readOnlyMessage[sliceIndex..(i - 1)];
+                                    commandMessages.Add(c);
+                                    sliceIndex = i + 1;
+                                }
+                            }
+
+                            foreach (ReadOnlyMemory<char> commandMessage in commandMessages)
+                            {
+                                foreach (var command in commands)
+                                {
+                                    if (command.Value.IsMatch(commandMessage.ToString()))
                                     {
-                                        OnCommandReceived(command.Key, new(message.ToCharArray()));
-                                    }
+                                        try
+                                        {
+                                            OnCommandReceived(command.Key, commandMessage);
+                                        }
 #if DEBUG
-                                    catch (Exception ex)
-                                    {
-                                        Trace.TraceError(ex.ToString());
-                                    }
+                                        catch (Exception ex)
+                                        {
+                                            Trace.TraceError("\n\tOnCommandReceived > " + ex.ToString());
+                                        }
 #else
                                     catch { }
 #endif
-                                    break;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -554,7 +570,7 @@ namespace Multitool.Net.Twitch.Irc
                     Interlocked.Exchange(ref disconnected, 1);
                     if (silentExit)
                     {
-                        Trace.TraceError("WebSocket exception occured, exiting receive thread silently.\n" + ex.ToString());
+                        Trace.TraceWarning("WebSocket exception occured, exiting receive thread silently.\n" + ex.ToString());
                     }
                     else
                     {
@@ -568,8 +584,6 @@ namespace Multitool.Net.Twitch.Irc
                     Trace.TraceError(ex.ToString());
                 }
             }
-            Trace.TraceInformation($"IrcClient '{NickName}' receive thread exiting");
-
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
         #endregion
