@@ -71,7 +71,7 @@ namespace MultitoolWinUI.Controls
             }
             else
             {
-                Trace.TraceError("Drive could not be loaded. '" + driveInfo.Name + "' was not ready");
+                App.TraceError("Drive could not be loaded. '" + driveInfo.Name + "' was not ready");
             }
         }
 

@@ -44,7 +44,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                     }
                     catch (XmlException ex)
                     {
-                        Trace.TraceError(ex.ToString());
+                        App.TraceError(ex.ToString());
                     }
                 }
             }
@@ -69,7 +69,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 }
                 catch (Exception ex)
                 {
-                    Trace.TraceError(ex.ToString());
+                    App.TraceError(ex.ToString());
                 }
             }
         }

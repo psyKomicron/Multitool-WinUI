@@ -43,16 +43,16 @@ namespace MultitoolWinUI.Pages
             XmlDocument doc = new();
             try
             {
+                App.TraceInformation("Loading main page shortcuts");
                 doc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, settingPath));
-                Trace.TraceInformation("Loading main page shortcuts");
             }
             catch (XmlException e)
             {
-                Trace.TraceError(e.ToString());
+                App.TraceError(e.ToString());
             }
             catch (IOException e)
             {
-                Trace.TraceError(e.ToString());
+                App.TraceError(e.ToString());
             }
         }
     }

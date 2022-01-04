@@ -17,6 +17,7 @@ using System.Linq;
 using System.Collections.Generic;
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Pages.Test;
+using MultitoolWinUI.Pages.Settings;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -76,16 +77,11 @@ namespace MultitoolWinUI
                         lastPage = typeof(TwitchPage);
                         break;
                     default:
-                        Trace.TraceWarning("MainWindow:ctor: Unknown page");
+                        App.TraceWarning("MainWindow:ctor: Unknown page");
                         break;
                 }
             }
             catch (SettingNotFoundException) { }
-#if false
-            Trace.Listeners[0] = new WindowTrace(this) { Name = "Debug_WindowTrace" };
-#else
-            Trace.Listeners.Add(new WindowTrace(this) { Name = "WindowTrace" });
-#endif
         }
 
         public bool IsPaneOpen { get; set; }
@@ -147,8 +143,11 @@ namespace MultitoolWinUI
                         lastPage = typeof(TestPage);
                         _ = ContentFrame.Navigate(typeof(TestPage));
                         break;
+                    case "Settings":
+                        _ = ContentFrame.Navigate(typeof(SettingsPage));
+                        break;
                     default:
-                        Trace.TraceWarning("Trying to navigate to : " + tag);
+                        App.TraceWarning("Trying to navigate to : " + tag);
                         break;
                 }
             }
@@ -173,14 +172,6 @@ namespace MultitoolWinUI
         {
             // save settings
             closed = true;
-            IEnumerable<WindowTrace> tracers = Trace.Listeners.OfType<WindowTrace>();
-            for (int i = 0; i < Trace.Listeners.Count; i++)
-            {
-                if (Trace.Listeners[i].GetType().IsAssignableFrom(typeof(WindowTrace)))
-                {
-                    Trace.Listeners.RemoveAt(i);
-                }
-            }
             if (lastPage != null)
             {
                 App.Settings.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);

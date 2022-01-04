@@ -65,7 +65,7 @@ namespace MultitoolWinUI.Pages.Explorer
             }
             catch (SettingNotFoundException ex)
             {
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
             }
 
 #if DEBUG
@@ -136,7 +136,7 @@ namespace MultitoolWinUI.Pages.Explorer
                 taskStopwatch.Restart();
                 try
                 {
-                    await fileSystemManager.GetFileSystemEntries(realPath, CurrentFiles, AddDelegate, fsCancellationTokenSource.Token);
+                    await fileSystemManager.GetEntries(realPath, CurrentFiles, AddDelegate, fsCancellationTokenSource.Token);
 
                     taskStopwatch.Stop();
                     fsCancellationTokenSource.Dispose();
@@ -175,7 +175,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
                     fsCancellationTokenSource.InvokeCancel();
                     fsCancellationTokenSource = null;
-                    Trace.TraceError("Operation cancelled, loading path : " + path);
+                    App.TraceError("Operation cancelled, loading path : " + path);
                     Progress_TextBox.Text = "Operation cancelled";
                     DispatcherQueue.TryEnqueue(() => SortList());
                 }
@@ -185,7 +185,7 @@ namespace MultitoolWinUI.Pages.Explorer
                     CancelAction_Button.IsEnabled = false;
                     Files_ProgressBar.IsIndeterminate = false;
 
-                    Trace.TraceError(ex.ToString());
+                    App.TraceError(ex.ToString());
                     Progress_TextBox.Text = ex.ToString();
                 }
             }
@@ -195,7 +195,7 @@ namespace MultitoolWinUI.Pages.Explorer
                 CancelAction_Button.IsEnabled = false;
                 Files_ProgressBar.IsIndeterminate = false;
 
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
                 CurrentPath = string.Empty;
                 Progress_TextBox.Text = "Directory not found : '" + path + "'";
             }
@@ -569,7 +569,7 @@ namespace MultitoolWinUI.Pages.Explorer
             }
             catch (UnauthorizedAccessException e)
             {
-                Trace.TraceError(e.ToString());
+                App.TraceError(e.ToString());
             }
         }
 
@@ -646,11 +646,11 @@ namespace MultitoolWinUI.Pages.Explorer
                     }
                     break;
                 case ChangeTypes.DirectoryCreated:
-                    Trace.TraceWarning("Directory created");
+                    App.TraceWarning("Directory created");
                     break;
                 case ChangeTypes.PathDeleted:
                     DispatcherQueue.TryEnqueue(() => CurrentFiles.Clear());
-                    Trace.TraceWarning("Path deleted");
+                    App.TraceWarning("Path deleted");
                     break;
             }
         }
