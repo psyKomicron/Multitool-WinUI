@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using Windows.ApplicationModel;
 
@@ -9,6 +10,9 @@ namespace MultitoolWinUI.Helpers
 {
     internal static class Tool
     {
+        private static readonly Regex absoluteUriRegex = new(@"(https?: \/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex relativeUriRegex = new(@"((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         public const string BuildType =
 #if DEBUG
             "Debug";
@@ -83,6 +87,10 @@ namespace MultitoolWinUI.Helpers
                 ext = " b";
             }
         }
+
+        public static bool IsAbsoluteUrl(string s) => absoluteUriRegex.IsMatch(s);
+
+        public static bool IsRelativeUrl(string s) => relativeUriRegex.IsMatch(s);
 
         private static T GetValueFromDictionary<T, K>(IDictionary<K, object> dic, K key)
         {
