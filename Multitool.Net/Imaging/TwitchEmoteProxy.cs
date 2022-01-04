@@ -18,8 +18,8 @@ namespace Multitool.Net.Imaging
         private readonly Timer cacheTimer;
         private readonly ConcurrentDictionary<object, Emote> cache = new();
         private readonly List<Emote> globalEmotesCache;
+        private readonly EmoteFetcher emoteFetcher = new();
         private TwitchConnectionToken connectionToken;
-        private EmoteFetcher emoteFetcher = new();
 
         private TwitchEmoteProxy()
         {
@@ -49,9 +49,15 @@ namespace Multitool.Net.Imaging
         public async Task<List<Emote>> LoadGlobalEmotes()
         {
             CheckToken();
-            if (globalEmotesCache.Count)
-            List<Emote> emotes = await emoteFetcher.GetGlobalEmotes();
-            return emotes;
+            if (globalEmotesCache.Count > 0)
+            {
+                return globalEmotesCache;
+            }
+            else
+            {
+                List<Emote> emotes = await emoteFetcher.GetGlobalEmotes();
+                return emotes;
+            }
         }
 
         #region private methods

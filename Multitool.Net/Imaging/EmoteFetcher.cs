@@ -86,7 +86,7 @@ namespace Multitool.Net.Twitch
             return emotes;
         }
 
-        public async Task<Emote> GetChannelEmotes(string emoteName)
+        public async Task<Emote> GetChannelEmotes(string channelId)
         {
             throw new NotImplementedException();
         }
