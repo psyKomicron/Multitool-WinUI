@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 
+using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
 
@@ -14,14 +15,22 @@ namespace Multitool.DAL.Settings
         public SettingsManager(ApplicationDataContainer container)
         {
             DataContainer = container;
+            ApplicationData.Current.DataChanged += ApplicationData_DataChanged;
         }
 
+        #region events
+        public event TypedEventHandler<ISettingsManager, string> SettingsChanged;
+        #endregion
+
+        #region properties
         /// <inheritdoc/>
         public ApplicationDataContainer DataContainer { get; }
 
         /// <inheritdoc/>
         public string SettingFormat { get; set; }
+        #endregion
 
+        #region public methods
         public void Save<T>(T toSave, bool useSettingAttribute = true)
         {
             if (toSave is null)
@@ -142,8 +151,10 @@ namespace Multitool.DAL.Settings
                 catch (ArgumentException ex)
                 {
                     Trace.TraceError($"Failed to save '{actualKey}', system was not able to serialize {value.GetType().FullName}\n{ex}");
+                    return;
                 }
             }
+            SettingsChanged?.Invoke(this, actualKey);
             Trace.TraceInformation($"Saved '{actualKey}'");
         }
 
@@ -205,7 +216,9 @@ namespace Multitool.DAL.Settings
                 return false;
             }
         }
+#endregion
 
+        #region private
         private static object GetTypeDefaultValue(Type type)
         {
             ConstructorInfo ctorInfo = type.GetConstructor(Array.Empty<Type>());
@@ -228,5 +241,14 @@ namespace Multitool.DAL.Settings
                 return value;
             }
         }
+
+        #region event handlers
+        private void ApplicationData_DataChanged(ApplicationData sender, object args)
+        {
+            
+        }
+        #endregion
+
+        #endregion
     }
 }
