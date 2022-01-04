@@ -15,21 +15,17 @@ namespace Multitool.DAL.FileSystem
         /// Raised when the one or more items in the cache have changed.
         /// </summary>
         event TypedEventHandler<IFileSystemManager, ChangeEventArgs> Changed;
-
         /// <summary>
         /// Raised when a cached path is updating.
         /// </summary>
-        public event TypedEventHandler<IFileSystemManager, CacheUpdatingEventArgs> CacheUpdating;
+        event TypedEventHandler<IFileSystemManager, CacheUpdatingEventArgs> CacheUpdating;
 
         double CacheTimeout { get; set; }
 
         /// <summary>
-        /// <para>
         /// List the content of a directory as a <see cref="IList{T}"/>.
-        /// </para>
-        /// <para>
         /// Because each directory size is calculated, the task can be 
-        /// cancelled with the <paramref name="cancellationToken"/>.</para>
+        /// cancelled with the <paramref name="cancellationToken"/>.
         /// </summary>
         /// <typeparam name="ItemType">Generic param of the <see cref="IList{T}"/></typeparam>
         /// <param name="path">System file path</param>
@@ -39,7 +35,7 @@ namespace Multitool.DAL.FileSystem
         /// <exception cref="System.ArgumentNullException">
         /// If either <paramref name="list"/> or <paramref name="cancellationToken"/> is null/>
         /// </exception>
-        Task GetFileSystemEntries<ItemType>(
+        Task GetEntries<ItemType>(
             string path, IList<ItemType> list,
             AddDelegate<ItemType> addDelegate, CancellationToken cancellationToken) where ItemType : IFileSystemEntry;
         /// <summary>

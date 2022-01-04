@@ -199,7 +199,7 @@ namespace Multitool.DAL.FileSystem
         }
 
         /// <inheritdoc/>
-        public async Task GetFileSystemEntries<TItem>(string path, IList<TItem> list, AddDelegate<TItem> addDelegate, CancellationToken cancellationToken) where TItem : IFileSystemEntry
+        public async Task GetEntries<TItem>(string path, IList<TItem> list, AddDelegate<TItem> addDelegate, CancellationToken cancellationToken) where TItem : IFileSystemEntry
         {
             #region not null
             if (list == null)
