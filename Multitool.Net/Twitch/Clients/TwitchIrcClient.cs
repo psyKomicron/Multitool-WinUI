@@ -40,6 +40,7 @@ namespace Multitool.Net.Twitch.Irc
 
         private bool disposed;
         private bool hasJoined;
+        private string room;
         // thread safe attributes -- using 64 bits adresses because programm is compiled for x64
         private long disconnected = 1;
         private long loggedIn = 0;
@@ -71,20 +72,6 @@ namespace Multitool.Net.Twitch.Irc
         }
         #endregion
 
-        #region events
-        /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
-
-        /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
-
-        /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, string> Joined;
-
-        /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
-        #endregion
-
         #region properties
         /// <inheritdoc/>
         public bool AutoLogIn { get; init; }
@@ -109,6 +96,20 @@ namespace Multitool.Net.Twitch.Irc
 
         /// <inheritdoc/>
         public CancellationTokenSource RootCancellationToken => rootCancelToken;
+        #endregion
+
+        #region events
+        /// <inheritdoc/>
+        public event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
+
+        /// <inheritdoc/>
+        public event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
+
+        /// <inheritdoc/>
+        public event TypedEventHandler<ITwitchIrcClient, string> Joined;
+
+        /// <inheritdoc/>
+        public event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
         #endregion
 
         #region public methods
@@ -151,6 +152,7 @@ namespace Multitool.Net.Twitch.Irc
                 hasJoined = true;
                 receiveThread.Start();
             }
+            room = channel;
         }
 
         /// <inheritdoc/>
@@ -188,6 +190,7 @@ namespace Multitool.Net.Twitch.Irc
             if (!disposed)
             {
                 rootCancelToken.Cancel();
+
                 if (Interlocked.Read(ref disconnected) == 0)
                 {
                     try
@@ -199,9 +202,18 @@ namespace Multitool.Net.Twitch.Irc
                         Trace.TraceError(ex.ToString());
                     }
                 }
-                socket.Dispose();
+
+                try
+                {
+                    socket.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError(ex.ToString());
+                }
+
                 disposed = true;
-                GC.SuppressFinalize(this);
+                //GC.SuppressFinalize(this);
             }
         }
 
@@ -212,64 +224,6 @@ namespace Multitool.Net.Twitch.Irc
         #endregion
 
         #region non-public methods
-
-        #region socket methods
-        private ArraySegment<byte> GetBytes(string text)
-        {
-            return new(Encoding.GetBytes(text));
-        }
-
-        private ArraySegment<byte> GetBytes(Memory<char> text)
-        {
-            return new(Encoding.GetBytes(text.ToArray()));
-        }
-
-        private async Task SendStringAsync(string message, bool end = true)
-        {
-            try
-            {
-                await socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
-            }
-            catch (WebSocketException)
-            {
-                Interlocked.Exchange(ref disconnected, 1);
-                Disconnected?.Invoke(this, EventArgs.Empty);
-                throw;
-            }
-        }
-
-        private async Task<string> ReceiveStringAsync()
-        {
-            ArraySegment<byte> buffer = new(new byte[bufferSize]);
-            try
-            {
-                WebSocketReceiveResult res = await socket.ReceiveAsync(buffer, CancellationToken.None);
-                if (res.MessageType == WebSocketMessageType.Text)
-                {
-                    int max = 0;
-                    for (; max < buffer.Count; max++)
-                    {
-                        if (buffer[max] == 0x0)
-                        {
-                            break;
-                        }
-                    }
-                    buffer = buffer.Slice(0, max);
-                    return Encoding.GetString(buffer);
-                }
-                else
-                {
-                    throw new InvalidOperationException("Message type wasn't text, decoding not possible.");
-                }
-            }
-            catch (WebSocketException)
-            {
-                Interlocked.Exchange(ref disconnected, 1);
-                Disconnected?.Invoke(this, EventArgs.Empty);
-                throw;
-            }
-        }
-        #endregion
 
         #region assertion methods
         /// <summary>
@@ -336,11 +290,6 @@ namespace Multitool.Net.Twitch.Irc
             }
         }
 
-        /// <summary>
-        /// Do not start the receive thread before calling this method. It will cause the socket to break.
-        /// </summary>
-        /// <returns><see cref="Task"/></returns>
-        /// <exception cref="InvalidOperationException">Thrown if any of the calls to the Twitch IRC server. The exception message will be explicit.</exception>
         private async Task LogIn()
         {
             if (RequestTags)
@@ -390,10 +339,10 @@ namespace Multitool.Net.Twitch.Irc
 
         private void InvokeMessageReceived(Message message)
         {
-#if !DEBUG
-            Task.Run(() => MessageReceived?.Invoke(this, message));
-#else
+#if true
             MessageReceived?.Invoke(this, message);
+#else
+            Task.Run(() => MessageReceived?.Invoke(this, message));
 #endif
         }
 
@@ -468,9 +417,108 @@ namespace Multitool.Net.Twitch.Irc
             }
         }
 
+        #region socket methods
+        private ArraySegment<byte> GetBytes(string text)
+        {
+            return new(Encoding.GetBytes(text));
+        }
+
+        private ArraySegment<byte> GetBytes(Memory<char> text)
+        {
+            return new(Encoding.GetBytes(text.ToArray()));
+        }
+
+        private async Task SendStringAsync(string message, bool end = true)
+        {
+            try
+            {
+                await socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+            }
+            catch (WebSocketException)
+            {
+                Interlocked.Exchange(ref disconnected, 1);
+                Disconnected?.Invoke(this, EventArgs.Empty);
+                throw;
+            }
+        }
+
+        private async Task<string> ReceiveStringAsync()
+        {
+            ArraySegment<byte> buffer = new(new byte[bufferSize]);
+            try
+            {
+                WebSocketReceiveResult res = await socket.ReceiveAsync(buffer, CancellationToken.None);
+                if (res.MessageType == WebSocketMessageType.Text)
+                {
+                    int max = 0;
+                    for (; max < buffer.Count; max++)
+                    {
+                        if (buffer[max] == 0x0)
+                        {
+                            break;
+                        }
+                    }
+                    buffer = buffer.Slice(0, max);
+                    return Encoding.GetString(buffer);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Message type wasn't text, decoding not possible.");
+                }
+            }
+            catch (WebSocketException)
+            {
+                Interlocked.Exchange(ref disconnected, 1);
+                Disconnected?.Invoke(this, EventArgs.Empty);
+                throw;
+            }
+        }
+
+        private void RouteMessage(ReadOnlyMemory<char> message)
+        {
+            if (messageRegex.IsMatch(message.ToString()))
+            {
+                try
+                {
+                    OnMessageReceived(message);
+                }
+#if DEBUG
+                catch (Exception ex)
+                {
+                    Trace.TraceError("\n\tOnMessageReceived > " + ex.ToString());
+                }
+#else
+                catch { }
+#endif
+            }
+            else
+            {
+                foreach (var command in commands)
+                {
+                    if (command.Value.IsMatch(message.ToString()))
+                    {
+                        try
+                        {
+                            OnCommandReceived(command.Key, message);
+                        }
+#if DEBUG
+                        catch (Exception ex)
+                        {
+                            Trace.TraceError("\n\tOnCommandReceived > " + ex.ToString());
+                        }
+#else
+                        catch { }
+#endif
+                        break;
+                    }
+                }
+            }
+        }
+
         private async void ReceiveData(object obj)
         {
             ArraySegment<byte> data = new(new byte[bufferSize]);
+            List<ReadOnlyMemory<char>> commandMessages = new(5);
             while (Interlocked.Read(ref disconnected) == 0)
             {
                 try
@@ -479,7 +527,7 @@ namespace Multitool.Net.Twitch.Irc
                     await socket.ReceiveAsync(data, CancellationToken.None);
                     if (data.Count != 0)
                     {
-                        int max = 0;
+                        /*int max = 0;
                         for (; max < data.Count; max++)
                         {
                             if (data[max] == 0x0)
@@ -492,77 +540,40 @@ namespace Multitool.Net.Twitch.Irc
                             }
                         }
 
-                        ArraySegment<byte> sliced = data.Slice(0, max);
-                        string message = Encoding.GetString(sliced);
+                        ArraySegment<byte> sliced = data.Slice(0, max);*/
+                        string message = Encoding.GetString(data);
                         ReadOnlyMemory<char> readOnlyMessage = MemoryExtensions.AsMemory(message);
-#if false
-                        Debug.WriteLine(message);
-#endif
-                        if (messageRegex.IsMatch(message))
-                        {
-                            try
-                            {
-                                OnMessageReceived(readOnlyMessage);
-                            }
-#if DEBUG
-                            catch (Exception ex)
-                            {
-                                Trace.TraceError("\n\tOnMessageReceived > " + ex.ToString());
-                            }
-#else
-                            catch { }
-#endif
-                        }
-                        else
-                        {
-                            List<ReadOnlyMemory<char>> commandMessages = new();
-                            int sliceIndex = 0;
-                            for (int i = 0; i < readOnlyMessage.Length; i++)
-                            {
-                                if (readOnlyMessage.Span[i] == '\n')
-                                {
-                                    ReadOnlyMemory<char> c = readOnlyMessage[sliceIndex..(i - 1)];
-                                    commandMessages.Add(c);
-                                    sliceIndex = i + 1;
-                                }
-                            }
 
-                            foreach (ReadOnlyMemory<char> commandMessage in commandMessages)
+                        int sliceIndex = 0;
+                        for (int i = 0; i < readOnlyMessage.Length; i++)
+                        {
+                            if (readOnlyMessage.Span[i] == '\n')
                             {
-                                foreach (var command in commands)
-                                {
-                                    if (command.Value.IsMatch(commandMessage.ToString()))
-                                    {
-                                        try
-                                        {
-                                            OnCommandReceived(command.Key, commandMessage);
-                                        }
-#if DEBUG
-                                        catch (Exception ex)
-                                        {
-                                            Trace.TraceError("\n\tOnCommandReceived > " + ex.ToString());
-                                        }
-#else
-                                    catch { }
-#endif
-                                        break;
-                                    }
-                                }
+                                ReadOnlyMemory<char> c = readOnlyMessage[sliceIndex..(i - 1)];
+                                commandMessages.Add(c);
+                                sliceIndex = i + 1;
                             }
+                        }
+
+                        for (int i = 0; i < commandMessages.Count; i++)
+                        {
+                            RouteMessage(commandMessages[i]);
                         }
 
                         // clear buffer
-                        for (int i = 0; i < max; i++)
+                        for (int i = 0; i < data.Count; i++)
                         {
-                            if (data[i] != 0x0)
+                            /*if (data[i] != 0x0)
                             {
                                 data[i] = default;
                             }
                             else
                             {
                                 break;
-                            }
+                            }*/
+                            data[i] = default;
                         }
+                        commandMessages.Clear();
                     }
                 }
                 catch (WebSocketException ex) // thread will exit (and break the application) when a websocket exception occur.
@@ -586,6 +597,8 @@ namespace Multitool.Net.Twitch.Irc
             }
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
+        #endregion
+
         #endregion
     }
 }
