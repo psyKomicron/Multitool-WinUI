@@ -12,6 +12,15 @@ namespace Multitool.Net.Twitch.Irc
 {
     public interface ITwitchIrcClient : IAsyncDisposable
     {
+        bool AutoLogIn { get; init; }
+        TwitchConnectionToken ConnectionToken { get; }
+        WebSocketState ClientState { get; }
+        Encoding Encoding { get; set; }
+        bool IsConnected { get; }
+        string NickName { get; set; }
+        bool RequestTags { get; init; }
+        CancellationTokenSource RootCancellationToken { get; }
+
         /// <summary>
         /// Fired when the IRC client has connected to a channel.
         /// <para>sender: the client</para>
@@ -34,15 +43,6 @@ namespace Multitool.Net.Twitch.Irc
         /// Fired when the room/channel underwent a change (sub-only mode...)
         /// </summary>
         event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
-
-        bool AutoLogIn { get; init; }
-        TwitchConnectionToken ConnectionToken { get; }
-        WebSocketState ClientState { get; }
-        Encoding Encoding { get; set; }
-        bool IsConnected { get; }
-        string NickName { get; set; }
-        bool RequestTags { get; init; }
-        CancellationTokenSource RootCancellationToken { get; }
 
         /// <summary>
         /// Disconnects the client from the server.
