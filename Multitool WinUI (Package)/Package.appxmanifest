@@ -10,8 +10,8 @@
 
   <Identity
     Name="a34c0c86-c628-4f8e-9e06-1af20315e557"
-    Publisher="CN=julie"
-    Version="1.0.16.0" />
+    Publisher="CN=psykomicron"
+    Version="1.0.17.0" />
 
   <Properties>
     <DisplayName>Multitool WinUI (Package)</DisplayName>
