@@ -8,100 +8,102 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     NavigationCacheMode="Required">
-    <Grid>
+    <Grid Background="{x:Bind Background}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="1*" MaxWidth="450"/>
+            <ColumnDefinition Width="1*" MaxWidth="450" MinWidth="350"/>
         </Grid.ColumnDefinitions>
 
         <Grid
             Grid.Column="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="50px"/>
                 <RowDefinition Height="40px"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
 
-            <StackPanel
-                Orientation="Horizontal"
-                HorizontalAlignment="Stretch"
-                Grid.Row="0"
-                Margin="5">
-                <ToggleSwitch
-                    x:Name="RequestTagsButton"
-                    IsOn="{x:Bind RequestTags, Mode=TwoWay}"
-                    OnContent="Disable tags"
-                    OffContent="Request tags"
-                    Margin="3"
-                    VerticalAlignment="Center"/>
-
-                <ToggleSwitch
-                    x:Name="LoadWebViewButton"
-                    IsOn="{x:Bind LoadWebView, Mode=TwoWay}"
-                    OffContent="Load webview"
-                    OnContent="Don't load webview"
-                    Margin="3"
-                    VerticalAlignment="Center"/>
-
-                <Button
-                    x:Name="LoadOAuth"
-                    Click="LoadOAuth_Click"
-                    Margin="3"
-                    VerticalContentAlignment="Center">
-                    <TextBlock Text="Load oauthentication page" TextWrapping="WrapWholeWords"/>
-                </Button>
-                <Button
-                    x:Name="LoadEmotesButton"
-                    Click="LoadEmotes_Click"
-                    Margin="3"
-                    VerticalContentAlignment="Center">
-                    <TextBlock Text="Load emotes" TextWrapping="WrapWholeWords"/>
-                </Button>
-            </StackPanel>
-
             <AutoSuggestBox
                 x:Name="UriTextBox"
                 Text="{x:Bind LastVisited, Mode=TwoWay}"
+                QueryIcon="Zoom"
                 VerticalContentAlignment="Center"
                 PlaceholderText="Search query"
                 QuerySubmitted="UriTextBox_QuerySubmitted"
-                Grid.Row="1"/>
+                Grid.Row="0"/>
 
             <WebView2
                 x:Name="PageWebView"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
-                Grid.Row="2"/>
+                Grid.Row="1"/>
+            
         </Grid>
 
-        <Grid
+        <SplitView
+            x:Name="SettingSplitView"
+            DisplayMode="Overlay"
             Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="50px"/>
-                <RowDefinition Height="10*"/>
-            </Grid.RowDefinitions>
+            <SplitView.Pane>
+                <StackPanel
+                    Orientation="Vertical"
+                    HorizontalAlignment="Stretch"
+                    Margin="5">
 
-            <PasswordBox
-                Password="{x:Bind Login, Mode=TwoWay}"
-                PlaceholderText="Login"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Center"
-                VerticalContentAlignment="Center"
-                BorderThickness="0"
-                Grid.Row="0"/>
+                    <ToggleSwitch
+                        x:Name="LoadWebViewButton"
+                        IsOn="{x:Bind LoadWebView, Mode=TwoWay}"
+                        OffContent="Webview off"
+                        OnContent="Webview on"
+                        Margin="3"
+                        VerticalAlignment="Center"/>
 
-            <TabView
-                x:Name="Chats"
-                TabItemsSource="{x:Bind Tabs}"
-                VerticalAlignment="Stretch"
-                CornerRadius="3"
-                Grid.Row="1"
-                AddTabButtonClick="Chats_AddTabButtonClick"
-                TabCloseRequested="Chats_TabCloseRequested">
-            </TabView>
-        </Grid>
+                    <Button
+                        x:Name="LoadOAuth"
+                        Click="LoadOAuth_Click"
+                        Margin="3"
+                        VerticalContentAlignment="Center">
+                        <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
+                    </Button>
+
+                    <PasswordBox
+                        x:Name="LoginBox"
+                        Password="{x:Bind Login, Mode=TwoWay}"
+                        PlaceholderText="Login"
+                        KeyDown="PasswordBox_KeyDown"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        BorderThickness="0"
+                        Grid.Row="0"/>
+                    
+                </StackPanel>
+            </SplitView.Pane>
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40px" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
+
+                <ToggleButton
+                    x:Name="SettingButton"
+                    Content="Settings"
+                    Click="SettingButton_Click"
+                    IsChecked="{x:Bind SettingSplitView.IsPaneOpen, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch"
+                    Grid.Row="0"/>
+
+                <TabView
+                    x:Name="Chats"
+                    TabItemsSource="{x:Bind Tabs}"
+                    VerticalAlignment="Stretch"
+                    CornerRadius="3"
+                    Grid.Row="1"
+                    AddTabButtonClick="Chats_AddTabButtonClick"
+                    TabCloseRequested="Chats_TabCloseRequested">
+                </TabView>
+                
+            </Grid>
+        </SplitView>
+        
     </Grid>
 </Page>

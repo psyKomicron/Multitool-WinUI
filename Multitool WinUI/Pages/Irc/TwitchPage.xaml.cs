@@ -1,13 +1,10 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-
-using Multitool.DAL;
 using Multitool.Net.Twitch;
 using Multitool.Net.Twitch.Irc;
 using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Pages.Irc;
-using MultitoolWinUI.Helpers;
 
 using System;
 using System.Collections.Generic;
@@ -15,13 +12,11 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-
-using Windows.Storage;
 using Windows.Web.Http;
 using System.ComponentModel;
 using Multitool.DAL.Settings;
 using Microsoft.UI.Xaml.Navigation;
+using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -61,7 +56,6 @@ namespace MultitoolWinUI.Pages
         [Setting("twitch.tv")]
         public string LastVisited { get; set; }
 
-        [Setting(typeof(StringListSettingConverter))]
         public List<string> Channels { get; set; }
 
         public ObservableCollection<TabViewItem> Tabs { get; } = new();
@@ -113,15 +107,29 @@ namespace MultitoolWinUI.Pages
         #region event handlers
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            //PageWebView;
-            //PageWebView.Close();
+            PageWebView.Close();
             base.OnNavigatedFrom(e);
+            /*PageWebView.ExecuteScriptAsync("window.close()").AsTask()
+                .ContinueWith((Task<string> task) =>
+                {
+                    if (task.IsFaulted)
+                    {
+                        Trace.TraceError(task.Exception.ToString());
+                    }
+                    else
+                    {
+                        Trace.TraceInformation("Successfully closed window");
+                    }
+                });*/
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            //PageWebView = new();
+            if (PageWebView.CoreWebView2 != null)
+            {
+                PageWebView.CoreWebView2.Resume();
+            }
         }
 
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
@@ -146,10 +154,10 @@ namespace MultitoolWinUI.Pages
                 }
                 else
                 {
-                    EmoteFetcher emoteFetcher = new(token);
+                    using EmoteFetcher emoteFetcher = new(token);
                     emotes = await emoteFetcher.GetGlobalEmotes();
 
-                    foreach (var channel in Channels)
+                    /*foreach (var channel in Channels)
                     {
                         try
                         {
@@ -174,7 +182,7 @@ namespace MultitoolWinUI.Pages
                             Tabs.Add(tab);
                         }
                         catch { }
-                    }
+                    }*/
                 }
             }
             catch (Exception ex)
@@ -190,6 +198,14 @@ namespace MultitoolWinUI.Pages
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             NavigateTo("https://www." + args.QueryText);
+        }
+
+        private void PasswordBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                Login = LoginBox.Password;
+            }
         }
 
         #region buttons
@@ -259,5 +275,10 @@ namespace MultitoolWinUI.Pages
         #endregion
 
         #endregion
+
+        private void SettingButton_Click(object sender, RoutedEventArgs e)
+        {
+            //SettingSplitView.IsPaneOpen = SettingButton.IsChecked ?? false;
+        }
     }
 }
