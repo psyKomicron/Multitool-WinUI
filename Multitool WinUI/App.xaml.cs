@@ -6,7 +6,10 @@ using Multitool.DAL.Settings;
 
 using MultitoolWinUI.Helpers;
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 using Windows.Storage;
 using Windows.UI;
@@ -32,7 +35,6 @@ namespace MultitoolWinUI
         public App()
         {
             InitializeComponent();
-            UnhandledException += OnUnhandledException;
         }
 
         public static MainWindow MainWindow { get; private set; }
@@ -41,17 +43,17 @@ namespace MultitoolWinUI
 
         public static void TraceInformation(string info)
         {
-            TraceMessage(string.Empty, "Information", info, infoBrush);
+            TraceMessage("Information", string.Empty, info, infoBrush);
         }
 
         public static void TraceWarning(string warning)
         {
-            TraceMessage(string.Empty, "Warning", warning, warningBrush);
+            TraceMessage("Warning", string.Empty, warning, warningBrush);
         }
 
         public static void TraceError(string error)
         {
-            TraceMessage(string.Empty, "Error", error, errorBrush);
+            TraceMessage("Error", string.Empty, error, errorBrush);
         }
 
         /// <summary>
@@ -62,6 +64,7 @@ namespace MultitoolWinUI
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
+            Test();
             Settings = new SettingsManager(ApplicationData.Current.LocalSettings)
             {
                 SettingFormat = "{0}/{1}"
@@ -89,11 +92,6 @@ namespace MultitoolWinUI
             MainWindow.Activate();
         }
 
-        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            Trace.TraceError("App -> Unhandled exception: " + e.Exception.ToString());
-        }
-
         private static void TraceMessage(string title, string header, string message, Brush background)
         {
             if (MainWindow != null)
@@ -101,5 +99,36 @@ namespace MultitoolWinUI
                 MainWindow.MessageDisplay.QueueMessage(title, header, message, background);
             }
         }
+
+        private async void Test()
+        {
+            try
+            {
+                await ApplicationData.Current.LocalFolder.CreateFileAsync("settings.xml", CreationCollisionOption.OpenIfExists);
+                var settingManager = new XmlSettingManager();
+                settingManager.Save(new Test());
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
+        }
+    }
+
+    class Test
+    {
+        public Test()
+        {
+            String = "flkdsnfeifslkn";
+            Number = 1298;
+            List = new List<int> { 1, 2, 4, 8, 213, 234, 234235, 23, 12, 667, 43358 };
+        }
+
+        [Setting]
+        public string String { get; set; }
+        [Setting]
+        public int Number { get; set; }
+        [Setting]
+        public List<int> List { get; set; }
     }
 }
