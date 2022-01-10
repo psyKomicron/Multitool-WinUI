@@ -16,7 +16,7 @@ using Windows.Foundation;
 
 namespace MultitoolWinUI.Controls
 {
-    public sealed partial class TraceControl : UserControl
+    public sealed partial class AppMessageControl : UserControl
     {
         private readonly ConcurrentQueue<DispatcherQueueHandler> displayQueue = new();
         private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false, Interval = 3000 };
@@ -25,7 +25,7 @@ namespace MultitoolWinUI.Controls
         private bool closed;
         private bool hasFocus;
 
-        public TraceControl()
+        public AppMessageControl()
         {
             InitializeComponent();
             if (DispatcherQueue != null)
@@ -36,17 +36,17 @@ namespace MultitoolWinUI.Controls
             closed = false;
         }
 
-        public event TypedEventHandler<TraceControl, Visibility> VisibilityChanged;
+        public event TypedEventHandler<AppMessageControl, Visibility> VisibilityChanged;
 
         #region properties
         #region dependency properties
-        public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(nameof(Header), typeof(string), typeof(TraceControl), new(string.Empty));
+        public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(nameof(Header), typeof(string), typeof(AppMessageControl), new(string.Empty));
 
-        public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(TraceControl), new(string.Empty));
+        public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(AppMessageControl), new(string.Empty));
 
-        public static readonly DependencyProperty TitleGlyphProperty = DependencyProperty.Register(nameof(TitleGlyph), typeof(string), typeof(TraceControl), new("\xE783"));
+        public static readonly DependencyProperty TitleGlyphProperty = DependencyProperty.Register(nameof(TitleGlyph), typeof(string), typeof(AppMessageControl), new("\xE783"));
 
-        public static readonly DependencyProperty MessageProperty = DependencyProperty.Register(nameof(MessageProperty), typeof(object), typeof(TraceControl), new(null));
+        public static readonly DependencyProperty MessageProperty = DependencyProperty.Register(nameof(MessageProperty), typeof(object), typeof(AppMessageControl), new(null));
         #endregion
 
         /// <summary>
@@ -87,28 +87,38 @@ namespace MultitoolWinUI.Controls
 
         public void QueueMessage(string title, string header, string message, Brush background)
         {
-            lock (_lock)
+            if (DispatcherQueue != null)
             {
-                if (!busy)
+                lock (_lock)
                 {
-                    if (!closed)
+                    if (!busy)
                     {
-                        busy = true;
-                        _ = DispatcherQueue.TryEnqueue(() => DisplayMessage(title, header, message, background));
+                        if (!closed)
+                        {
+                            busy = true;
+                            _ = DispatcherQueue.TryEnqueue(() => DisplayMessage(title, header, message, background));
+                        }
                     }
-                }
-                else
-                {
-                    displayQueue.Enqueue(() => DisplayMessage(title, header, message, background));
-                }
+                    else
+                    {
+                        displayQueue.Enqueue(() => DisplayMessage(title, header, message, background));
+                    }
+                } 
             }
+        }
+
+        public void Silence()
+        {
+            closed = true;
+            messageTimer.Stop();
+            displayQueue.Clear();
         }
 
         #region private methods
         private void Dump()
         {
             StringBuilder builder = new();
-            _ = builder.AppendLine(nameof(TraceControl) + " trace stack dump:");
+            _ = builder.AppendLine(nameof(AppMessageControl) + " trace stack dump:");
             _ = builder.Append("\tQueued callbacks ");
             _ = builder.Append(displayQueue.Count);
             displayQueue.Clear();

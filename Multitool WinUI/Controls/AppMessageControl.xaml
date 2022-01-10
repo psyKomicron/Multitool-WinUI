@@ -1,6 +1,6 @@
 ﻿<UserControl
     x:Name="Control"
-    x:Class="MultitoolWinUI.Controls.TraceControl"
+    x:Class="MultitoolWinUI.Controls.AppMessageControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -22,7 +22,7 @@
             <ColumnDefinition Width="30px"/>
             <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="4*"/>
-            <ColumnDefinition Width="90px"/>
+            <ColumnDefinition Width="120px"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
