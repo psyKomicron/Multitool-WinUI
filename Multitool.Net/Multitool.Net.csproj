@@ -8,32 +8,37 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Twitch\Parsers\**" />
+    <Content Remove="Twitch\Parsers\**" />
+    <EmbeddedResource Remove="Twitch\Parsers\**" />
+    <None Remove="Twitch\Parsers\**" />
+    <Page Remove="Twitch\Parsers\**" />
+    <PRIResource Remove="Twitch\Parsers\**" />
+  </ItemGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.0.0-preview3" />
+	  <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.0.0" />
 	  <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
+	  <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
+	  <Compile Update="Properties\Resources.Designer.cs">
+		  <DesignTime>True</DesignTime>
+		  <AutoGen>True</AutoGen>
+		  <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+	  <EmbeddedResource Update="Properties\Resources.resx">
+		  <Generator>ResXFileCodeGenerator</Generator>
+		  <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Twitch\Parsers\" />
-  </ItemGroup>
 </Project>

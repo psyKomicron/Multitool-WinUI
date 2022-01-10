@@ -48,14 +48,14 @@
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.props" />
   <PropertyGroup>
     <ProjectGuid>64e43abb-c18e-4485-9b79-becc6ca81bb4</ProjectGuid>
-    <TargetPlatformVersion>10.0.20348.0</TargetPlatformVersion>
+    <TargetPlatformVersion>10.0.22000.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <AssetTargetFallback>net5.0-windows$(TargetPlatformVersion);$(AssetTargetFallback)</AssetTargetFallback>
     <DefaultLanguage>en-US</DefaultLanguage>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <EntryPointProjectUniqueName>..\Multitool WinUI\Multitool WinUI.csproj</EntryPointProjectUniqueName>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-    <PackageCertificateThumbprint>BDBC75F1FEE0C411038CB0B9CC08C790C63965EA</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>354788E32B6ED892516FEFBD703FF4210F91F00F</PackageCertificateThumbprint>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA512</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
@@ -156,11 +156,11 @@
       <PublishProfile>Properties\PublishProfiles\win10-$(Platform).pubxml</PublishProfile>
     </ProjectReference>
   </ItemGroup>
-    <ItemGroup>
-	    <PackageReference Include="Microsoft.WindowsAppSDK" Version="[1.0.0-preview3]">
-		    <IncludeAssets>build</IncludeAssets>
-	    </PackageReference>
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.0.0">
+      <IncludeAssets>build</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
   <ItemGroup>
     <None Include="Images\multitool.png" />
   </ItemGroup>
