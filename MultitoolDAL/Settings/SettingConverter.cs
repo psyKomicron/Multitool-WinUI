@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Multitool.DAL.Settings
+﻿namespace Multitool.DAL.Settings
 {
     public abstract class SettingConverter
     {
@@ -12,6 +6,8 @@ namespace Multitool.DAL.Settings
         /// Default constructor
         /// </summary>
         public SettingConverter() { }
+
+        public bool IsSingleLineValue { get; protected set; }
 
         public abstract object Convert(object toConvert);
         public abstract object Restore(object toRestore);
