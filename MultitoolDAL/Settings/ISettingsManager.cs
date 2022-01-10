@@ -10,16 +10,12 @@ namespace Multitool.DAL.Settings
     /// </summary>
     public interface ISettingsManager
     {
-        event TypedEventHandler<ISettingsManager, string> SettingsChanged;
-
         /// <summary>
         /// The <see cref="ApplicationDataContainer"/> associated with this instance.
         /// </summary>
         ApplicationDataContainer DataContainer { get; }
-        /// <summary>
-        /// How the setting key will be created
-        /// </summary>
-        string SettingFormat { get; set; }
+        
+        event TypedEventHandler<ISettingsManager, string> SettingsChanged;
 
         /// <summary>
         /// Loads values into the corresponding properties of <paramref name="toLoad"/> from the 
