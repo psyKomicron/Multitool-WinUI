@@ -79,7 +79,7 @@
         <Popup
             x:Name="ContentPopup"
             HorizontalAlignment="Left">
-            <controls:TraceControl
+            <controls:AppMessageControl
                 x:Name="MessageDisplay"
                 x:FieldModifier="public"
                 HorizontalAlignment="Stretch"

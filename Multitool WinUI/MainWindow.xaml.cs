@@ -171,6 +171,7 @@ namespace MultitoolWinUI
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
+            MessageDisplay.Silence();
             closed = true;
             if (lastPage != null)
             {
@@ -179,7 +180,7 @@ namespace MultitoolWinUI
             App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
         }
 
-        private void MessageDisplay_VisibilityChanged(TraceControl sender, Visibility args)
+        private void MessageDisplay_VisibilityChanged(AppMessageControl sender, Visibility args)
         {
             if (!closed)
             {
