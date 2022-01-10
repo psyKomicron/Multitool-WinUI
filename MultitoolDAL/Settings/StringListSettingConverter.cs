@@ -9,6 +9,11 @@ namespace Multitool.DAL.Settings
 {
     public class StringListSettingConverter : SettingConverter
     {
+        public StringListSettingConverter() : base()
+        {
+            IsSingleLineValue = false;
+        }
+
         public override object Convert(object toConvert)
         {
             if (toConvert is List<object> list)

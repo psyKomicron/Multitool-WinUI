@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -12,6 +11,8 @@ namespace Multitool.DAL.Settings
 {
     public class SettingsManager : ISettingsManager
     {
+        //private 
+
         public SettingsManager(ApplicationDataContainer container)
         {
             DataContainer = container;
@@ -26,11 +27,14 @@ namespace Multitool.DAL.Settings
         /// <inheritdoc/>
         public ApplicationDataContainer DataContainer { get; }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// How the setting key will be created
+        /// </summary>
         public string SettingFormat { get; set; }
         #endregion
 
         #region public methods
+        /// <inheritdoc/>
         public void Save<T>(T toSave, bool useSettingAttribute = true)
         {
             if (toSave is null)
@@ -72,6 +76,7 @@ namespace Multitool.DAL.Settings
             }
         }
 
+        /// <inheritdoc/>
         public void Load<T>(T toLoad, bool useSettingAttribute = true)
         {
             if (useSettingAttribute)
