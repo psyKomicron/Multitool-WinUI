@@ -7,24 +7,27 @@
     xmlns:models="using:MultitoolWinUI.Models" 
     xmlns:controls="using:MultitoolWinUI.Controls"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{StaticResource AppBarBackgroundThemeBrush}">
 
     <Grid 
         x:Name="ContentGrid"
-        Background="{StaticResource DarkBlack}">
+        Background="{x:Bind Background}">
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition MinHeight="20" Height="50" MaxHeight="70"/>
         </Grid.RowDefinitions>
         <Popup x:Name="UpdatePopup" HorizontalAlignment="Stretch" Grid.Row="0">
-            <controls:TraceControl
+            <controls:AppMessageControl
                 x:Name="RoomStateDisplay"
+                Background="MediumPurple"
                 Sync="True"
                 HorizontalAlignment="Stretch"
                 VisibilityChanged="MessageDisplay_VisibilityChanged"/>
         </Popup>
         
         <ListView
+            x:Name="Chat_ListView"
+            Header="{x:Bind Chat.Count}"
             ItemsSource="{x:Bind Chat}"
             SelectionMode="None"
             Grid.Row="0">
@@ -39,7 +42,7 @@
 
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:ChatMessageModel">
-                    <Grid Width="Auto" ColumnSpacing="7">
+                    <Grid Width="Auto" ColumnSpacing="7" Margin="0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="35px"/>
                             <ColumnDefinition Width="Auto"/>
@@ -70,14 +73,6 @@
                             Grid.ColumnSpan="2"
                             Grid.Column="1"
                             Grid.Row="1"/>
-                        <!--<TextBlock 
-                            Text="{Binding Message, Mode=OneWay}"
-                            IsTextSelectionEnabled="True"
-                            TextWrapping="WrapWholeWords"
-                            HorizontalAlignment="Stretch"
-                            Grid.ColumnSpan="2"
-                            Grid.Column="1"
-                            Grid.Row="1"/>-->
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
