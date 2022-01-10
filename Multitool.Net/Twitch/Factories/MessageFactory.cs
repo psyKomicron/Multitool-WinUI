@@ -12,10 +12,7 @@ namespace Multitool.Net.Twitch.Factories
 {
     internal class MessageFactory
     {
-        private const string userKey = "user-name";
-        private readonly ConcurrentDictionary<string, User> cache = new();
-        private readonly SemaphoreSlim semaphore = new(1);
-        private readonly ColorConverter colorConverter = new(0xFF);
+        private readonly UserFactory userFactory = new();
 
         public bool UseLocalTimestamp { get; set; }
 
@@ -42,7 +39,7 @@ namespace Multitool.Net.Twitch.Factories
 
             ReadOnlySpan<char> text = data[index..];
 
-            User author = CreateUser(tags);
+            User author = userFactory.CreateUser(tags);
             Message message = new(text.ToString())
             {
                 Author = author
@@ -104,107 +101,6 @@ namespace Multitool.Net.Twitch.Factories
                 index++;
             }
             return tags;
-        }
-
-        public User CreateUser(Dictionary<string, string> tags)
-        {
-            string userId = tags[userKey];
-            if (cache.ContainsKey(userId))
-            {
-                User user = cache[userId];
-                //AssertSame(user, tags);
-                return user;
-            }
-            else
-            {
-                User user = BuildUser(tags);
-                if (semaphore.Wait(100))
-                {
-                    cache.AddOrUpdate(userId, user, UpdateCallback);
-                    semaphore.Release();
-                }
-                else
-                {
-                    Debug.WriteLine($"User.CreateUser > Failed to get semaphore, user ({user.Name}) was created but not cached");
-                }
-                return user;
-            }
-        }
-
-        private User BuildUser(Dictionary<string, string> tags)
-        {
-            Color nameColor;
-            try
-            {
-                string stringColor = tags["color"];
-                if (!string.IsNullOrEmpty(stringColor))
-                {
-                    nameColor = colorConverter.ConvertFromHexaString(stringColor);
-                }
-                else
-                {
-                    nameColor = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
-                }
-            }
-            catch
-            {
-                Debug.WriteLine("Failed to convert color: " + tags["color"]);
-                nameColor = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
-            }
-
-            User user = new()
-            {
-                DisplayName = tags["display-name"],
-                Name = tags["user-name"],
-                Id = tags["user-id"],
-                IsMod = tags["mod"] == "1",
-                NameColor = nameColor,
-                Badges = new()
-            };
-            // badges
-            string badgeTag = tags["badges"];
-            if (badgeTag != string.Empty)
-            {
-                ReadOnlySpan<char> badges = new(badgeTag.ToCharArray());
-                int length = 0;
-                for (int i = 0; i < badges.Length; i++)
-                {
-                    if (badges[i] == '/')
-                    {
-                        ReadOnlySpan<char> badgeName = badges.Slice(i - length, length);
-                        length = 0;
-
-                        for (i += 1; i < badges.Length; i++)
-                        {
-                            if (badges[i] == ',')
-                            {
-                                ReadOnlySpan<char> badgeValue = badges.Slice(i - length, length);
-                                user.Badges.Add(new(badgeName, badgeValue));
-                            }
-                            else
-                            {
-                                length++;
-                            }
-                        }
-                        length = 0;
-                    }
-                    else
-                    {
-                        length++;
-                    }
-                }
-            }
-            return user;
-        }
-
-        private void AssertSame(User user, Dictionary<string, string> tags)
-        {
-
-        }
-
-        private static User UpdateCallback(string key, User user)
-        {
-            return user;
         }
     }
 }
