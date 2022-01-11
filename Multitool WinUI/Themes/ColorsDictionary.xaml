@@ -8,11 +8,13 @@
     <Color x:Key="DevBlue">#FF569DE5</Color>
     <Color x:Key="DevOrange">#CA5100</Color>
     <Color x:Key="WarmWhite">#CFCFCF</Color>
+    <Color x:Key="NewDarkGray">#2D2D2E</Color>
 
     <SolidColorBrush x:Key="LightBlackBrush" Color="{StaticResource LightBlackColor}"/>
     <SolidColorBrush x:Key="DarkBlackBrush" Color="{StaticResource DarkBlackColor}"/>
     <SolidColorBrush x:Key="DevBlueBrush" Color="{StaticResource DevBlueColor}"/>
     <SolidColorBrush x:Key="DarkDevBlueBrush" Color="{StaticResource DarkDevBlueColor}"/>
     <SolidColorBrush x:Key="DevOrangeBrush" Color="{StaticResource DevOrangeColor}"/>
+    <SolidColorBrush x:Key="PageBackgroundBrush" Color="{StaticResource NewDarkGray}"/>
 
 </ResourceDictionary>

@@ -174,7 +174,7 @@ namespace MultitoolWinUI.Helpers
             if (ShowTimestamp && ShowStackTrace == 0)
             {
 
-                window.MessageDisplay.QueueMessage(eventCache.DateTime.ToLongTimeString() + " - " + title, header, message, background);
+                window.MessageDisplay.QueueMessage(title, header, eventCache.DateTime.ToLongTimeString() + " - " + message, background);
             }
             else
             {

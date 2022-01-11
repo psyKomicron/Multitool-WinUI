@@ -13,10 +13,13 @@ using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Models;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
+
+using Windows.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -31,6 +34,7 @@ namespace MultitoolWinUI.Pages.Irc
         private readonly User thisUser = User.CreateSystemUser();
         private readonly SolidColorBrush messageBackground = new(Colors.MediumPurple);
         private readonly SolidColorBrush messageForeground = new(Colors.MediumPurple);
+        private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
         private bool joined;
         private bool loaded;
 
@@ -175,6 +179,11 @@ namespace MultitoolWinUI.Pages.Irc
 
             return presenter;
         }
+
+        private SolidColorBrush GetOrCreate(Color p)
+        {
+            return new(p);
+        }
         #endregion
 
         #region event handlers
@@ -235,9 +244,9 @@ namespace MultitoolWinUI.Pages.Irc
                     ChatMessageModel model = new()
                     {
                         Message = CreateMessage(args),
-                        Timestamp = args.ServerTimestamp.ToString("t"),
+                        Timestamp = args.ServerTimestamp.ToString("T"),
                         UserName = string.IsNullOrEmpty(args.Author.DisplayName) ? args.Author.Name : args.Author.DisplayName,
-                        NameColor = /*new(args.Author.NameColor)*/messageForeground
+                        NameColor = messageColors.GetOrAdd(args.Author.NameColor, GetOrCreate)
                     };
 
                     Chat.Add(model);
@@ -333,9 +342,11 @@ namespace MultitoolWinUI.Pages.Irc
 
         private async void MainWindow_Closed(object sender, WindowEventArgs args)
         {
+            loaded = false;
             if (Client != null && Client.IsConnected)
             {
                 Client.MessageReceived -= Client_MessageReceived;
+                Client.RoomChanged -= Client_RoomChanged;
                 try
                 {
                     await Client.Disconnect();
@@ -347,7 +358,7 @@ namespace MultitoolWinUI.Pages.Irc
 
         private void MessageDisplay_VisibilityChanged(Controls.AppMessageControl sender, Visibility args)
         {
-            UpdatePopup.IsOpen = args == Visibility.Visible;
+            if (loaded) UpdatePopup.IsOpen = args == Visibility.Visible;
         }
 
         private void ChatInput_GotFocus(object sender, RoutedEventArgs e)

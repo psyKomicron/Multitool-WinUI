@@ -110,7 +110,7 @@ namespace MultitoolWinUI.Pages
         #region event handlers
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            PageWebView.Close();
+            //PageWebView.Close();
             base.OnNavigatedFrom(e);
             /*PageWebView.ExecuteScriptAsync("window.close()").AsTask()
                 .ContinueWith((Task<string> task) =>
@@ -129,10 +129,10 @@ namespace MultitoolWinUI.Pages
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (PageWebView.CoreWebView2 != null)
+            /*if (PageWebView.CoreWebView2 != null)
             {
                 PageWebView.CoreWebView2.Resume();
-            }
+            }*/
         }
 
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
@@ -156,38 +156,11 @@ namespace MultitoolWinUI.Pages
                 {
                     using EmoteFetcher emoteFetcher = new(token);
                     emotes = await emoteFetcher.GetGlobalEmotes();
-
-                    /*foreach (var channel in Channels)
-                    {
-                        try
-                        {
-                            ITwitchIrcClient client = new TwitchIrcClient(token, 5_000, true)
-                            {
-                                NickName = "psykomicron",
-                                Encoding = Encoding.UTF8,
-                                RequestTags = RequestTags,
-                            };
-
-                            TabViewItem tab = new();
-                            ChatControl chat = new()
-                            {
-                                Client = client,
-                                Tab = tab,
-                                Channel = channel,
-                                Emotes = emotes
-                            };
-                            
-                            tab.Content = chat;
-
-                            Tabs.Add(tab);
-                        }
-                        catch { }
-                    }*/
                 }
             }
             catch (Exception ex)
             {
-                App.TraceError(ex.ToString());
+                App.TraceError(ex.Message);
             }
         }
 
@@ -208,6 +181,11 @@ namespace MultitoolWinUI.Pages
             }
         }
 
+        private void ChatHistoryLength_Slider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+        {
+
+        }
+
         #region buttons
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
@@ -219,7 +197,7 @@ namespace MultitoolWinUI.Pages
             {
                 try
                 {
-                    ITwitchIrcClient client = new TwitchIrcClient(token, 5_000, true)
+                    ITwitchIrcClient client = new TwitchIrcClient(token, true)
                     {
                         NickName = "psykomicron",
                         Encoding = Encoding.UTF8,
@@ -270,11 +248,6 @@ namespace MultitoolWinUI.Pages
         }
 
         private void LoadEmotes_Click(object sender, RoutedEventArgs e)
-        {
-            
-        }
-
-        private void ChatHistoryLength_Slider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
             
         }

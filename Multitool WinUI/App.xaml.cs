@@ -88,7 +88,9 @@ namespace MultitoolWinUI
             }
             catch (SettingNotFoundException e) { Trace.TraceError(e.Message); }
 
+
             MainWindow = new MainWindow();
+            Trace.Listeners.Add(new WindowTrace(MainWindow));
             MainWindow.Activate();
         }
 

@@ -6,8 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:models="using:MultitoolWinUI.Models" 
     xmlns:controls="using:MultitoolWinUI.Controls"
-    mc:Ignorable="d"
-    Background="{StaticResource AppBarBackgroundThemeBrush}">
+    mc:Ignorable="d">
 
     <Grid 
         x:Name="ContentGrid"

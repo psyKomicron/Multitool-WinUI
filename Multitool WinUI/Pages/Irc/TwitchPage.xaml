@@ -6,7 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     NavigationCacheMode="Required">
     <Grid Background="{x:Bind Background}">
         <Grid.ColumnDefinitions>
@@ -93,11 +92,15 @@
 
                             <Slider 
                                 x:Name="ChatHistorySize_Slider"
+                                VerticalAlignment="Center"
                                 Minimum="50"
                                 Maximum="2000"
+                                MinWidth="300"
                                 StepFrequency="10"
-                                Margin="10"
+                                Margin="{StaticResource StackPanelChildElementDefaultMargin}"
+                                Header="Maximum number of messages"
                                 Value="{x:Bind ChatMaxNumberOfMessages, Mode=TwoWay}"/>
+                            
 
                         </StackPanel>
                     </Flyout>
