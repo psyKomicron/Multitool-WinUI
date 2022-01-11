@@ -386,7 +386,16 @@ namespace Multitool.Net.Twitch.Irc
                     RoomStates changes = RoomStates.None;
                     if (tags.ContainsKey("followers-only"))
                     {
-                        changes = tags["followers-only"] == "1" ? RoomStates.FollowersOnlyOn : RoomStates.FollowersOnlyOff;
+                        if (tags["followers-only"] == "0")
+                        {
+                            changes = RoomStates.FollowersOnlyOff;
+                        }
+                        else
+                        {
+                            Trace.TraceInformation($"#{room} switched to {tags["followers-only"]} min followers only");
+                            changes = RoomStates.FollowersOnlyOn;
+                        }
+                        //changes = tags["followers-only"] == "0" ? RoomStates.FollowersOnlyOff : RoomStates.FollowersOnlyOn;
                     }
                     if (tags.ContainsKey("emote-only"))
                     {
