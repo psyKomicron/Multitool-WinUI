@@ -62,27 +62,37 @@ namespace Multitool.Net.Twitch.Security
 
             using HttpClient client = new();
             client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
             HttpResponseMessage res = await client.GetAsync(new(Properties.Resources.TwitchOAuthValidationUrl));
+            JsonDocument json = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+
             if (res.StatusCode == HttpStatusCode.Unauthorized)
             {
-                InvalidOperationException ex = new("Failed to validate token. Server responded with 401.");
-                ex.Data.Add("Token", token);
-                ex.Data.Add("Full response", await res.Content.ReadAsStringAsync());
-                throw ex;
+                if (json.RootElement.TryGetProperty("message", out JsonElement jsonElement))
+                {
+                    return false;
+                }
+                else
+                {
+                    InvalidOperationException ex = new("Failed to validate token. Server responded with 401/Unauthorized.");
+                    ex.Data.Add("Token", token);
+                    ex.Data.Add("Full response", json);
+                    throw ex;
+                }
             }
-#if true
-            JsonDocument json = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+
             if (json.RootElement.TryGetProperty("login", out JsonElement value))
             {
                 Login = value.ToString();
             }
+
             if (json.RootElement.TryGetProperty("client_id", out value))
             {
                 ClientId = value.ToString();
                 Validated = true;
                 return true;
             }
-#endif
+
             return false;
         }
     }
