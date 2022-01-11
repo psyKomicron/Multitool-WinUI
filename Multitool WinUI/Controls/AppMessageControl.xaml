@@ -20,8 +20,8 @@
         MaxHeight="200">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="30px"/>
-            <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="4*"/>
+            <ColumnDefinition Width="1*" MaxWidth="200"/>
+            <ColumnDefinition Width="5*"/>
             <ColumnDefinition Width="120px"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -41,6 +41,7 @@
             x:Name="TitleTextBlock"
             Text="{x:Bind Title, Mode=OneWay}"
             VerticalAlignment="Center"
+            HorizontalAlignment="Center"
             FontWeight="SemiBold"
             FontSize="30"
             Grid.Column="1"
@@ -58,7 +59,9 @@
             <TextBlock
                 x:Name="ContentTextBlock"
                 Margin="10, 0, 0, 0"
-                Text="{x:Bind Message, Mode=OneWay}"/>
+                Text="{x:Bind Message, Mode=OneWay}"
+                TextWrapping="Wrap"
+                HorizontalAlignment="Stretch"/>
         </ScrollViewer>
 
         <HyperlinkButton 
