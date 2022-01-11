@@ -35,75 +35,85 @@
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 Grid.Row="1"/>
-            
+
         </Grid>
 
-        <SplitView
-            x:Name="SettingSplitView"
-            DisplayMode="Overlay"
-            Grid.Column="1">
-            <SplitView.Pane>
-                <StackPanel
-                    Orientation="Vertical"
-                    HorizontalAlignment="Stretch"
-                    Margin="5">
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40px" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
 
-                    <ToggleSwitch
-                        x:Name="LoadWebViewButton"
-                        IsOn="{x:Bind LoadWebView, Mode=TwoWay}"
-                        OffContent="Webview off"
-                        OnContent="Webview on"
-                        Margin="3"
-                        VerticalAlignment="Center"/>
+            <Button
+                x:Name="SettingButton"
+                Content="Settings"
+                HorizontalAlignment="Stretch"
+                Grid.Row="0">
+                <Button.Flyout>
+                    <Flyout>
+                        <StackPanel
+                            Orientation="Vertical"
+                            HorizontalAlignment="Stretch"
+                            Margin="5">
 
-                    <Button
-                        x:Name="LoadOAuth"
-                        Click="LoadOAuth_Click"
-                        Margin="3"
-                        VerticalContentAlignment="Center">
-                        <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
-                    </Button>
+                            <ToggleSwitch
+                                x:Name="LoadWebViewButton"
+                                IsOn="{x:Bind LoadWebView, Mode=TwoWay}"
+                                OffContent="Webview off"
+                                OnContent="Webview on"
+                                Margin="10"
+                                VerticalAlignment="Center"/>
 
-                    <PasswordBox
-                        x:Name="LoginBox"
-                        Password="{x:Bind Login, Mode=TwoWay}"
-                        PlaceholderText="Login"
-                        KeyDown="PasswordBox_KeyDown"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        BorderThickness="0"
-                        Grid.Row="0"/>
-                    
-                </StackPanel>
-            </SplitView.Pane>
-            
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="40px" />
-                    <RowDefinition Height="1*" />
-                </Grid.RowDefinitions>
+                            <Button
+                                x:Name="LoadOAuth"
+                                Click="LoadOAuth_Click"
+                                Margin="10"
+                                VerticalContentAlignment="Center">
+                                <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
+                            </Button>
 
-                <ToggleButton
-                    x:Name="SettingButton"
-                    Content="Settings"
-                    Click="SettingButton_Click"
-                    IsChecked="{x:Bind SettingSplitView.IsPaneOpen, Mode=TwoWay}"
-                    HorizontalAlignment="Stretch"
-                    Grid.Row="0"/>
+                            <PasswordBox
+                                x:Name="LoginBox"
+                                Password="{x:Bind Login, Mode=TwoWay}"
+                                Margin="10"
+                                Header="Twitch login"
+                                PlaceholderText="Login"
+                                KeyDown="PasswordBox_KeyDown"
+                                HorizontalAlignment="Stretch"
+                                BorderThickness="0"
+                                Grid.Row="0"/>
 
-                <TabView
-                    x:Name="Chats"
-                    TabItemsSource="{x:Bind Tabs}"
-                    VerticalAlignment="Stretch"
-                    CornerRadius="3"
-                    Grid.Row="1"
-                    AddTabButtonClick="Chats_AddTabButtonClick"
-                    TabCloseRequested="Chats_TabCloseRequested">
-                </TabView>
+                            <Slider 
+                                x:Name="ChatHistoryLength_Slider"
+                                Minimum="2"
+                                Maximum="15"
+                                StepFrequency="1"
+                                Margin="10"
+                                ValueChanged="ChatHistoryLength_Slider_ValueChanged"/>
+
+                            <Slider 
+                                x:Name="ChatHistorySize_Slider"
+                                Minimum="50"
+                                Maximum="2000"
+                                StepFrequency="10"
+                                Margin="10"
+                                Value="{x:Bind ChatMaxNumberOfMessages, Mode=TwoWay}"/>
+
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <TabView
+                x:Name="Chats"
+                TabItemsSource="{x:Bind Tabs}"
+                VerticalAlignment="Stretch"
+                CornerRadius="3"
+                Grid.Row="1"
+                AddTabButtonClick="Chats_AddTabButtonClick"
+                TabCloseRequested="Chats_TabCloseRequested">
+            </TabView>
                 
-            </Grid>
-        </SplitView>
-        
+        </Grid>
     </Grid>
 </Page>

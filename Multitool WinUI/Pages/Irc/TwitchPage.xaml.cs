@@ -56,6 +56,9 @@ namespace MultitoolWinUI.Pages
         [Setting("twitch.tv")]
         public string LastVisited { get; set; }
 
+        [Setting(500)]
+        public int ChatMaxNumberOfMessages { get; set; }
+
         public List<string> Channels { get; set; }
 
         public ObservableCollection<TabViewItem> Tabs { get; } = new();
@@ -137,10 +140,7 @@ namespace MultitoolWinUI.Pages
             try
             {
                 App.Settings.Load(this);
-                PropertyChanged(this, new(nameof(Login)));
-                PropertyChanged(this, new(nameof(RequestTags)));
-                PropertyChanged(this, new(nameof(LoadWebView)));
-                PropertyChanged(this, new(nameof(LastVisited)));
+                PropertyChanged(this, new(string.Empty));
 
                 if (LoadWebView)
                 {
@@ -231,7 +231,8 @@ namespace MultitoolWinUI.Pages
                     {
                         Client = client,
                         Tab = tab,
-                        Emotes = emotes
+                        Emotes = emotes,
+                        MaxMessages = ChatMaxNumberOfMessages
                     };
                     tab.Content = chat;
 
@@ -272,13 +273,13 @@ namespace MultitoolWinUI.Pages
         {
             
         }
-        #endregion
 
-        #endregion
-
-        private void SettingButton_Click(object sender, RoutedEventArgs e)
+        private void ChatHistoryLength_Slider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
-            //SettingSplitView.IsPaneOpen = SettingButton.IsChecked ?? false;
+            
         }
+        #endregion
+
+        #endregion
     }
 }

@@ -30,6 +30,7 @@ namespace MultitoolWinUI.Pages.Irc
     {
         private readonly User thisUser = User.CreateSystemUser();
         private readonly SolidColorBrush messageBackground = new(Colors.MediumPurple);
+        private readonly SolidColorBrush messageForeground = new(Colors.MediumPurple);
         private bool joined;
         private bool loaded;
 
@@ -168,6 +169,7 @@ namespace MultitoolWinUI.Pages.Irc
                     }                    
                     paragraph.Inlines.Add(run);
                 }
+                text = true;
             }
             presenter.Blocks.Add(paragraph);
 
@@ -235,10 +237,11 @@ namespace MultitoolWinUI.Pages.Irc
                         Message = CreateMessage(args),
                         Timestamp = args.ServerTimestamp.ToString("t"),
                         UserName = string.IsNullOrEmpty(args.Author.DisplayName) ? args.Author.Name : args.Author.DisplayName,
-                        NameColor = new(args.Author.NameColor)
+                        NameColor = /*new(args.Author.NameColor)*/messageForeground
                     };
 
                     Chat.Add(model);
+                    NumberOfMessages_TextBlock.Text = Chat.Count.ToString();
                 });
 
                 if (Chat.Count > MaxMessages)

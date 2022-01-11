@@ -24,10 +24,11 @@
                 HorizontalAlignment="Stretch"
                 VisibilityChanged="MessageDisplay_VisibilityChanged"/>
         </Popup>
-        
+
+        <TextBlock x:Name="NumberOfMessages_TextBlock" Grid.Row="0" HorizontalAlignment="Right" FontWeight="Bold" FontFamily="Roboto"/>
+
         <ListView
             x:Name="Chat_ListView"
-            Header="{x:Bind Chat.Count}"
             ItemsSource="{x:Bind Chat}"
             SelectionMode="None"
             Grid.Row="0">
@@ -35,8 +36,7 @@
                 <ItemsPanelTemplate>
                     <ItemsStackPanel
                         VerticalAlignment="Bottom"
-                        ItemsUpdatingScrollMode="KeepLastItemInView"
-                        CacheLength="200"/>
+                        ItemsUpdatingScrollMode="KeepLastItemInView"/>
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
 
