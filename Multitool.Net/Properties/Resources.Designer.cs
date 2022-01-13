@@ -70,6 +70,15 @@ namespace Multitool.Net.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to https://api.twitch.tv/helix/chat/emotes/set.
+        /// </summary>
+        internal static string TwitchApiGetEmoteSetsEndPoint {
+            get {
+                return ResourceManager.GetString("TwitchApiGetEmoteSetsEndPoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to https://api.twitch.tv/helix/users?login={0}.
         /// </summary>
         internal static string TwitchApiGetUsersByLoginEndpoint {

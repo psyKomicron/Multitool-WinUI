@@ -22,12 +22,6 @@ namespace Multitool.Net.Twitch.Irc
         CancellationTokenSource RootCancellationToken { get; }
 
         /// <summary>
-        /// Fired when the IRC client has connected to a channel.
-        /// <para>sender: the client</para>
-        /// <para>args: the name of the joined channel</para>
-        /// </summary>
-        event TypedEventHandler<ITwitchIrcClient, string> Joined;
-        /// <summary>
         /// Fired when the IRC client has been disconnected (from an internal error, websocket error or user request).
         /// <para>sender: the client</para>
         /// <para>empty event args</para>

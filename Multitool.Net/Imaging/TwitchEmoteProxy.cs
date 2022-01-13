@@ -4,8 +4,10 @@ using Multitool.Net.Twitch.Security;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -13,14 +15,19 @@ namespace Multitool.Net.Imaging
 {
     public class TwitchEmoteProxy
     {
+        private const int timeout = 500;
         private static TwitchEmoteProxy instance;
 
-        private readonly Timer cacheTimer;
+        private readonly System.Timers.Timer cacheTimer;
         private readonly ConcurrentDictionary<object, Emote> cache = new();
-        private readonly List<Emote> globalEmotesCache;
         private readonly EmoteFetcher emoteFetcher;
 
-        private TwitchEmoteProxy()
+        private readonly SemaphoreSlim globalEmotesDownloadSemaphore = new(0);
+        private readonly List<Emote> globalEmotesCache = new();
+
+        private readonly List<Emote> emotesCache = new();
+
+        protected TwitchEmoteProxy()
         {
             cacheTimer = new(5_000);
             cacheTimer.Elapsed += OnCacheTimerElapsed;
@@ -35,6 +42,8 @@ namespace Multitool.Net.Imaging
             } 
         }
 
+        public EmoteFetcher EmoteFetcher => emoteFetcher;
+
         public static TwitchEmoteProxy GetInstance()
         {
             if (instance is null)
@@ -44,18 +53,35 @@ namespace Multitool.Net.Imaging
             return instance;
         }
 
-        public async Task<List<Emote>> LoadGlobalEmotes()
+        public async Task<List<Emote>> GetGlobalEmotes()
         {
             CheckToken();
             if (globalEmotesCache.Count > 0)
             {
                 return globalEmotesCache;
             }
-            else
+            else if (globalEmotesDownloadSemaphore.CurrentCount == 0)
             {
-                List<Emote> emotes = await emoteFetcher.GetGlobalEmotes();
+                globalFetchTask = emoteFetcher.GetGlobalEmotes();
+                List<Emote> emotes = await globalFetchTask;
+                Trace.TraceInformation($"Downloaded global emotes (count {emotes.Count})");
                 return emotes;
             }
+            else
+            {
+                return await globalFetchTask;
+            }
+        }
+
+        public async Task<List<Emote>> GetChannelEmotes(string channel)
+        {
+            CheckToken();
+            throw new NotImplementedException();
+        }
+
+        public async Task<List<Emote>> GetEmoteSets(string sets)
+        {
+
         }
 
         #region private methods

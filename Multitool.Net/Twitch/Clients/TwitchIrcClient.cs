@@ -105,9 +105,6 @@ namespace Multitool.Net.Twitch.Irc
         public event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
 
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, string> Joined;
-
-        /// <inheritdoc/>
         public event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
         #endregion
 
@@ -130,6 +127,7 @@ namespace Multitool.Net.Twitch.Irc
                 throw new ArgumentException("Connection token has not been validated");
             }
             AssertChannelNameValid(channel);
+
             if (Interlocked.Read(ref disconnected) == 1)
             {
                 await Connect();
@@ -141,6 +139,46 @@ namespace Multitool.Net.Twitch.Irc
 
             if (Interlocked.Read(ref loggedIn) == 0)
             {
+                if (RequestTags)
+                {
+                    Regex nak = new(@"NAK");
+                    await SendStringAsync(@"CAP REQ :twitch.tv/membership");
+                    string rep = await ReceiveStringAsync();
+                    if (nak.IsMatch(rep))
+                    {
+                        await Disconnect();
+                        throw new InvalidOperationException("Failed to request membership capability from tmi.twitch.tv");
+                    }
+
+                    await SendStringAsync(@"CAP REQ :twitch.tv/commands");
+                    rep = await ReceiveStringAsync();
+                    if (nak.IsMatch(rep))
+                    {
+                        await Disconnect();
+                        throw new InvalidOperationException("Failed to request commands capability from tmi.twitch.tv");
+                    }
+
+                    await SendStringAsync(@"CAP REQ :twitch.tv/tags");
+                    rep = await ReceiveStringAsync();
+                    if (nak.IsMatch(rep))
+                    {
+                        await Disconnect();
+                        throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
+                    }
+
+                    await SendStringAsync(@"CAP LS 302");
+                    rep = await ReceiveStringAsync();
+                    if (nak.IsMatch(rep))
+                    {
+                        await Disconnect();
+                        throw new InvalidOperationException("Failed to request chathistory capability from tmi.twitch.tv");
+                    }
+                    else
+                    {
+                        Debug.WriteLine(rep);
+                    }
+                }
+
                 await LogIn();
             }
     
@@ -152,40 +190,6 @@ namespace Multitool.Net.Twitch.Irc
             }
 
             hasJoined = true;
-
-#if DEBUG
-            try
-            {
-                Regex regex = new(@"BATCH -[0-9]*");
-                bool batch = true;
-                StringBuilder builder = new();
-                await SendStringAsync($"CHATHISTORY LATEST {channel} * 50");
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                while (batch)
-                {
-                    string reply = await ReceiveStringAsync();
-                    if (regex.IsMatch(reply))
-                    {
-                        batch = false;
-                    }
-                    else
-                    {
-                        builder.Append(reply);
-                    }
-
-                    if (stopwatch.Elapsed.TotalSeconds > 10)
-                    {
-                        batch = false;
-                    }
-                }
-                stopwatch.Stop();
-                Debug.WriteLine(builder.ToString());
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.ToString());
-            } 
-#endif
             receiveThread.Start();
             this.channel = channel;
         }
@@ -315,6 +319,7 @@ namespace Multitool.Net.Twitch.Irc
         #endregion
 
         #region irc
+
         private async Task Connect()
         {
             if (Interlocked.Read(ref disconnected) == 1)
@@ -328,34 +333,6 @@ namespace Multitool.Net.Twitch.Irc
 
         private async Task LogIn()
         {
-            if (RequestTags)
-            {
-                Regex nak = new(@"NAK");
-                await SendStringAsync(@"CAP REQ :twitch.tv/membership");
-                string rep = await ReceiveStringAsync();
-                if (nak.IsMatch(rep))
-                {
-                    await Disconnect();
-                    throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
-                }
-
-                await SendStringAsync(@"CAP REQ :twitch.tv/commands");
-                rep = await ReceiveStringAsync();
-                if (nak.IsMatch(rep))
-                {
-                    await Disconnect();
-                    throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
-                }
-
-                await SendStringAsync(@"CAP REQ :twitch.tv/tags");
-                rep = await ReceiveStringAsync();
-                if (nak.IsMatch(rep))
-                {
-                    await Disconnect();
-                    throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
-                }
-            }
-
             await SendStringAsync($"PASS {ConnectionToken}");
             await SendStringAsync($"NICK {NickName}");
 
@@ -431,23 +408,34 @@ namespace Multitool.Net.Twitch.Irc
                             Trace.TraceInformation($"#{channel} switched to {tags["followers-only"]} min followers only");
                             changes = RoomStates.FollowersOnlyOn;
                         }
-                        //changes = tags["followers-only"] == "0" ? RoomStates.FollowersOnlyOff : RoomStates.FollowersOnlyOn;
                     }
+
                     if (tags.ContainsKey("emote-only"))
                     {
-                        changes = tags["emote-only"] == "1" ? RoomStates.EmoteOnlyOn : RoomStates.EmoteOnlyOff;
+                        changes = tags["emote-only"][0] == '1' ? RoomStates.EmoteOnlyOn : RoomStates.EmoteOnlyOff;
                     }
+
                     if (tags.ContainsKey("r9k"))
                     {
-                        changes = tags["r9k"] == "1" ? RoomStates.R9KOn : RoomStates.R9KOff;
+                        changes = tags["r9k"][0] == '1' ? RoomStates.R9KOn : RoomStates.R9KOff;
                     }
+
                     if (tags.ContainsKey("slow"))
                     {
-                        changes = tags["slow"] == "1" ? RoomStates.SlowModeOn : RoomStates.SlowModeOff;
+                        if (tags["slow"] == "0")
+                        {
+                            changes = RoomStates.SlowModeOff;
+                        }
+                        else
+                        {
+                            Trace.TraceInformation($"#{channel} switched to {tags["slow"]} s slow mode");
+                            changes = RoomStates.SlowModeOn;
+                        }
                     }
+
                     if (tags.ContainsKey("subs-only"))
                     {
-                        changes = tags["subs-only"] == "1" ? RoomStates.SubsOnlyOn : RoomStates.SubsOnlyOff;
+                        changes = tags["subs-only"][0] == '1' ? RoomStates.SubsOnlyOn : RoomStates.SubsOnlyOff;
                     }
 
                     RoomChanged?.Invoke(this, changes);

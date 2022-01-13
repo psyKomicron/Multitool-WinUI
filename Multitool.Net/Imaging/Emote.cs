@@ -26,6 +26,8 @@ namespace Multitool.Net.Twitch
             Name = name;
         }
 
+        public string ChannelOwner { get; internal set; }
+
         public Id Id { get; internal set; }
 
         public string Name { get; internal set; }

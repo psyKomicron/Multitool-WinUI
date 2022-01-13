@@ -121,6 +121,9 @@
     <value>https://api.twitch.tv/helix/chat/emotes?broadcaster_id={0}</value>
     <comment>Twitch channel emotes end point. Use string format to create a url with the wanted broadcaster id</comment>
   </data>
+  <data name="TwitchApiGetEmoteSetsEndPoint" xml:space="preserve">
+    <value>https://api.twitch.tv/helix/chat/emotes/set</value>
+  </data>
   <data name="TwitchApiGetUsersByLoginEndpoint" xml:space="preserve">
     <value>https://api.twitch.tv/helix/users?login={0}</value>
   </data>

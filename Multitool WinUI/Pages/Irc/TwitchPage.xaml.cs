@@ -19,6 +19,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
+using Multitool.Net.Imaging;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -225,10 +226,13 @@ namespace MultitoolWinUI.Pages
                     }
                     else
                     {
-                        using EmoteFetcher emoteFetcher = new(token) { DefaultImageSize = ImageSize.Big };
                         try
                         {
-                            emotes = await emoteFetcher.GetGlobalEmotes();
+                            TwitchEmoteProxy proxy = TwitchEmoteProxy.GetInstance();
+                            proxy.EmoteFetcher.DefaultImageSize = ImageSize.Big;
+                            proxy.EmoteFetcher.ConnectionToken = token;
+
+                            emotes = await proxy.GetGlobalEmotes();
                         }
                         catch (InvalidOperationException ex)
                         {

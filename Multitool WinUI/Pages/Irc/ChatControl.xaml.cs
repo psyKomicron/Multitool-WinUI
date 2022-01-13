@@ -134,29 +134,11 @@ namespace MultitoolWinUI.Pages.Irc
 
             string[] words = message.ToString().Split(' ');
             bool text = true;
-
             for (int i = 0; i < words.Length; i++)
             {
                 if (Tool.IsRelativeUrl(words[i]))
                 {
-                    try
-                    {
-                        Hyperlink container = new()
-                        {
-                            NavigateUri = new(words[i])
-                        };
-                        container.Inlines.Add(new Run()
-                        {
-                            Text = words[i]
-                        });
-
-                        paragraph.Inlines.Add(container);
-                        text = false;
-                    }
-                    catch (UriFormatException ex)
-                    {
-                        App.TraceError(ex.Message + "\n" + words[i]);
-                    }
+                    text = PutHyperlink(paragraph, words[i]);
                     break;
                 }
                 else if (Emotes != null)
@@ -165,21 +147,7 @@ namespace MultitoolWinUI.Pages.Irc
                     {
                         if (Emotes[j].Name.Equals(words[i]))
                         {
-                            InlineUIContainer imageContainer = new()
-                            {
-                                Child = new Image()
-                                {
-                                    Source = Emotes[j].Image,
-                                    Height = EmoteSize,
-                                    Margin = new(0, 0, 0, -(EmoteSize/2) + 1),
-                                    ContextFlyout = new Flyout()
-                                    {
-                                        Content = new TextBlock() { Text = $"Provider {Emotes[j].Provider}" }
-                                    }
-                                }
-                            };
-                            paragraph.Inlines.Add(imageContainer);
-
+                            PutImage(paragraph, Emotes[j]);
                             text = false;
                             break;
                         }
@@ -188,22 +156,67 @@ namespace MultitoolWinUI.Pages.Irc
 
                 if (text)
                 {
-                    Run run = new()
-                    {
-                        Text = words[i] + ' '
-                    };
-                    if (words[i].Length > 0)
-                    {
-                        run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : FontWeights.Normal;
-                    }
-                    paragraph.Inlines.Add(run);
+                    PutText(paragraph, words[i]);
                 }
                 text = true;
             }
 
             presenter.Blocks.Add(paragraph);
-
             return presenter;
+        }
+
+        private bool PutHyperlink(Paragraph paragraph, string text)
+        {
+            try
+            {
+                Hyperlink container = new()
+                {
+                    NavigateUri = new(text)
+                };
+                container.Inlines.Add(new Run()
+                {
+                    Text = text
+                });
+
+                paragraph.Inlines.Add(container);
+                return false;
+            }
+            catch (UriFormatException ex)
+            {
+                App.TraceError(ex.Message + "\n" + text);
+                return true;
+            }
+        }
+
+        private void PutText(Paragraph paragraph, string text)
+        {
+            Run run = new()
+            {
+                Text = text + ' '
+            };
+            if (text.Length > 0)
+            {
+                run.FontWeight = text[0] == '@' ? FontWeights.Bold : FontWeights.Normal;
+            }
+            paragraph.Inlines.Add(run);
+        }
+
+        private void PutImage(Paragraph paragraph, Emote emote)
+        {
+            InlineUIContainer imageContainer = new()
+            {
+                Child = new Image()
+                {
+                    Source = emote.Image,
+                    Height = EmoteSize,
+                    Margin = new(0, 0, 0, -(EmoteSize / 2) + 1),
+                    ContextFlyout = new Flyout()
+                    {
+                        Content = new TextBlock() { Text = $"Provider {emote.Provider}" }
+                    }
+                }
+            };
+            paragraph.Inlines.Add(imageContainer);
         }
 
         private SolidColorBrush GetOrCreate(Color p)
