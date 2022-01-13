@@ -68,13 +68,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, data.ToString(), errorBrush, eventCache);
+                        TraceMessage("Error", data.ToString(), errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, data.ToString(), warningBrush, eventCache);
+                        TraceMessage("Warning", data.ToString(), warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, data.ToString(), infoBrush, eventCache);
+                        TraceMessage("Information", data.ToString(), infoBrush, eventCache);
                         break;
                 }
             });
@@ -88,13 +88,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, data.ToString(), errorBrush, eventCache);
+                        TraceMessage("Error", data.ToString(), errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, data.ToString(), warningBrush, eventCache);
+                        TraceMessage("Warning", data.ToString(), warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, data.ToString(), infoBrush, eventCache);
+                        TraceMessage("Information", data.ToString(), infoBrush, eventCache);
                         break;
                 }
             });
@@ -114,13 +114,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, message, errorBrush, eventCache);
+                        TraceMessage("Error", message, errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, message, warningBrush, eventCache);
+                        TraceMessage("Warning", message, warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, message, infoBrush, eventCache);
+                        TraceMessage("Information", message, infoBrush, eventCache);
                         break;
                 }
             });
@@ -134,13 +134,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, string.Empty, errorBrush, eventCache);
+                        TraceMessage("Error", string.Empty, errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, string.Empty, warningBrush, eventCache);
+                        TraceMessage("Warning", string.Empty, warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, string.Empty, infoBrush, eventCache);
+                        TraceMessage("Information", string.Empty, infoBrush, eventCache);
                         break;
                 }
             });
@@ -154,13 +154,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, message, errorBrush, eventCache);
+                        TraceMessage("Error", message, errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, message, warningBrush, eventCache);
+                        TraceMessage("Warning", message, warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, message, infoBrush, eventCache);
+                        TraceMessage("Information", message, infoBrush, eventCache);
                         break;
                 }
             });
@@ -169,16 +169,16 @@ namespace MultitoolWinUI.Helpers
         #endregion
 
         #region private methods
-        private void TraceMessage(string title, string header, string message, Brush background, TraceEventCache eventCache)
+        private void TraceMessage(string title, string message, Brush background, TraceEventCache eventCache)
         {
             if (ShowTimestamp && ShowStackTrace == 0)
             {
 
-                window.MessageDisplay.QueueMessage(title, header, eventCache.DateTime.ToLongTimeString() + " - " + message, background);
+                window.MessageDisplay.QueueMessage(title, eventCache.DateTime.ToLongTimeString() + " - " + message, background);
             }
             else
             {
-                window.MessageDisplay.QueueMessage(title, header, message, background);
+                window.MessageDisplay.QueueMessage(title, message, background);
             }
         }
         #endregion
