@@ -20,45 +20,31 @@
         MaxHeight="200">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="30px"/>
-            <ColumnDefinition Width="1*" MaxWidth="200"/>
+            <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="5*"/>
             <ColumnDefinition Width="120px"/>
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="1*"/>
-        </Grid.RowDefinitions>
 
         <FontIcon 
             x:Name="Icon"
             FontFamily="{StaticResource SymbolThemeFontFamily}"
             Glyph="{x:Bind TitleGlyph, Mode=OneWay}"
             VerticalAlignment="Center"
-            Grid.Column="0"
-            Grid.RowSpan="2"/>
-
-        <TextBlock 
-            x:Name="TitleTextBlock"
-            Text="{x:Bind Title, Mode=OneWay}"
-            VerticalAlignment="Center"
-            HorizontalAlignment="Center"
-            FontWeight="SemiBold"
-            FontSize="30"
-            Grid.Column="1"
-            Grid.RowSpan="2"/>
+            Grid.Column="0"/>
 
         <TextBlock
-            x:Name="HeaderTextBlock"
+            x:Name="TitleTextBlock"
             FontSize="20"
             FontWeight="Bold"
-            Text="{x:Bind Header, Mode=OneWay}"
-            Grid.Row="0"
-            Grid.Column="2"/>
+            VerticalAlignment="Center"
+            Text="{x:Bind Title, Mode=OneWay}"
+            Grid.Column="1"/>
 
-        <ScrollViewer Grid.Column="2" Grid.Row="1">
+        <ScrollViewer Grid.Column="2" VerticalAlignment="Stretch">
             <TextBlock
                 x:Name="ContentTextBlock"
                 Margin="10, 0, 0, 0"
+                FontSize="16"
                 Text="{x:Bind Message, Mode=OneWay}"
                 TextWrapping="Wrap"
                 HorizontalAlignment="Stretch"/>
@@ -70,7 +56,6 @@
             Foreground="White"
             HorizontalAlignment="Right"
             Click="HyperlinkButton_Click"
-            Grid.Row="1"
             Grid.Column="3"/>
     </Grid>
 </UserControl>

@@ -19,7 +19,7 @@ namespace MultitoolWinUI.Controls
     public sealed partial class AppMessageControl : UserControl
     {
         private readonly ConcurrentQueue<DispatcherQueueHandler> displayQueue = new();
-        private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false, Interval = 3000 };
+        private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false, Interval = 2500 };
         private readonly object _lock = new();
         private volatile bool busy;
         private bool closed;
@@ -39,9 +39,8 @@ namespace MultitoolWinUI.Controls
         public event TypedEventHandler<AppMessageControl, Visibility> VisibilityChanged;
 
         #region properties
-        #region dependency properties
-        public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(nameof(Header), typeof(string), typeof(AppMessageControl), new(string.Empty));
 
+        #region dependency properties
         public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(AppMessageControl), new(string.Empty));
 
         public static readonly DependencyProperty TitleGlyphProperty = DependencyProperty.Register(nameof(TitleGlyph), typeof(string), typeof(AppMessageControl), new("\xE783"));
@@ -59,21 +58,12 @@ namespace MultitoolWinUI.Controls
         }
 
         /// <summary>
-        /// Title of the control.
+        /// Header of the optional control's content.
         /// </summary>
         public string Title
         {
             get => (string)GetValue(TitleProperty);
             set => SetValue(TitleProperty, value);
-        }
-
-        /// <summary>
-        /// Header of the optional control's content.
-        /// </summary>
-        public string Header
-        {
-            get => (string)GetValue(HeaderProperty);
-            set => SetValue(HeaderProperty, value);
         }
 
         public object Message
@@ -85,7 +75,7 @@ namespace MultitoolWinUI.Controls
         public bool Sync { get; set; } = true;
         #endregion
 
-        public void QueueMessage(string title, string header, string message, Brush background)
+        public void QueueMessage(string title, string message, Brush background)
         {
             if (DispatcherQueue != null)
             {
@@ -96,12 +86,12 @@ namespace MultitoolWinUI.Controls
                         if (!closed)
                         {
                             busy = true;
-                            _ = DispatcherQueue.TryEnqueue(() => DisplayMessage(title, header, message, background));
+                            _ = DispatcherQueue.TryEnqueue(() => DisplayMessage(title, message, background));
                         }
                     }
                     else
                     {
-                        displayQueue.Enqueue(() => DisplayMessage(title, header, message, background));
+                        displayQueue.Enqueue(() => DisplayMessage(title, message, background));
                     }
                 } 
             }
@@ -125,13 +115,12 @@ namespace MultitoolWinUI.Controls
             Trace.WriteLine(builder.ToString());
         }
 
-        private void DisplayMessage(string title, string header, string message, Brush background)
+        private void DisplayMessage(string title, string message, Brush background)
         {
             if (!closed)
             {
                 ContentGrid.Background = background;
                 Title = title;
-                Header = header;
                 Message = message;
                 messageTimer.Start();
                 VisibilityChanged?.Invoke(this, Visibility.Visible);
@@ -159,23 +148,6 @@ namespace MultitoolWinUI.Controls
                 return false;
             }
         }
-
-#if DEBUG
-        private void SetTitle(string title)
-        {
-            TitleTextBlock.Text = title;
-        }
-
-        private void SetHeader(string header)
-        {
-            HeaderTextBlock.Text = header;
-        }
-
-        private void SetMessage(string message)
-        {
-            ContentTextBlock.Text = message;
-        }
-#endif
         #endregion
 
         #region event handlers
