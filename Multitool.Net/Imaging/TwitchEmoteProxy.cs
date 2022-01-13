@@ -18,8 +18,7 @@ namespace Multitool.Net.Imaging
         private readonly Timer cacheTimer;
         private readonly ConcurrentDictionary<object, Emote> cache = new();
         private readonly List<Emote> globalEmotesCache;
-        private readonly EmoteFetcher emoteFetcher = new();
-        private TwitchConnectionToken connectionToken;
+        private readonly EmoteFetcher emoteFetcher;
 
         private TwitchEmoteProxy()
         {
@@ -29,11 +28,10 @@ namespace Multitool.Net.Imaging
 
         public TwitchConnectionToken ConnectionToken 
         { 
-            get => connectionToken; 
+            get => emoteFetcher.ConnectionToken; 
             set
             {
-                connectionToken = value;
-                emoteFetcher.ConnectionToken = connectionToken;
+                emoteFetcher.ConnectionToken = value;
             } 
         }
 

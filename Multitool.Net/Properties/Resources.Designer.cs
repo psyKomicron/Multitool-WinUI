@@ -61,6 +61,24 @@ namespace Multitool.Net.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to https://api.twitch.tv/helix/chat/emotes?broadcaster_id={0}.
+        /// </summary>
+        internal static string TwitchApiChannelEmoteEndPoint {
+            get {
+                return ResourceManager.GetString("TwitchApiChannelEmoteEndPoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to https://api.twitch.tv/helix/users?login={0}.
+        /// </summary>
+        internal static string TwitchApiGetUsersByLoginEndpoint {
+            get {
+                return ResourceManager.GetString("TwitchApiGetUsersByLoginEndpoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to https://api.twitch.tv/helix/chat/emotes/global.
         /// </summary>
         internal static string TwitchApiGlobalEmotesEndPoint {

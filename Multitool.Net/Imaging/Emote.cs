@@ -3,6 +3,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 using Windows.Storage.Streams;
 
@@ -10,6 +11,8 @@ namespace Multitool.Net.Twitch
 {
     public class Emote
     {
+        private Regex nameRegex;
+
         public Emote() { }
 
         public Emote(Id id, string name)
@@ -21,15 +24,24 @@ namespace Multitool.Net.Twitch
 
             Id = id;
             Name = name;
-            // "\b" + Regex.Escape(name) + "\b"
-            NameRegex = new($"^{Regex.Escape(name)}");
         }
 
         public Id Id { get; internal set; }
 
         public string Name { get; internal set; }
 
-        public Regex NameRegex { get; internal set; }
+        public Regex NameRegex
+        {
+            get
+            {
+                if (nameRegex == null)
+{
+                    nameRegex = new($"^{Regex.Escape(Name)}");
+                }
+                return nameRegex;
+            }
+            //internal set => nameRegex = value;
+        }
 
         public BitmapImage Image { get; private set; }
 

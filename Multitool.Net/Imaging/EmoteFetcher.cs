@@ -28,8 +28,6 @@ namespace Multitool.Net.Twitch
             client.DefaultRequestHeaders.Add(new("Client-Id", ConnectionToken.ClientId));
         }
 
-        public EmoteFetcher() { }
-
         public ImageSize DefaultImageSize { get; set; } = ImageSize.Medium;
 
         public TwitchConnectionToken ConnectionToken
@@ -66,7 +64,63 @@ namespace Multitool.Net.Twitch
             using DataReader jsonReader = new(await emotesResponse.Content.ReadAsInputStreamAsync());
             JsonData data = await JsonSerializer.DeserializeAsync<JsonData>((await emotesResponse.Content.ReadAsInputStreamAsync()).AsStreamForRead());
 #endif
+            return await DownloadEmotes(data);
+        }
 
+        public async Task<List<Emote>> GetChannelEmotes(string channelId)
+        {
+            CheckIfDisposed();
+            CheckConnectionToken();
+
+            string id = string.Empty;
+
+            using HttpResponseMessage getUsersEndpointResponse = await client.GetAsync(new(string.Format(Properties.Resources.TwitchApiGetUsersByLoginEndpoint, channelId)), HttpCompletionOption.ResponseHeadersRead);
+            getUsersEndpointResponse.EnsureSuccessStatusCode();
+
+            string s = await getUsersEndpointResponse.Content.ReadAsStringAsync();
+            JsonDocument idData = JsonDocument.Parse(s);
+
+            if (idData.RootElement.TryGetProperty("data", out JsonElement jsonData))
+            {
+                if (jsonData.ValueKind != JsonValueKind.Array)
+                {
+                    throw new InvalidOperationException("\"jsonData\" is not an array");
+                }
+                
+                if (jsonData[0].TryGetProperty("id", out JsonElement value))
+                {
+                    id = value.ToString();
+                    string url = string.Format(Properties.Resources.TwitchApiChannelEmoteEndPoint, id);
+
+                    Trace.TraceInformation($"ChannelEmotes endpoint {url}");
+
+                    using HttpResponseMessage emotesResponse = await client.GetAsync(new(url), HttpCompletionOption.ResponseHeadersRead);
+                    emotesResponse.EnsureSuccessStatusCode();
+
+                    s = await emotesResponse.Content.ReadAsStringAsync();
+                    JsonData data = JsonSerializer.Deserialize<JsonData>(s);
+
+                    return await DownloadEmotes(data);
+                }
+                else
+                {
+                    Exception ex = new InvalidOperationException("Unable to parse user id from Twitch API GetUsers endpoint");
+                    ex.Data.Add("Full response", s);
+                    throw ex;
+                }
+            }
+            else
+            {
+                Exception ex = new InvalidOperationException("Unable to parse Twitch API GetUsers endpoint response. (does not have { data: {...} })");
+                ex.Data.Add("Full response", s);
+                throw ex;
+            }
+        }
+
+        #region private members
+
+        private async Task<List<Emote>> DownloadEmotes(JsonData data)
+        {
             List<JsonEmote> list = data.data;
             List<Emote> emotes = new();
             List<Task> downloadTasks = new();
@@ -75,6 +129,7 @@ namespace Multitool.Net.Twitch
             {
                 JsonEmote jsonEmote = list[i];
                 Emote emote = new(new(jsonEmote.id), jsonEmote.name);
+                emote.Provider = "Global emote";
 
                 downloadTasks.Add(DownloadEmote(emote, jsonEmote));
 
@@ -82,13 +137,7 @@ namespace Multitool.Net.Twitch
             }
 
             await Task.WhenAll(downloadTasks);
-
             return emotes;
-        }
-
-        public async Task<Emote> GetChannelEmotes(string channelId)
-        {
-            throw new NotImplementedException();
         }
 
         private async Task DownloadEmote(Emote emote, JsonEmote jsonEmote)
@@ -145,6 +194,7 @@ namespace Multitool.Net.Twitch
             {
                 throw new ArgumentNullException("Client id is null.");
             }
-        }
+        } 
+        #endregion
     }
 }
