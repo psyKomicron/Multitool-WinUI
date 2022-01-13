@@ -17,6 +17,8 @@ using System.ComponentModel;
 using Multitool.DAL.Settings;
 using Microsoft.UI.Xaml.Navigation;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -108,6 +110,73 @@ namespace MultitoolWinUI.Pages
         #endregion
 
         #region event handlers
+
+        #region buttons
+        private void Chats_AddTabButtonClick(TabView sender, object args)
+        {
+            if (token == null || !token.Validated)
+            {
+                App.TraceWarning("Cannot connect to any chat without login");
+            }
+            else
+            {
+                try
+                {
+                    ITwitchIrcClient client = new TwitchIrcClient(token, true)
+                    {
+                        NickName = "psykomicron",
+                        Encoding = Encoding.UTF8,
+                        RequestTags = RequestTags
+                    };
+
+                    TabViewItem tab = new();
+                    ChatControl chat = new(token)
+                    {
+                        Client = client,
+                        Tab = tab,
+                        Emotes = emotes,
+                        MaxMessages = ChatMaxNumberOfMessages,
+                        EmoteSize = ChatEmoteSize_Slider.Value
+                    };
+                    tab.Content = chat;
+
+                    Tabs.Add(tab);
+
+                    //sender.SelectedIndex = Tabs.Count - 1;
+                }
+                catch (ArgumentNullException)
+                {
+                    App.TraceError("Login is empty");
+                }
+            }
+        }
+
+        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Tabs.Remove(args.Tab);
+
+        private void LoadOAuth_Click(object sender, RoutedEventArgs e)
+        {
+            if (token.Validated)
+            {
+                PageWebView.Source = new(@"https://id.twitch.tv/oauth2/authorize?client_id=" + token.ClientId.ToString() + @"&redirect_uri=http://localhost&scope&response_type=token&scope=");
+            }
+        }
+
+        private void LoadEmotes_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Flyout_Opening(object sender, object e)
+        {
+            SettingsButton.BorderBrush = new SolidColorBrush(Helpers.Tool.GetAppRessource<Color>("SystemAccentColor"));
+        }
+
+        private void Flyout_Closing(Microsoft.UI.Xaml.Controls.Primitives.FlyoutBase sender, Microsoft.UI.Xaml.Controls.Primitives.FlyoutBaseClosingEventArgs args)
+        {
+            SettingsButton.BorderBrush = null;
+        }
+        #endregion
+
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             //PageWebView.Close();
@@ -147,15 +216,29 @@ namespace MultitoolWinUI.Pages
                     NavigateTo($"https://{LastVisited}");
                 }
 
-                token = new(Login);
-                if (!await token.ValidateToken())
+                if (!string.IsNullOrEmpty(Login))
                 {
-                    App.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
+                    token = new(Login);
+                    if (!await token.ValidateToken())
+                    {
+                        App.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
+                    }
+                    else
+                    {
+                        using EmoteFetcher emoteFetcher = new(token) { DefaultImageSize = ImageSize.Big };
+                        try
+                        {
+                            emotes = await emoteFetcher.GetGlobalEmotes();
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            Trace.TraceError(ex.ToString());
+                        }
+                    }
                 }
                 else
                 {
-                    using EmoteFetcher emoteFetcher = new(token);
-                    emotes = await emoteFetcher.GetGlobalEmotes();
+                    App.TraceInformation("Please add your account to chat");
                 }
             }
             catch (Exception ex)
@@ -183,75 +266,25 @@ namespace MultitoolWinUI.Pages
 
         private void ChatHistoryLength_Slider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
-
-        }
-
-        #region buttons
-        private void Chats_AddTabButtonClick(TabView sender, object args)
-        {
-            if (token == null || !token.Validated)
+            foreach (var tab in Tabs)
             {
-                App.TraceWarning("Cannot connect to any chat without login");
-            }
-            else
-            {
-                try
+                if (tab.Content is ChatControl control)
                 {
-                    ITwitchIrcClient client = new TwitchIrcClient(token, true)
-                    {
-                        NickName = "psykomicron",
-                        Encoding = Encoding.UTF8,
-                        RequestTags = RequestTags,
-                    };
-
-                    TabViewItem tab = new();
-                    ChatControl chat = new()
-                    {
-                        Client = client,
-                        Tab = tab,
-                        Emotes = emotes,
-                        MaxMessages = ChatMaxNumberOfMessages
-                    };
-                    tab.Content = chat;
-
-                    Tabs.Add(tab);
-
-                    //sender.SelectedIndex = Tabs.Count - 1;
-                }
-                catch (ArgumentNullException)
-                {
-                    App.TraceError("Login is empty");
+                    control.MaxMessages = (int)e.NewValue;
                 }
             }
         }
 
-        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Tabs.Remove(args.Tab);
-
-        private async void LoadOAuth_Click(object sender, RoutedEventArgs e)
+        private void ChatEmoteSize_Slider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
-            using HttpClient client = new();
-            client.DefaultRequestHeaders.Authorization = new("Bearer", Login);
-            HttpResponseMessage res = await client.GetAsync(new(@"https://id.twitch.tv/oauth2/validate"));
-            if (res.StatusCode == HttpStatusCode.Ok)
+            foreach (var tab in Tabs)
             {
-                JsonDocument json = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
-                if (json.RootElement.TryGetProperty("client_id", out JsonElement value))
+                if (tab.Content is ChatControl control)
                 {
-                    Debug.WriteLine(value.ToString());
-                    PageWebView.Source = new(@"https://id.twitch.tv/oauth2/authorize?client_id" + value.ToString() + @"=&redirect_uri=http://localhost&scope&response_type=token&scope=");
+                    control.EmoteSize = e.NewValue;
                 }
             }
-            else
-            {
-                App.TraceWarning("Unable to contact twitch to get client id");
-            }
         }
-
-        private void LoadEmotes_Click(object sender, RoutedEventArgs e)
-        {
-            
-        }
-        #endregion
 
         #endregion
     }

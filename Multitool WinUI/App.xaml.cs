@@ -43,17 +43,17 @@ namespace MultitoolWinUI
 
         public static void TraceInformation(string info)
         {
-            TraceMessage("Information", string.Empty, info, infoBrush);
+            TraceMessage("Information", info, infoBrush);
         }
 
         public static void TraceWarning(string warning)
         {
-            TraceMessage("Warning", string.Empty, warning, warningBrush);
+            TraceMessage("Warning", warning, warningBrush);
         }
 
         public static void TraceError(string error)
         {
-            TraceMessage("Error", string.Empty, error, errorBrush);
+            TraceMessage("Error", error, errorBrush);
         }
 
         /// <summary>
@@ -64,7 +64,9 @@ namespace MultitoolWinUI
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
-            Test();
+#if DEBUG
+            Test(); 
+#endif
             Settings = new SettingsManager(ApplicationData.Current.LocalSettings)
             {
                 SettingFormat = "{0}/{1}"
@@ -94,14 +96,15 @@ namespace MultitoolWinUI
             MainWindow.Activate();
         }
 
-        private static void TraceMessage(string title, string header, string message, Brush background)
+        private static void TraceMessage(string title, string message, Brush background)
         {
             if (MainWindow != null)
             {
-                MainWindow.MessageDisplay.QueueMessage(title, header, message, background);
+                MainWindow.MessageDisplay.QueueMessage(title, message, background);
             }
         }
 
+#if DEBUG
         private async void Test()
         {
             try
@@ -114,9 +117,11 @@ namespace MultitoolWinUI
             {
                 Trace.TraceError(ex.ToString());
             }
-        }
+        } 
+#endif
     }
 
+#if DEBUG
     class Test
     {
         public Test()
@@ -132,5 +137,6 @@ namespace MultitoolWinUI
         public int Number { get; set; }
         [Setting]
         public List<int> List { get; set; }
-    }
+    } 
+#endif
 }

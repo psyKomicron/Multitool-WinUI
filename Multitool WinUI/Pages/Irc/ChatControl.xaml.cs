@@ -6,8 +6,10 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
+using Multitool.Net.Imaging;
 using Multitool.Net.Twitch;
 using Multitool.Net.Twitch.Irc;
+using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Models;
@@ -33,20 +35,22 @@ namespace MultitoolWinUI.Pages.Irc
     {
         private readonly User thisUser = User.CreateSystemUser();
         private readonly SolidColorBrush messageBackground = new(Colors.MediumPurple);
-        private readonly SolidColorBrush messageForeground = new(Colors.MediumPurple);
+        private readonly SolidColorBrush timestampBrush = new(Colors.White) { Opacity = 0.5 };
         private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
+        private readonly TwitchConnectionToken token;
         private bool joined;
         private bool loaded;
 
-        public ChatControl()
+        public ChatControl(TwitchConnectionToken twitchConnectionToken)
         {
+            token = twitchConnectionToken;
             InitializeComponent();
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
         }
 
         #region properties
-        public ObservableCollection<ChatMessageModel> Chat { get; set; } = new();
+        public ObservableCollection<MessageModel> Chat { get; set; } = new();
 
         public List<Emote> Emotes { get; set; }
 
@@ -58,7 +62,9 @@ namespace MultitoolWinUI.Pages.Irc
 
         public ITwitchIrcClient Client { get; set; }
 
-        public int EmoteSize { get; set; } = 20;
+        public double EmoteSize { get; set; } = 20;
+
+        public string TimestampFormat { get; set; } = "T";
         #endregion
 
         public async ValueTask DisposeAsync()
@@ -109,12 +115,26 @@ namespace MultitoolWinUI.Pages.Irc
             RichTextBlock presenter = new()
             {
                 TextWrapping = TextWrapping.WrapWholeWords,
-                IsTextSelectionEnabled = true,
-                HorizontalAlignment = HorizontalAlignment.Stretch
+                IsTextSelectionEnabled = true
             };
             Paragraph paragraph = new();
+
+            // timestamp
+            paragraph.Inlines.Add(new Run()
+            {
+                Text = message.ServerTimestamp.ToString(TimestampFormat) + " ",
+                Foreground = timestampBrush
+            });
+            // name
+            paragraph.Inlines.Add(new Run()
+            {
+                Text = (string.IsNullOrEmpty(message.Author.DisplayName) ? message.Author.Name : message.Author.DisplayName) + ": ",
+                Foreground = messageColors.GetOrAdd(message.Author.NameColor, GetOrCreate),
+            });
+
             string[] words = message.ToString().Split(' ');
             bool text = true;
+
             for (int i = 0; i < words.Length; i++)
             {
                 if (Tool.IsRelativeUrl(words[i]))
@@ -143,14 +163,19 @@ namespace MultitoolWinUI.Pages.Irc
                 {
                     for (int j = 0; j < Emotes.Count; j++)
                     {
-                        if (Emotes[j].NameRegex.IsMatch(words[i]))
+                        if (Emotes[j].Name.Equals(words[i]))
                         {
                             InlineUIContainer imageContainer = new()
                             {
                                 Child = new Image()
                                 {
                                     Source = Emotes[j].Image,
-                                    Height = EmoteSize
+                                    Height = EmoteSize,
+                                    Margin = new(0, 0, 0, -(EmoteSize/2) + 1),
+                                    ContextFlyout = new Flyout()
+                                    {
+                                        Content = new TextBlock() { Text = $"Provider {Emotes[j].Provider}" }
+                                    }
                                 }
                             };
                             paragraph.Inlines.Add(imageContainer);
@@ -170,11 +195,12 @@ namespace MultitoolWinUI.Pages.Irc
                     if (words[i].Length > 0)
                     {
                         run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : FontWeights.Normal;
-                    }                    
+                    }
                     paragraph.Inlines.Add(run);
                 }
                 text = true;
             }
+
             presenter.Blocks.Add(paragraph);
 
             return presenter;
@@ -194,31 +220,31 @@ namespace MultitoolWinUI.Pages.Irc
                 switch (args)
                 {
                     case RoomStates.EmoteOnlyOn:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "Emote only on", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "Emote only on", messageBackground);
                         break;
                     case RoomStates.EmoteOnlyOff:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "Emote only off", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "Emote only off", messageBackground);
                         break;
 
                     case RoomStates.FollowersOnlyOn:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "Followers only on", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "Followers only on", messageBackground);
                         break;
                     case RoomStates.FollowersOnlyOff:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "Followers only off", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "Followers only off", messageBackground);
                         break;
 
                     case RoomStates.R9KOn:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "R9K on", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "R9K on", messageBackground);
                         break;
                     case RoomStates.R9KOff:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "R9K off", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "R9K off", messageBackground);
                         break;
 
                     case RoomStates.SlowModeOn:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "Slow mode on", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "Slow mode on", messageBackground);
                         break;
                     case RoomStates.SlowModeOff:
-                        RoomStateDisplay.QueueMessage(string.Empty, "Room change", "Slow mode off", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", "Slow mode off", messageBackground);
                         break;
 
                     default:
@@ -229,54 +255,54 @@ namespace MultitoolWinUI.Pages.Irc
 
         private void Client_Disconnected(ITwitchIrcClient sender, EventArgs args)
         {
-            DispatcherQueue.TryEnqueue(() =>
+            if (DispatcherQueue != null)
             {
-                RoomStateDisplay.QueueMessage("Information", "Disconnected", "The client has been disconnected from the channel", messageBackground);
-            });
+                DispatcherQueue.TryEnqueue(() =>
+                    {
+                        RoomStateDisplay.QueueMessage("Warning", "The client has been disconnected from the channel", messageBackground);
+                    });
+            }
         }
 
         private void Client_MessageReceived(ITwitchIrcClient sender, Message args)
         {
-            if (DispatcherQueue != null)
+            if (DispatcherQueue == null) return;
+
+            DispatcherQueue?.TryEnqueue(() =>
             {
-                DispatcherQueue.TryEnqueue(() => 
+                MessageModel model = new()
                 {
-                    ChatMessageModel model = new()
-                    {
-                        Message = CreateMessage(args),
-                        Timestamp = args.ServerTimestamp.ToString("T"),
-                        UserName = string.IsNullOrEmpty(args.Author.DisplayName) ? args.Author.Name : args.Author.DisplayName,
-                        NameColor = messageColors.GetOrAdd(args.Author.NameColor, GetOrCreate)
-                    };
+                    Message = CreateMessage(args),
+                };
 
-                    Chat.Add(model);
-                    NumberOfMessages_TextBlock.Text = Chat.Count.ToString();
-                });
+                Chat.Add(model);
+                NumberOfMessages_TextBlock.Text = Chat.Count.ToString();
+            });
 
-                if (Chat.Count > MaxMessages)
+            if (Chat.Count > MaxMessages)
+            {
+                DispatcherQueue?.TryEnqueue(() =>
                 {
-                    DispatcherQueue.TryEnqueue(() =>
+                    for (int i = 0; i < 50; i++)
                     {
-                        for (int i = 0; i < 50; i++)
+                        if (DispatcherQueue == null)
                         {
-                            if (DispatcherQueue == null)
-                            {
-                                return;
-                            }
-                            try
-                            {
-                                Chat.RemoveAt(i);
-                            }
-                            catch { return; }
+                            return;
                         }
-                    });
-                }
+                        try
+                        {
+                            Chat.RemoveAt(i);
+                        }
+                        catch { return; }
+                    }
+                });
             }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (loaded) return;
+
             TextBox header = new()
             {
                 PlaceholderText = Channel ?? "Select channel...",
@@ -361,14 +387,14 @@ namespace MultitoolWinUI.Pages.Irc
             if (loaded) UpdatePopup.IsOpen = args == Visibility.Visible;
         }
 
-        private void ChatInput_GotFocus(object sender, RoutedEventArgs e)
-        {
-            ContentGrid.RowDefinitions[1].Height = new(70);
-        }
+        private void ChatInput_GotFocus(object sender, RoutedEventArgs e) => ContentGrid.RowDefinitions[1].Height = new(70);
 
-        private void ChatInput_LostFocus(object sender, RoutedEventArgs e)
+        private void ChatInput_LostFocus(object sender, RoutedEventArgs e) => ContentGrid.RowDefinitions[1].Height = new (50);
+
+        private void EmoteGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            ContentGrid.RowDefinitions[1].Height = new(50);
+            Debug.WriteLine($"Clicked {(e.ClickedItem as Emote).Name}");
+            ChatInput.Text += $" {(e.ClickedItem as Emote).Name} ";
         }
         #endregion
     }

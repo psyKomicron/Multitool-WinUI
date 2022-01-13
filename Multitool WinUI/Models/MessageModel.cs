@@ -10,13 +10,13 @@ using System.Text.RegularExpressions;
 
 namespace MultitoolWinUI.Models
 {
-    public sealed class ChatMessageModel
+    public sealed class MessageModel
     {
         private const string dateTimeFormat = "t";
 
-        public ChatMessageModel() { }
+        public MessageModel() { }
 
-        public ChatMessageModel(Message message)
+        public MessageModel(Message message)
         {
             Timestamp = message.ServerTimestamp.ToString(dateTimeFormat);
             UserName = message?.Author?.DisplayName;
