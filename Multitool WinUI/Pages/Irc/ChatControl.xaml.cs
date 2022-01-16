@@ -37,13 +37,11 @@ namespace MultitoolWinUI.Pages.Irc
         private readonly SolidColorBrush messageBackground = new(Colors.MediumPurple);
         private readonly SolidColorBrush timestampBrush = new(Colors.White) { Opacity = 0.5 };
         private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
-        private readonly TwitchConnectionToken token;
         private bool joined;
         private bool loaded;
 
-        public ChatControl(TwitchConnectionToken twitchConnectionToken)
+        public ChatControl()
         {
-            token = twitchConnectionToken;
             InitializeComponent();
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
@@ -52,7 +50,9 @@ namespace MultitoolWinUI.Pages.Irc
         #region properties
         public ObservableCollection<MessageModel> Chat { get; set; } = new();
 
-        public List<Emote> Emotes { get; set; }
+        public List<Emote> Emotes { get; set; } = new();
+
+        public List<Emote> ChannelEmotes { get; set; } = new();
 
         public string Channel { get; set; }
 
@@ -73,15 +73,17 @@ namespace MultitoolWinUI.Pages.Irc
         }
 
         #region private methods
+
         private async Task Join()
         {
             if (!joined && Client != null && !string.IsNullOrEmpty(Channel))
             {
                 try
                 {
+                    ChannelEmotes.AddRange(await TwitchEmoteProxy.GetInstance().GetChannelEmotes(Channel));
                     await Client.Join(Channel);
                     joined = true;
-                    App.TraceInformation("Joined " + Channel);
+                    RoomStateDisplay.QueueMessage("Channel", "Joined " + Channel, messageBackground);
                 }
                 catch (ArgumentException ex)
                 {
@@ -117,19 +119,27 @@ namespace MultitoolWinUI.Pages.Irc
                 TextWrapping = TextWrapping.WrapWholeWords,
                 IsTextSelectionEnabled = true
             };
-            Paragraph paragraph = new();
+
+            Paragraph paragraph = new()
+            {
+                LineHeight = 24,
+                CharacterSpacing = 15,
+                LineStackingStrategy = LineStackingStrategy.MaxHeight
+            };
 
             // timestamp
             paragraph.Inlines.Add(new Run()
             {
                 Text = message.ServerTimestamp.ToString(TimestampFormat) + " ",
-                Foreground = timestampBrush
+                Foreground = timestampBrush,
+                FontWeight = FontWeights.Light
             });
             // name
             paragraph.Inlines.Add(new Run()
             {
                 Text = (string.IsNullOrEmpty(message.Author.DisplayName) ? message.Author.Name : message.Author.DisplayName) + ": ",
                 Foreground = messageColors.GetOrAdd(message.Author.NameColor, GetOrCreate),
+                FontWeight = FontWeights.Bold
             });
 
             string[] words = message.ToString().Split(' ');
@@ -156,7 +166,15 @@ namespace MultitoolWinUI.Pages.Irc
 
                 if (text)
                 {
-                    PutText(paragraph, words[i]);
+                    Run run = new()
+                    {
+                        Text = words[i] + ' '
+                    };
+                    if (words[i].Length > 0)
+                    {
+                        run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : FontWeights.Normal;
+                    }
+                    paragraph.Inlines.Add(run);
                 }
                 text = true;
             }
@@ -188,19 +206,6 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
-        private void PutText(Paragraph paragraph, string text)
-        {
-            Run run = new()
-            {
-                Text = text + ' '
-            };
-            if (text.Length > 0)
-            {
-                run.FontWeight = text[0] == '@' ? FontWeights.Bold : FontWeights.Normal;
-            }
-            paragraph.Inlines.Add(run);
-        }
-
         private void PutImage(Paragraph paragraph, Emote emote)
         {
             InlineUIContainer imageContainer = new()
@@ -223,9 +228,40 @@ namespace MultitoolWinUI.Pages.Irc
         {
             return new(p);
         }
+
+        private StackPanel CreateEmotePanel(Emote emote)
+        {
+            StackPanel panel = new()
+            {
+                Orientation = Orientation.Vertical,
+                Spacing = 0,
+                Margin = new(5)
+            };
+            panel.PointerPressed += Panel_PointerPressed;
+            Image image = new()
+            {
+                Source = emote.Image,
+                Height = 30,
+                Stretch = Stretch.Uniform
+            };
+            TextBlock textBlock = new()
+            {
+                Text = emote.Name,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextWrapping = TextWrapping.NoWrap
+            };
+            panel.Children.Add(image);
+            panel.Children.Add(textBlock);
+
+            return panel;
+        }
+
         #endregion
 
         #region event handlers
+
+        #region irc events
+
         private void Client_RoomChanged(ITwitchIrcClient sender, RoomStates args)
         {
             DispatcherQueue.TryEnqueue(() =>
@@ -312,7 +348,11 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region ui events
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (loaded) return;
 
@@ -335,6 +375,9 @@ namespace MultitoolWinUI.Pages.Irc
             {
                 _ = Join();
             }
+
+            Emotes.AddRange(await TwitchEmoteProxy.GetInstance().GetGlobalEmotes());
+
             loaded = true;
         }
 
@@ -404,11 +447,31 @@ namespace MultitoolWinUI.Pages.Irc
 
         private void ChatInput_LostFocus(object sender, RoutedEventArgs e) => ContentGrid.RowDefinitions[1].Height = new (50);
 
+        private void ChatSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            /*foreach (var emote in ChannelEmotes)
+            {
+                ChannelEmotesGrid.Children.Add(CreateEmotePanel(emote));
+            }*/
+
+            /*foreach (var emote in Emotes)
+            {
+                GlobalEmotesGrid.Children.Add(CreateEmotePanel(emote));
+            }*/
+        }
+
         private void EmoteGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             Debug.WriteLine($"Clicked {(e.ClickedItem as Emote).Name}");
-            ChatInput.Text += $" {(e.ClickedItem as Emote).Name} ";
+            ChatInput.Text += $" {(e.ClickedItem as Emote)} ";
         }
+
+        private void Panel_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+
         #endregion
     }
 }

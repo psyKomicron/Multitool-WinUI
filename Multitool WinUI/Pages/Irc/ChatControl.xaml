@@ -46,20 +46,14 @@
 
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:MessageModel">
-                    <Grid Width="Auto" ColumnSpacing="7" Margin="0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="1*"/>
-                        </Grid.ColumnDefinitions>
-                        <ContentPresenter
-                            Content="{x:Bind Message, Mode=OneTime}"
-                            HorizontalAlignment="Stretch"
-                            Grid.ColumnSpan="2"
-                            Grid.Column="1"/>
-                    </Grid>
+                    <ContentPresenter
+                        Content="{x:Bind Message, Mode=OneTime}"
+                        HorizontalAlignment="Left"
+                        Margin="3"/>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+
 
         <TextBox
             x:Name="ChatInput"
@@ -74,21 +68,46 @@
 
         <Button
             x:Name="ChatSettingsButton"
+            Click="ChatSettingsButton_Click"
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch"
             Margin="5"
             Grid.Row="1"
             Grid.Column="1">
             <Button.Content>
-                <FontIcon Glyph="&#xE713;" FontSize="16"/>
+                <FontIcon Glyph="&#xED54;" FontSize="16"/>
             </Button.Content>
             <Button.Flyout>
-                <Flyout>
-                    <StackPanel Spacing="{StaticResource StackPanelChildElementDefaultMargin}">
+                <Flyout Placement="TopEdgeAlignedLeft">
+                    <Flyout.FlyoutPresenterStyle>
+                        <Style TargetType="FlyoutPresenter">
+                            <Setter Property="Opacity" Value="1"/>
+                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                        </Style>
+                    </Flyout.FlyoutPresenterStyle>
+                    <Grid 
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        MaxWidth="400">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="50"/>
+                            <RowDefinition />
+                            <RowDefinition Height="50"/>
+                            <RowDefinition />
+                            <RowDefinition Height="50"/>
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Global emotes" FontSize="18" Grid.Row="0"/>
                         <GridView
                             x:Name="EmoteGridView"
+                            MaxHeight="300"
                             ItemsSource="{x:Bind Emotes}"
                             IsItemClickEnabled="True"
+                            BorderBrush="{ThemeResource LightBlack}"
+                            CornerRadius="3"
+                            BorderThickness="1"
+                            Grid.Row="1"
                             ItemClick="EmoteGridView_ItemClick">
                             <GridView.ItemTemplate>
                                 <DataTemplate x:DataType="twitch:Emote">
@@ -106,11 +125,76 @@
                             </GridView.ItemTemplate>
                             <GridView.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <ItemsWrapGrid MaximumRowsOrColumns="5" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+                                    <ItemsWrapGrid MinHeight="300" Orientation="Horizontal" MaximumRowsOrColumns="10"/>
                                 </ItemsPanelTemplate>
                             </GridView.ItemsPanel>
                         </GridView>
-                    </StackPanel>
+
+                        <TextBlock Text="Channel emotes" FontSize="18" Grid.Row="2"/>
+                        <GridView
+                            x:Name="ChannelEmoteGridView"
+                            ItemsSource="{x:Bind ChannelEmotes}"
+                            IsItemClickEnabled="True"
+                            Grid.Row="3"
+                            ItemClick="EmoteGridView_ItemClick">
+                            <GridView.ItemTemplate>
+                                <DataTemplate x:DataType="twitch:Emote">
+                                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="30">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip>
+                                                <StackPanel Orientation="Vertical">
+                                                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="70"/>
+                                                    <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </ToolTip>
+                                        </ToolTipService.ToolTip>
+                                    </Image>
+                                </DataTemplate>
+                            </GridView.ItemTemplate>
+                            <GridView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="10"/>
+                                </ItemsPanelTemplate>
+                            </GridView.ItemsPanel>
+                        </GridView>
+
+                        <TextBlock Text="Animated emotes" FontSize="18" Grid.Row="4"/>
+                        <GridView
+                            IsItemClickEnabled="True"
+                            Grid.Row="5"
+                            ItemClick="EmoteGridView_ItemClick">
+                            <GridView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid CanBeScrollAnchor="False" Orientation="Horizontal" MaximumRowsOrColumns="10"/>
+                                </ItemsPanelTemplate>
+                            </GridView.ItemsPanel>
+
+                            <GridViewItem>
+                                <Image Stretch="Uniform" Source="E:\\julie\\Pictures\\bttv\\pepeMeltdown.gif" Height="30">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip>
+                                            <StackPanel Orientation="Vertical">
+                                                <Image Stretch="Uniform" Source="E:\\julie\\Pictures\\bttv\\pepeMeltdown.gif" Height="70"/>
+                                                <TextBlock Text="pepeMeltdown" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>
+                                </Image>
+                            </GridViewItem>
+                            <GridViewItem>
+                                <Image Stretch="Uniform" Source="E:\julie\Pictures\bttv\KissaHomie.gif" Height="30">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip>
+                                            <StackPanel Orientation="Vertical">
+                                                <Image Stretch="Uniform" Source="E:\julie\Pictures\bttv\KissaHomie.gif" Height="70"/>
+                                                <TextBlock Text="KissaHomie" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>
+                                </Image>
+                            </GridViewItem>
+                        </GridView>
+                    </Grid>
                 </Flyout>
             </Button.Flyout>
         </Button>
