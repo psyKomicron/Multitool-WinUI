@@ -1,4 +1,7 @@
-﻿using Multitool.Net.Twitch.Json;
+﻿using Multitool.Net.Imaging.Json;
+using Multitool.Net.Imaging.Json.Ffz;
+using Multitool.Net.Imaging.Json.SevenTV;
+using Multitool.Net.Properties;
 using Multitool.Net.Twitch.Security;
 
 using System;
@@ -52,9 +55,10 @@ namespace Multitool.Net.Twitch
         public async Task<List<Emote>> GetGlobalEmotes()
         {
             CheckIfDisposed();
-            CheckConnectionToken();
 
-            using HttpResponseMessage emotesResponse = await client.GetAsync(new(Properties.Resources.TwitchApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
+            Trace.TraceInformation("Downloading global emotes...");
+
+            using HttpResponseMessage emotesResponse = await client.GetAsync(new(Resources.TwitchApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
             emotesResponse.EnsureSuccessStatusCode();
 
 #if true
@@ -64,17 +68,16 @@ namespace Multitool.Net.Twitch
             using DataReader jsonReader = new(await emotesResponse.Content.ReadAsInputStreamAsync());
             JsonData data = await JsonSerializer.DeserializeAsync<JsonData>((await emotesResponse.Content.ReadAsInputStreamAsync()).AsStreamForRead());
 #endif
-            return await DownloadEmotes(data);
+            return await DownloadTwitchEmotesAsync(data);
         }
 
         public async Task<List<Emote>> GetChannelEmotes(string channelId)
         {
             CheckIfDisposed();
-            CheckConnectionToken();
 
             string id = string.Empty;
 
-            using HttpResponseMessage getUsersEndpointResponse = await client.GetAsync(new(string.Format(Properties.Resources.TwitchApiGetUsersByLoginEndpoint, channelId)), HttpCompletionOption.ResponseHeadersRead);
+            using HttpResponseMessage getUsersEndpointResponse = await client.GetAsync(new(string.Format(Resources.TwitchApiGetUsersByLoginEndpoint, channelId)), HttpCompletionOption.ResponseHeadersRead);
             getUsersEndpointResponse.EnsureSuccessStatusCode();
 
             string s = await getUsersEndpointResponse.Content.ReadAsStringAsync();
@@ -90,7 +93,7 @@ namespace Multitool.Net.Twitch
                 if (jsonData[0].TryGetProperty("id", out JsonElement value))
                 {
                     id = value.ToString();
-                    string url = string.Format(Properties.Resources.TwitchApiChannelEmoteEndPoint, id);
+                    string url = string.Format(Resources.TwitchApiChannelEmoteEndPoint, id);
 
                     Trace.TraceInformation($"ChannelEmotes endpoint {url}");
 
@@ -100,7 +103,7 @@ namespace Multitool.Net.Twitch
                     s = await emotesResponse.Content.ReadAsStringAsync();
                     JsonData data = JsonSerializer.Deserialize<JsonData>(s);
 
-                    return await DownloadEmotes(data);
+                    return await DownloadTwitchEmotesAsync(data);
                 }
                 else
                 {
@@ -117,9 +120,65 @@ namespace Multitool.Net.Twitch
             }
         }
 
-        #region private members
+        public async Task<List<Emote>> GetGlobal7TVEmotes()
+        {
+            CheckIfDisposed();
 
-        private async Task<List<Emote>> DownloadEmotes(JsonData data)
+            using HttpResponseMessage httpResponse = await client.GetAsync(new(Resources._7TVApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
+            httpResponse.EnsureSuccessStatusCode();
+            
+            string s = await httpResponse.Content.ReadAsStringAsync();
+            var json = JsonSerializer.Deserialize<List<SevenTVJsonEmote>>(s);
+
+            List<Emote> emotes = new();
+            List<Task> downloadTasks = new();
+
+            for (int i = 0; i < json.Count; i++)
+            {
+                SevenTVJsonEmote jsonEmote = json[i];
+                Emote emote = new(new(jsonEmote.id), jsonEmote.name);
+                emote.Provider = "7TV Global emote";
+                downloadTasks.Add(DownloadEmoteAsync(emote, new(jsonEmote.urls[0][1])));
+                emotes.Add(emote);
+            }
+
+            await Task.WhenAll(downloadTasks);
+
+            return emotes;
+        }
+
+        public async Task<List<Emote>> GetGlobalFfzEmotes()
+        {
+            CheckIfDisposed();
+
+            using HttpResponseMessage httpResponse = await client.GetAsync(new(Resources.FfzApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
+            httpResponse.EnsureSuccessStatusCode();
+
+            string s = await httpResponse.Content.ReadAsStringAsync();
+            var json = JsonSerializer.Deserialize<FfzJsonData>(s);
+
+            List<Emote> emotes = new();
+            List<Task> downloadTasks = new();
+
+            foreach (KeyValuePair<string, FfzJsonSet> set in json.sets)
+            {
+                FfzJsonSet jsonEmotes = set.Value;
+                foreach (var jsonEmote in jsonEmotes.emoticons)
+                {
+                    Emote emote = new(new(jsonEmote.id), jsonEmote.name);
+                    emote.Provider = "FFZ Global emote";
+                    downloadTasks.Add(DownloadEmoteAsync(emote, new($"https:{jsonEmote.urls["1"]}")));
+                    emotes.Add(emote);
+                }
+            }
+
+            await Task.WhenAll(downloadTasks);
+
+            return emotes;
+        }
+
+        #region private members
+        private async Task<List<Emote>> DownloadTwitchEmotesAsync(JsonData data)
         {
             List<JsonEmote> list = data.data;
             List<Emote> emotes = new();
@@ -130,8 +189,14 @@ namespace Multitool.Net.Twitch
                 JsonEmote jsonEmote = list[i];
                 Emote emote = new(new(jsonEmote.id), jsonEmote.name);
                 emote.Provider = "Global emote";
-
-                downloadTasks.Add(DownloadEmote(emote, jsonEmote));
+                string emoteUrl = DefaultImageSize switch
+                {
+                    ImageSize.Small => jsonEmote.images.url_1x,
+                    ImageSize.Medium => jsonEmote.images.url_2x,
+                    ImageSize.Big => jsonEmote.images.url_4x,
+                    _ => jsonEmote.images.url_2x,
+                };
+                downloadTasks.Add(DownloadEmoteAsync(emote, new(emoteUrl)));
 
                 emotes.Add(emote);
             }
@@ -140,17 +205,9 @@ namespace Multitool.Net.Twitch
             return emotes;
         }
 
-        private async Task DownloadEmote(Emote emote, JsonEmote jsonEmote)
+        private async Task DownloadEmoteAsync(Emote emote, Uri emoteUrl)
         {
-            string emoteUrl = DefaultImageSize switch
-            {
-                ImageSize.Small => jsonEmote.images.url_1x,
-                ImageSize.Medium => jsonEmote.images.url_2x,
-                ImageSize.Big => jsonEmote.images.url_4x,
-                _ => jsonEmote.images.url_2x,
-            };
-
-            using HttpResponseMessage reponse = await client.GetAsync(new(emoteUrl), HttpCompletionOption.ResponseHeadersRead).AsTask();
+            using HttpResponseMessage reponse = await client.GetAsync(emoteUrl, HttpCompletionOption.ResponseHeadersRead).AsTask();
             reponse.EnsureSuccessStatusCode();
 
             IBuffer stream = await reponse.Content.ReadAsBufferAsync();
@@ -179,22 +236,6 @@ namespace Multitool.Net.Twitch
                 throw new ObjectDisposedException(GetType().Name);
             }
         }
-
-        private void CheckConnectionToken()
-        {
-            if (ConnectionToken is null)
-            {
-                throw new ArgumentNullException($"{nameof(ConnectionToken)} is null.{nameof(EmoteFetcher)} cannot make calls to the Twitch API without a connection token.");
-            }
-            if (!ConnectionToken.Validated)
-            {
-                throw new ArgumentException("Token has not been validated. Call the appropriate method to validate the token.");
-            }
-            if (ConnectionToken.ClientId is null)
-            {
-                throw new ArgumentNullException("Client id is null.");
-            }
-        } 
         #endregion
     }
 }
