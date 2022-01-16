@@ -49,6 +49,11 @@ namespace Multitool.Net.Twitch
 
         public string Provider { get; internal set; }
 
+        public override string ToString()
+        {
+            return Name;
+        }
+
         internal async Task SetImage(byte[] buffer)
         {
             Image = new();
