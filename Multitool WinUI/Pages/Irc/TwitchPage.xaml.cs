@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
 using Multitool.Net.Imaging;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -34,7 +36,6 @@ namespace MultitoolWinUI.Pages
         //private readonly object _lock = new();
         private bool saved;
         private TwitchConnectionToken token;
-        private List<Emote> emotes;
 
         public TwitchPage()
         {
@@ -112,71 +113,54 @@ namespace MultitoolWinUI.Pages
 
         #region event handlers
 
-        #region buttons
-        private void Chats_AddTabButtonClick(TabView sender, object args)
+        private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            if (token == null || !token.Validated)
+            try
             {
-                App.TraceWarning("Cannot connect to any chat without login");
-            }
-            else
-            {
-                try
+                App.Settings.Load(this);
+                PropertyChanged(this, new(string.Empty));
+
+                if (LoadWebView)
                 {
-                    ITwitchIrcClient client = new TwitchIrcClient(token, true)
-                    {
-                        NickName = "psykomicron",
-                        Encoding = Encoding.UTF8,
-                        RequestTags = RequestTags
-                    };
-
-                    TabViewItem tab = new();
-                    ChatControl chat = new(token)
-                    {
-                        Client = client,
-                        Tab = tab,
-                        Emotes = emotes,
-                        MaxMessages = ChatMaxNumberOfMessages,
-                        EmoteSize = ChatEmoteSize_Slider.Value
-                    };
-                    tab.Content = chat;
-
-                    Tabs.Add(tab);
-
-                    //sender.SelectedIndex = Tabs.Count - 1;
+                    NavigateTo($"https://{LastVisited}");
                 }
-                catch (ArgumentNullException)
+
+                if (!string.IsNullOrEmpty(Login))
                 {
-                    App.TraceError("Login is empty");
+                    token = new(Login);
+                    if (!await token.ValidateToken())
+                    {
+                        App.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
+                    }
+                    else
+                    {
+                        TwitchEmoteProxy proxy = TwitchEmoteProxy.GetInstance();
+                        proxy.CreateEmoteFetcher(token);
+                        proxy.EmoteFetcher.DefaultImageSize = ImageSize.Big;
+
+                        Task<List<Emote>>[] tasks = new Task<List<Emote>>[3];
+                        tasks[0] = proxy.EmoteFetcher.GetGlobal7TVEmotes();
+                        tasks[1] = proxy.GetGlobalEmotes();
+                        tasks[2] = proxy.EmoteFetcher.GetGlobalFfzEmotes();
+
+                        await Task.WhenAll(tasks);
+
+                        tasks[1].Result.AddRange(tasks[0].Result);
+                        tasks[1].Result.AddRange(tasks[2].Result);
+                    }
+                }
+                else
+                {
+                    App.TraceInformation("Please add your account to chat");
                 }
             }
-        }
-
-        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Tabs.Remove(args.Tab);
-
-        private void LoadOAuth_Click(object sender, RoutedEventArgs e)
-        {
-            if (token.Validated)
+            catch (Exception ex)
             {
-                PageWebView.Source = new(@"https://id.twitch.tv/oauth2/authorize?client_id=" + token.ClientId.ToString() + @"&redirect_uri=http://localhost&scope&response_type=token&scope=");
+                App.TraceError(ex.ToString());
             }
         }
 
-        private void LoadEmotes_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void Flyout_Opening(object sender, object e)
-        {
-            SettingsButton.BorderBrush = new SolidColorBrush(Helpers.Tool.GetAppRessource<Color>("SystemAccentColor"));
-        }
-
-        private void Flyout_Closing(Microsoft.UI.Xaml.Controls.Primitives.FlyoutBase sender, Microsoft.UI.Xaml.Controls.Primitives.FlyoutBaseClosingEventArgs args)
-        {
-            SettingsButton.BorderBrush = null;
-        }
-        #endregion
+        private void OnPageUnloaded(object sender, RoutedEventArgs e) => SavePage();
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -205,55 +189,97 @@ namespace MultitoolWinUI.Pages
             }*/
         }
 
-        private async void OnPageLoaded(object sender, RoutedEventArgs e)
+        private void OnMainWindowClose(object sender, WindowEventArgs args) => SavePage();
+
+        #region ui events
+        private void Chats_AddTabButtonClick(TabView sender, object args)
+        {
+            if (token == null || !token.Validated)
+            {
+                App.TraceWarning("Cannot connect to any chat without login");
+            }
+            else
+            {
+                try
+                {
+                    ITwitchIrcClient client = new TwitchIrcClient(token, true)
+                    {
+                        NickName = "psykomicron",
+                        Encoding = Encoding.UTF8,
+                        RequestTags = RequestTags
+                    };
+
+                    TabViewItem tab = new();
+                    ChatControl chat = new()
+                    {
+                        Client = client,
+                        Tab = tab,
+                        MaxMessages = ChatMaxNumberOfMessages,
+                        EmoteSize = ChatEmoteSize_Slider.Value
+                    };
+                    tab.Content = chat;
+
+                    Tabs.Add(tab);
+
+                    //sender.SelectedIndex = Tabs.Count - 1;
+                }
+                catch (ArgumentNullException)
+                {
+                    App.TraceError("Login is empty");
+                }
+            }
+        }
+
+        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Tabs.Remove(args.Tab);
+
+        private void LoadOAuth_Click(object sender, RoutedEventArgs e)
+        {
+            if (token.Validated)
+            {
+                PageWebView.Source = new(@"https://id.twitch.tv/oauth2/authorize?client_id=" + token.ClientId.ToString() + @"&redirect_uri=http://localhost&scope&response_type=token&scope=");
+            }
+        }
+
+        private void Flyout_Opening(object sender, object e)
+        {
+            SettingsButton.BorderBrush = new SolidColorBrush(Helpers.Tool.GetAppRessource<Color>("SystemAccentColor"));
+        }
+
+        private void Flyout_Closing(FlyoutBase sender, FlyoutBaseClosingEventArgs args)
+        {
+            SettingsButton.BorderBrush = null;
+        }
+
+        private async void ValidateTokenButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                App.Settings.Load(this);
-                PropertyChanged(this, new(string.Empty));
-
-                if (LoadWebView)
-                {
-                    NavigateTo($"https://{LastVisited}");
-                }
-
-                if (!string.IsNullOrEmpty(Login))
+                if (token == null)
                 {
                     token = new(Login);
-                    if (!await token.ValidateToken())
-                    {
-                        App.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
-                    }
-                    else
-                    {
-                        try
-                        {
-                            TwitchEmoteProxy proxy = TwitchEmoteProxy.GetInstance();
-                            proxy.EmoteFetcher.DefaultImageSize = ImageSize.Big;
-                            proxy.EmoteFetcher.ConnectionToken = token;
+                }
 
-                            emotes = await proxy.GetGlobalEmotes();
-                        }
-                        catch (InvalidOperationException ex)
-                        {
-                            Trace.TraceError(ex.ToString());
-                        }
-                    }
+                if (await token.ValidateToken())
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.Green);
+                    });
                 }
                 else
                 {
-                    App.TraceInformation("Please add your account to chat");
+                    Trace.TraceWarning("Token is not valid, try creating a new one or check if it is the right one");
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.IndianRed);
+                    });
                 }
             }
             catch (Exception ex)
             {
-                App.TraceError(ex.Message);
+                Trace.TraceError(ex.ToString());
             }
         }
-
-        private void OnPageUnloaded(object sender, RoutedEventArgs e) => SavePage();
-
-        private void OnMainWindowClose(object sender, WindowEventArgs args) => SavePage();
 
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
@@ -264,7 +290,7 @@ namespace MultitoolWinUI.Pages
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                Login = LoginBox.Password;
+                Login = LoginPasswordBox.Password;
             }
         }
 
@@ -289,6 +315,7 @@ namespace MultitoolWinUI.Pages
                 }
             }
         }
+        #endregion
 
         #endregion
     }

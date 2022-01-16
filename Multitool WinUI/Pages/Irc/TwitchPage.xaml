@@ -39,15 +39,26 @@
 
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="40px" />
                 <RowDefinition Height="1*" />
+                <RowDefinition Height="40px" />
             </Grid.RowDefinitions>
+
+            <TabView
+                x:Name="Chats"
+                TabItemsSource="{x:Bind Tabs}"
+                VerticalAlignment="Stretch"
+                CornerRadius="3"
+                Grid.Row="0"
+                AddTabButtonClick="Chats_AddTabButtonClick"
+                TabCloseRequested="Chats_TabCloseRequested">
+            </TabView>
 
             <Button
                 x:Name="SettingsButton"
-                Content="Settings"
-                HorizontalAlignment="Stretch"
-                Grid.Row="0">
+                HorizontalAlignment="Right"
+                VerticalAlignment="Stretch"
+                Margin="3"
+                Grid.Row="1">
                 <Button.Flyout>
                     <Flyout Opening="Flyout_Opening" Closing="Flyout_Closing">
                         <StackPanel
@@ -70,15 +81,24 @@
                                 <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
                             </Button>
 
-                            <PasswordBox
-                                x:Name="LoginBox"
-                                Password="{x:Bind Login, Mode=TwoWay}"
-                                Header="Twitch login"
-                                PlaceholderText="Login"
-                                KeyDown="PasswordBox_KeyDown"
-                                HorizontalAlignment="Stretch"
-                                BorderThickness="0"
-                                Grid.Row="0"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Spacing="{StaticResource StackPanelChildElementDefaultMargin}">
+                                <PasswordBox
+                                    x:Name="LoginPasswordBox"
+                                    Password="{x:Bind Login, Mode=TwoWay}"
+                                    Header="Twitch login"
+                                    PlaceholderText="Login"
+                                    KeyDown="PasswordBox_KeyDown"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Top"
+                                    Grid.Row="0"/>
+                                <Button
+                                    x:Name="ValidateTokenButton"
+                                    VerticalAlignment="Bottom"
+                                    Click="ValidateTokenButton_Click">
+                                    <FontIcon 
+                                        Glyph="&#xE73E;"/>
+                                </Button>
+                            </StackPanel>
 
                             <Slider 
                                 x:Name="ChatEmoteSize_Slider"
@@ -99,22 +119,14 @@
                                 StepFrequency="10"
                                 Header="Maximum number of messages"
                                 Value="{x:Bind ChatMaxNumberOfMessages, Mode=TwoWay}"/>
-                            
+
                         </StackPanel>
                     </Flyout>
                 </Button.Flyout>
+                <Button.Content>
+                    <FontIcon Glyph="&#xE713;"/>
+                </Button.Content>
             </Button>
-
-            <TabView
-                x:Name="Chats"
-                TabItemsSource="{x:Bind Tabs}"
-                VerticalAlignment="Stretch"
-                CornerRadius="3"
-                Grid.Row="1"
-                AddTabButtonClick="Chats_AddTabButtonClick"
-                TabCloseRequested="Chats_TabCloseRequested">
-            </TabView>
-                
         </Grid>
     </Grid>
 </Page>
