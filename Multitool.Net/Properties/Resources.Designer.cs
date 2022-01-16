@@ -61,6 +61,33 @@ namespace Multitool.Net.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to https://api.7tv.app/v2/emotes/global.
+        /// </summary>
+        internal static string _7TVApiGlobalEmotesEndPoint {
+            get {
+                return ResourceManager.GetString("7TVApiGlobalEmotesEndPoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to https://api.frankerfacez.com/v1/set/global.
+        /// </summary>
+        internal static string FfzApiGlobalEmotesEndPoint {
+            get {
+                return ResourceManager.GetString("FfzApiGlobalEmotesEndPoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to https://api.frankerfacez.com.
+        /// </summary>
+        internal static string FfzApiServerUrl {
+            get {
+                return ResourceManager.GetString("FfzApiServerUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to https://api.twitch.tv/helix/chat/emotes?broadcaster_id={0}.
         /// </summary>
         internal static string TwitchApiChannelEmoteEndPoint {
