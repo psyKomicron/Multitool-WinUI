@@ -85,7 +85,7 @@ namespace Multitool.Net.Imaging
 
                     await globalEmotesDownloadSemaphore.WaitAsync();
 
-                    globalEmotesCache.AddRange(await emoteFetcher.GetGlobalEmotes());
+                    globalEmotesCache.AddRange(await emoteFetcher.GetGlobalTwitchEmotes());
                     globalEmotesDownloadSemaphore.Release();
 
                     Trace.TraceInformation($"Downloaded global emotes (count {globalEmotesCache.Count})");
@@ -172,7 +172,7 @@ namespace Multitool.Net.Imaging
                 SemaphoreSlim s = new(1);
                 semaphores.TryAdd(channel, s);
                 await s.WaitAsync();
-                List<Emote> channelEmotes = await emoteFetcher.GetChannelEmotes(channel);
+                List<Emote> channelEmotes = await emoteFetcher.GetTwitchChannelEmotes(channel);
 
                 Trace.TraceInformation("Downloaded emotes");
 

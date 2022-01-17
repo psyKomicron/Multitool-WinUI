@@ -138,15 +138,23 @@ namespace MultitoolWinUI.Pages
                         proxy.CreateEmoteFetcher(token);
                         proxy.EmoteFetcher.DefaultImageSize = ImageSize.Big;
 
-                        Task<List<Emote>>[] tasks = new Task<List<Emote>>[3];
-                        tasks[0] = proxy.EmoteFetcher.GetGlobal7TVEmotes();
-                        tasks[1] = proxy.GetGlobalEmotes();
-                        tasks[2] = proxy.EmoteFetcher.GetGlobalFfzEmotes();
+                        Task<List<Emote>>[] tasks = new Task<List<Emote>>[2];
+                        tasks[0] = proxy.GetGlobalEmotes();
+                        tasks[1] = proxy.EmoteFetcher.GetGlobalFfzEmotes();
+                        //tasks[2] = proxy.EmoteFetcher.GetGlobal7TVEmotes();
+                        //tasks[3] = proxy.EmoteFetcher.GetChannel7TVEmotes("gigi");
 
                         await Task.WhenAll(tasks);
 
-                        tasks[1].Result.AddRange(tasks[0].Result);
-                        tasks[1].Result.AddRange(tasks[2].Result);
+                        tasks[0].Result.AddRange(tasks[0].Result);
+                        tasks[0].Result.AddRange(tasks[1].Result);
+                        //tasks[1].Result.AddRange(tasks[3].Result);
+                        var list = await proxy.EmoteFetcher.GetChannel7TVEmotes("gigi");
+                        foreach (var emote in list)
+                        {
+                            Debug.WriteLine(emote);
+                        }
+
                     }
                 }
                 else
@@ -156,7 +164,11 @@ namespace MultitoolWinUI.Pages
             }
             catch (Exception ex)
             {
+#if DEBUG
+                Trace.TraceError(ex.ToString());
+#else
                 App.TraceError(ex.ToString());
+#endif
             }
         }
 
@@ -182,7 +194,7 @@ namespace MultitoolWinUI.Pages
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            base.OnNavigatedTo(e);
+            //base.OnNavigatedTo(e);
             /*if (PageWebView.CoreWebView2 != null)
             {
                 PageWebView.CoreWebView2.Resume();

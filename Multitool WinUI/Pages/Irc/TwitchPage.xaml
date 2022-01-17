@@ -124,7 +124,7 @@
                     </Flyout>
                 </Button.Flyout>
                 <Button.Content>
-                    <FontIcon Glyph="&#xE713;"/>
+                    <FontIcon Glyph="&#xE713;" FontSize="12"/>
                 </Button.Content>
             </Button>
         </Grid>

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using Windows.Storage.Streams;
@@ -52,7 +53,7 @@ namespace Multitool.Net.Twitch
             GC.SuppressFinalize(this);
         }
 
-        public async Task<List<Emote>> GetGlobalEmotes()
+        public async Task<List<Emote>> GetGlobalTwitchEmotes()
         {
             CheckIfDisposed();
 
@@ -71,80 +72,17 @@ namespace Multitool.Net.Twitch
             return await DownloadTwitchEmotesAsync(data);
         }
 
-        public async Task<List<Emote>> GetChannelEmotes(string channelId)
-        {
-            CheckIfDisposed();
-
-            string id = string.Empty;
-
-            using HttpResponseMessage getUsersEndpointResponse = await client.GetAsync(new(string.Format(Resources.TwitchApiGetUsersByLoginEndpoint, channelId)), HttpCompletionOption.ResponseHeadersRead);
-            getUsersEndpointResponse.EnsureSuccessStatusCode();
-
-            string s = await getUsersEndpointResponse.Content.ReadAsStringAsync();
-            JsonDocument idData = JsonDocument.Parse(s);
-
-            if (idData.RootElement.TryGetProperty("data", out JsonElement jsonData))
-            {
-                if (jsonData.ValueKind != JsonValueKind.Array)
-                {
-                    throw new InvalidOperationException("\"jsonData\" is not an array");
-                }
-                
-                if (jsonData[0].TryGetProperty("id", out JsonElement value))
-                {
-                    id = value.ToString();
-                    string url = string.Format(Resources.TwitchApiChannelEmoteEndPoint, id);
-
-                    Trace.TraceInformation($"ChannelEmotes endpoint {url}");
-
-                    using HttpResponseMessage emotesResponse = await client.GetAsync(new(url), HttpCompletionOption.ResponseHeadersRead);
-                    emotesResponse.EnsureSuccessStatusCode();
-
-                    s = await emotesResponse.Content.ReadAsStringAsync();
-                    JsonData data = JsonSerializer.Deserialize<JsonData>(s);
-
-                    return await DownloadTwitchEmotesAsync(data);
-                }
-                else
-                {
-                    Exception ex = new InvalidOperationException("Unable to parse user id from Twitch API GetUsers endpoint");
-                    ex.Data.Add("Full response", s);
-                    throw ex;
-                }
-            }
-            else
-            {
-                Exception ex = new InvalidOperationException("Unable to parse Twitch API GetUsers endpoint response. (does not have { data: {...} })");
-                ex.Data.Add("Full response", s);
-                throw ex;
-            }
-        }
-
         public async Task<List<Emote>> GetGlobal7TVEmotes()
         {
             CheckIfDisposed();
 
-            using HttpResponseMessage httpResponse = await client.GetAsync(new(Resources._7TVApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
+            using HttpResponseMessage httpResponse = await client.GetAsync(new(Resources.SevenTVApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
             httpResponse.EnsureSuccessStatusCode();
             
             string s = await httpResponse.Content.ReadAsStringAsync();
-            var json = JsonSerializer.Deserialize<List<SevenTVJsonEmote>>(s);
+            List<SevenTVJsonEmote> json = JsonSerializer.Deserialize<List<SevenTVJsonEmote>>(s);
 
-            List<Emote> emotes = new();
-            List<Task> downloadTasks = new();
-
-            for (int i = 0; i < json.Count; i++)
-            {
-                SevenTVJsonEmote jsonEmote = json[i];
-                Emote emote = new(new(jsonEmote.id), jsonEmote.name);
-                emote.Provider = "7TV Global emote";
-                downloadTasks.Add(DownloadEmoteAsync(emote, new(jsonEmote.urls[0][1])));
-                emotes.Add(emote);
-            }
-
-            await Task.WhenAll(downloadTasks);
-
-            return emotes;
+            return await Download7TVEmotesAsync(json);
         }
 
         public async Task<List<Emote>> GetGlobalFfzEmotes()
@@ -177,6 +115,66 @@ namespace Multitool.Net.Twitch
             return emotes;
         }
 
+        public async Task<List<Emote>> GetTwitchChannelEmotes(string channelId)
+        {
+            CheckIfDisposed();
+
+            string id = string.Empty;
+
+            using HttpResponseMessage getUsersEndpointResponse = await client.GetAsync(new(string.Format(Resources.TwitchApiGetUsersByLoginEndpoint, channelId)), HttpCompletionOption.ResponseHeadersRead);
+            getUsersEndpointResponse.EnsureSuccessStatusCode();
+
+            string s = await getUsersEndpointResponse.Content.ReadAsStringAsync();
+            JsonDocument idData = JsonDocument.Parse(s);
+
+            if (idData.RootElement.TryGetProperty("data", out JsonElement jsonData))
+            {
+                if (jsonData.ValueKind != JsonValueKind.Array)
+                {
+                    throw new InvalidOperationException("\"jsonData\" is not an array");
+                }
+                
+                if (jsonData[0].TryGetProperty("id", out JsonElement value))
+                {
+                    id = value.ToString();
+                    string url = string.Format(Resources.TwitchApiChannelEmoteEndPoint, id);
+
+                    using HttpResponseMessage emotesResponse = await client.GetAsync(new(url), HttpCompletionOption.ResponseHeadersRead);
+                    emotesResponse.EnsureSuccessStatusCode();
+
+                    s = await emotesResponse.Content.ReadAsStringAsync();
+                    JsonData data = JsonSerializer.Deserialize<JsonData>(s);
+
+                    return await DownloadTwitchEmotesAsync(data);
+                }
+                else
+                {
+                    Exception ex = new InvalidOperationException("Unable to parse user id from Twitch API GetUsers endpoint");
+                    ex.Data.Add("Full response", s);
+                    throw ex;
+                }
+            }
+            else
+            {
+                Exception ex = new InvalidOperationException("Unable to parse Twitch API GetUsers endpoint response. (does not have { data: {...} })");
+                ex.Data.Add("Full response", s);
+                throw ex;
+            }
+        }
+
+        public async Task<List<Emote>> GetChannel7TVEmotes(string channel)
+        {
+            CheckIfDisposed();
+
+            string url = string.Format(Resources.SevenTVApiChannelEmotesEndPoint, channel);
+            using HttpResponseMessage emotesResponse = await client.GetAsync(new(url), HttpCompletionOption.ResponseHeadersRead);
+            emotesResponse.EnsureSuccessStatusCode();
+
+            List<SevenTVJsonEmote> json = JsonSerializer.Deserialize<List<SevenTVJsonEmote>>(await emotesResponse.Content.ReadAsStringAsync());
+
+            return await Download7TVEmotesAsync(json);
+        }
+
         #region private members
         private async Task<List<Emote>> DownloadTwitchEmotesAsync(JsonData data)
         {
@@ -205,28 +203,58 @@ namespace Multitool.Net.Twitch
             return emotes;
         }
 
-        private async Task DownloadEmoteAsync(Emote emote, Uri emoteUrl)
+        private async Task<List<Emote>> Download7TVEmotesAsync(List<SevenTVJsonEmote> json)
         {
-            using HttpResponseMessage reponse = await client.GetAsync(emoteUrl, HttpCompletionOption.ResponseHeadersRead).AsTask();
-            reponse.EnsureSuccessStatusCode();
+            List<Emote> emotes = new();
+            List<Task> downloadTasks = new();
 
-            IBuffer stream = await reponse.Content.ReadAsBufferAsync();
-            using DataReader dataReader = DataReader.FromBuffer(stream);
-
-            byte[] bytes = new byte[dataReader.UnconsumedBufferLength];
-            int pos = 0;
-            while (dataReader.UnconsumedBufferLength > 0)
+            for (int i = 0; i < json.Count; i++)
             {
-                if (pos >= bytes.Length)
-                {
-                    Trace.TraceWarning("Index out of bounds");
-                    break;
-                }
-                bytes[pos] = dataReader.ReadByte();
-                pos++;
+                SevenTVJsonEmote jsonEmote = json[i];
+                Emote emote = new(new(jsonEmote.id), jsonEmote.name);
+                emote.Provider = "7TV Global emote";
+                downloadTasks.Add(DownloadEmoteAsync(emote, new(jsonEmote.urls[0][1])));
+                emotes.Add(emote);
             }
 
-            await emote.SetImage(bytes);
+            await Task.WhenAll(downloadTasks);
+            return emotes;
+        }
+
+        private async Task DownloadEmoteAsync(Emote emote, Uri emoteUrl)
+        {
+            try
+            {
+                using HttpResponseMessage reponse = await client.GetAsync(emoteUrl, HttpCompletionOption.ResponseHeadersRead).AsTask();
+                if (reponse.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    Trace.TraceError($"Bad request:\n{await reponse.Content.ReadAsStringAsync()}\n{reponse.Headers}");
+                }
+                reponse.EnsureSuccessStatusCode();
+
+                IBuffer stream = await reponse.Content.ReadAsBufferAsync();
+                using DataReader dataReader = DataReader.FromBuffer(stream);
+
+                byte[] bytes = new byte[dataReader.UnconsumedBufferLength];
+                int pos = 0;
+                while (dataReader.UnconsumedBufferLength > 0)
+                {
+                    if (pos >= bytes.Length)
+                    {
+                        Trace.TraceWarning("Index out of bounds");
+                        break;
+                    }
+                    bytes[pos] = dataReader.ReadByte();
+                    pos++;
+                }
+
+                await emote.SetImage(bytes);
+            }
+            catch
+            {
+                Trace.TraceError($"emote name: {emote.Name}, uri: {emoteUrl.OriginalString}");
+                throw;
+            }
         }
 
         private void CheckIfDisposed()

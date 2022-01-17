@@ -17,7 +17,7 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition/>
-            <RowDefinition MinHeight="20" Height="50" MaxHeight="70"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Popup x:Name="UpdatePopup" HorizontalAlignment="Stretch" Grid.Row="0">
             <controls:AppMessageControl
@@ -54,22 +54,20 @@
             </ListView.ItemTemplate>
         </ListView>
 
-
         <TextBox
             x:Name="ChatInput"
             PlaceholderText="Enter message"
-            VerticalAlignment="Stretch"
-            HorizontalAlignment="Stretch"
-            ScrollViewer.HorizontalScrollBarVisibility="Auto"
-            ScrollViewer.VerticalScrollMode="Enabled"
-            GotFocus="ChatInput_GotFocus"
-            LostFocus="ChatInput_LostFocus"
+            TextWrapping="Wrap"
+            AcceptsReturn="True"
+            VerticalAlignment="Bottom"
+            MinHeight="40"
+            ScrollViewer.VerticalScrollMode="Auto"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
             Grid.Row="1"/>
 
         <Button
             x:Name="ChatSettingsButton"
-            Click="ChatSettingsButton_Click"
-            VerticalAlignment="Stretch"
+            VerticalAlignment="Bottom"
             HorizontalAlignment="Stretch"
             Margin="5"
             Grid.Row="1"

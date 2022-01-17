@@ -183,7 +183,7 @@ namespace MultitoolWinUI.Pages.Irc
             return presenter;
         }
 
-        private bool PutHyperlink(Paragraph paragraph, string text)
+        private static bool PutHyperlink(Paragraph paragraph, string text)
         {
             try
             {
@@ -214,7 +214,7 @@ namespace MultitoolWinUI.Pages.Irc
                 {
                     Source = emote.Image,
                     Height = EmoteSize,
-                    Margin = new(0, 0, 0, -(EmoteSize / 2) + 1),
+                    Margin = new(0, 0, 0, -(EmoteSize / 2)),
                     ContextFlyout = new Flyout()
                     {
                         Content = new TextBlock() { Text = $"Provider {emote.Provider}" }
@@ -227,33 +227,6 @@ namespace MultitoolWinUI.Pages.Irc
         private SolidColorBrush GetOrCreate(Color p)
         {
             return new(p);
-        }
-
-        private StackPanel CreateEmotePanel(Emote emote)
-        {
-            StackPanel panel = new()
-            {
-                Orientation = Orientation.Vertical,
-                Spacing = 0,
-                Margin = new(5)
-            };
-            panel.PointerPressed += Panel_PointerPressed;
-            Image image = new()
-            {
-                Source = emote.Image,
-                Height = 30,
-                Stretch = Stretch.Uniform
-            };
-            TextBlock textBlock = new()
-            {
-                Text = emote.Name,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                TextWrapping = TextWrapping.NoWrap
-            };
-            panel.Children.Add(image);
-            panel.Children.Add(textBlock);
-
-            return panel;
         }
 
         #endregion
@@ -443,32 +416,10 @@ namespace MultitoolWinUI.Pages.Irc
             if (loaded) UpdatePopup.IsOpen = args == Visibility.Visible;
         }
 
-        private void ChatInput_GotFocus(object sender, RoutedEventArgs e) => ContentGrid.RowDefinitions[1].Height = new(70);
-
-        private void ChatInput_LostFocus(object sender, RoutedEventArgs e) => ContentGrid.RowDefinitions[1].Height = new (50);
-
-        private void ChatSettingsButton_Click(object sender, RoutedEventArgs e)
-        {
-            /*foreach (var emote in ChannelEmotes)
-            {
-                ChannelEmotesGrid.Children.Add(CreateEmotePanel(emote));
-            }*/
-
-            /*foreach (var emote in Emotes)
-            {
-                GlobalEmotesGrid.Children.Add(CreateEmotePanel(emote));
-            }*/
-        }
-
         private void EmoteGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             Debug.WriteLine($"Clicked {(e.ClickedItem as Emote).Name}");
             ChatInput.Text += $" {(e.ClickedItem as Emote)} ";
-        }
-
-        private void Panel_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            throw new NotImplementedException();
         }
         #endregion
 

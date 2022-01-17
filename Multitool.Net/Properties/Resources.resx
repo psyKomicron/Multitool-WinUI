@@ -117,14 +117,17 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="7TVApiGlobalEmotesEndPoint" xml:space="preserve">
-    <value>https://api.7tv.app/v2/emotes/global</value>
-  </data>
   <data name="FfzApiGlobalEmotesEndPoint" xml:space="preserve">
     <value>https://api.frankerfacez.com/v1/set/global</value>
   </data>
   <data name="FfzApiServerUrl" xml:space="preserve">
     <value>https://api.frankerfacez.com</value>
+  </data>
+  <data name="SevenTVApiChannelEmotesEndPoint" xml:space="preserve">
+    <value>https://api.7tv.app/v2/users/{0}/emotes</value>
+  </data>
+  <data name="SevenTVApiGlobalEmotesEndPoint" xml:space="preserve">
+    <value>https://api.7tv.app/v2/emotes/global</value>
   </data>
   <data name="TwitchApiChannelEmoteEndPoint" xml:space="preserve">
     <value>https://api.twitch.tv/helix/chat/emotes?broadcaster_id={0}</value>

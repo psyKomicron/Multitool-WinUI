@@ -4,29 +4,33 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:MultitoolWinUI.Pages.Test"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:twitch="using:Multitool.Net.Twitch"
     mc:Ignorable="d">
 
-    <RichTextBlock
-            x:Name="Test_RichTextBlock" LineHeight="30" >
-        <Paragraph LineStackingStrategy="MaxHeight">
-            <Run Text="psykomicron"/>
-            <InlineUIContainer>
-                <InlineUIContainer.Child>
-                    <Image
-                        Margin="0,0,0,-10"
-                        Source="C:\Users\julie\Desktop\Repositories\Multitool WinUI\Multitool WinUI\Resources\Images\catJAM-1x.gif"
-                        Height="30"/>
-                </InlineUIContainer.Child>
-            </InlineUIContainer>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
 
-            <Run Text="Microsoft.ui.xaml.dll!00007FFCA2F27A75: (caller: 00007FFCA159DA93) ReturnHr(1) tid(ec8) 80070057 The parameter is incorrect.
-Microsoft.ui.xaml.dll!00007FFCA2F27A75: (caller: 00007FFCA159DA93) ReturnHr(2) tid(ec8) 80070057 The parameter is incorrect.
-Microsoft.ui.xaml.dll!00007FFCA2F27A75: (caller: 00007FFCA159DA93) ReturnHr(3) tid(ec8) 80070057 The parameter is incorrect.
-onecoreuap\windows\frameworkudk\dxprivatescommon.cpp(53)\Microsoft.Internal.FrameworkUdk.System.dll!00007FFD37764989: (caller: 00007FFCBAE6966D) ReturnHr(3) tid(4a58) 80004002 No such interface supported
-onecore\com\combase\winrt\error\restrictederror.cpp(1017)\combase.dll!00007FFD5B89A21E: (caller: 00007FFD5B78A2F3) ReturnHr(7) tid(ec8) 8007007E The specified module could not be found.
-onecore\com\combase\winrt\error\restrictederror.cpp(1017)\combase.dll!00007FFD5B89A21E: (caller: 00007FFD5B78A2F3) ReturnHr(8) tid(ec8) 8007007E The specified module could not be found.
-mincore\com\oleaut32\dispatch\ups.cpp(2126)\OLEAUT32.dll!00007FFD5D001924: (caller: 00007FFD5D001A5A) ReturnHr(1) tid(ec8) 8002801D Library not registered."/>
-        </Paragraph>
-    </RichTextBlock>
+        <RichTextBlock Grid.Row="0">
+            <Paragraph CharacterSpacing="15" LineStackingStrategy="MaxHeight" LineHeight="24">
+                <Run Text="03:24" FontWeight="Light"/>
+                <Run Text="psykomicron" FontWeight="Bold"/>
+                <Run>
+                    GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN
+                </Run>
+            </Paragraph>
+        </RichTextBlock>
+
+        <TextBox
+            x:Name="ChatInput"
+            PlaceholderText="Enter message"
+            TextWrapping="Wrap"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Stretch"
+            AcceptsReturn="True"
+            ScrollViewer.VerticalScrollMode="Auto"
+            Grid.Row="1"/>
+    </Grid>
 </Page>
