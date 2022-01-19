@@ -18,10 +18,18 @@ namespace Multitool.Net.Twitch
         }
 
         public User Author { get; set; }
+
         public Id Id { get; set; }
+
         public Reply? Reply { get; set; }
+
         public Id ChannelId { get; set; }
+
         public DateTime ServerTimestamp { get; set; }
+
+#if DEBUG
+        public string ActualMessage => message;
+#endif
 
         public override string ToString()
         {
