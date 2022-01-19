@@ -149,11 +149,11 @@ namespace MultitoolWinUI.Pages
                         tasks[0].Result.AddRange(tasks[0].Result);
                         tasks[0].Result.AddRange(tasks[1].Result);
                         //tasks[1].Result.AddRange(tasks[3].Result);
-                        var list = await proxy.EmoteFetcher.GetChannel7TVEmotes("gigi");
+                        /*var list = await proxy.EmoteFetcher.GetChannel7TVEmotes("gigi");
                         foreach (var emote in list)
                         {
                             Debug.WriteLine(emote);
-                        }
+                        }*/
 
                     }
                 }
@@ -204,6 +204,7 @@ namespace MultitoolWinUI.Pages
         private void OnMainWindowClose(object sender, WindowEventArgs args) => SavePage();
 
         #region ui events
+
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
             if (token == null || !token.Validated)
@@ -214,10 +215,12 @@ namespace MultitoolWinUI.Pages
             {
                 try
                 {
+                    Encoding encoding = Encoding.Default;
+                    //encoding.DecoderFallback = new DecoderReplacementFallback("");
                     ITwitchIrcClient client = new TwitchIrcClient(token, true)
                     {
                         NickName = "psykomicron",
-                        Encoding = Encoding.UTF8,
+                        Encoding = encoding,
                         RequestTags = RequestTags
                     };
 
