@@ -194,7 +194,20 @@ namespace MultitoolWinUI.Controls
 
         private void Control_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            hasFocus= false;
+            hasFocus = false;
+        }
+
+        private void Control_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            hasFocus = true;
+            messageTimer.Stop();
+            //messageTimer.
+        }
+
+        private void Control_PointerReleased(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            hasFocus = false;
+            messageTimer.Start();
         }
         #endregion
     }

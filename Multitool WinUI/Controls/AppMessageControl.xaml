@@ -7,8 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Padding="20"
-    PointerEntered="Control_PointerEntered"
-    PointerExited="Control_PointerExited">
+    PointerPressed="Control_PointerPressed"
+    PointerReleased="Control_PointerReleased">
     <Grid 
         x:Name="ContentGrid"
         Padding="3"
