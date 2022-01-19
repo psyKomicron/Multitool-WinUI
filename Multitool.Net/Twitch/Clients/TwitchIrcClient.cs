@@ -19,6 +19,7 @@ namespace Multitool.Net.Twitch.Irc
         #region fields
         private const string wssUri = @"wss://irc-ws.chat.twitch.tv:443";
         private const int bufferSize = 16_000;
+        private const int charReplacement = 0;
 
         #region static regexes
         // commands
@@ -452,6 +453,7 @@ namespace Multitool.Net.Twitch.Irc
         #endregion
 
         #region socket methods
+
         private ArraySegment<byte> GetBytes(string text)
         {
             return new(Encoding.GetBytes(text));
@@ -561,34 +563,65 @@ namespace Multitool.Net.Twitch.Irc
                     if (data.Count != 0)
                     {
 #if DEBUG
-                        int max = 0;
-                        for (; max < data.Count; max++)
+                        int upperBound = 0;
+                        for (; upperBound < data.Count; upperBound++)
                         {
-                            if (data[max] == 0x0)
+                            if (data[upperBound] == 0x0)
                             {
                                 break;
                             }
-                            else if (data[max] == 0x10)
+                            else if (data[upperBound] == 0xF3)
                             {
-                                data[max] = 0x40;
+                                if (upperBound++ < data.Count && data[upperBound] == 0xA0)
+                                {
+                                    if (upperBound++ < data.Count && data[upperBound] == 0x80)
+                                    {
+                                        if (upperBound++ < data.Count && data[upperBound] == 0x80)
+                                        {
+                                            data[upperBound - 3] = charReplacement;
+                                            data[upperBound - 2] = charReplacement;
+                                            data[upperBound - 1] = charReplacement;
+                                            data[upperBound] = charReplacement;
+                                        }
+                                    }
+                                }
                             }
                         }
 
-                        ArraySegment<byte> sliced = data.Slice(0, max); 
+                        ArraySegment<byte> sliced = data.Slice(0, upperBound);
                         string message = Encoding.GetString(sliced);
 #else
                         string message = Encoding.GetString(data);
 #endif
                         ReadOnlyMemory<char> readOnlyMessage = MemoryExtensions.AsMemory(message);
 
+                        /*if (b1 == 10 && b2 == 13 && b3 == 56320 && b4 == 56128)
+                        {
+                            readOnlyMessage = readOnlyMessage.Slice(0, readOnlyMessage.Length - 5);
+                        }
+                        for (int n = 0; n < readOnlyMessage.Length; n++)
+                        {
+                            if (readOnlyMessage.Span[n] == 56320 || readOnlyMessage.Span[n] == 56128)
+                            {
+                                readOnlyMessage = readOnlyMessage.Slice(0, )
+                            }
+                        }*/
+
                         int sliceIndex = 0;
                         for (int i = 0; i < readOnlyMessage.Length; i++)
                         {
-                            if (readOnlyMessage.Span[i] == '\n')
+                            if (sliceIndex < (i - 1) && readOnlyMessage.Span[i] == '\n')
                             {
-                                ReadOnlyMemory<char> c = readOnlyMessage[sliceIndex..(i - 1)];
-                                commandMessages.Add(c);
-                                sliceIndex = i + 1;
+                                try
+                                {
+                                    ReadOnlyMemory<char> c = readOnlyMessage[sliceIndex..(i - 1)];
+                                    commandMessages.Add(c);
+                                    sliceIndex = i + 1;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Trace.TraceError($"Cannot slice {message}\n{ex}");
+                                }
                             }
                         }
 
@@ -616,7 +649,7 @@ namespace Multitool.Net.Twitch.Irc
                         commandMessages.Clear();
                     }
                 }
-                catch (WebSocketException ex) // thread will exit (and break the application) when a websocket exception occur.
+                catch (WebSocketException ex) // thread will exit (and break the application ? maybe not in the last versions) when a websocket exception occur.
                 {
                     Interlocked.Exchange(ref disconnected, 1);
                     if (silentExit)
