@@ -83,7 +83,6 @@
             <controls:AppMessageControl
                 x:Name="MessageDisplay"
                 x:FieldModifier="public"
-                HorizontalAlignment="Stretch"
                 Background="{StaticResource DarkDevBlue}"
                 VisibilityChanged="MessageDisplay_VisibilityChanged"/>
         </Popup>
