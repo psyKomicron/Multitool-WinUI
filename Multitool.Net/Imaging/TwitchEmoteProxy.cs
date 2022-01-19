@@ -74,22 +74,16 @@ namespace Multitool.Net.Imaging
 
             if (globalEmotesCache.Count > 0)
             {
-                Trace.TraceInformation("Cache built, returning emote cache");
                 return globalEmotesCache;
             }
             else if (globalEmotesDownloadSemaphore.CurrentCount == 1)
             {
                 try
                 {
-                    Trace.TraceInformation("Proxy downloading emotes...");
-
+                    Trace.TraceInformation("Downloading global emotes...");
                     await globalEmotesDownloadSemaphore.WaitAsync();
-
                     globalEmotesCache.AddRange(await emoteFetcher.GetGlobalTwitchEmotes());
                     globalEmotesDownloadSemaphore.Release();
-
-                    Trace.TraceInformation($"Downloaded global emotes (count {globalEmotesCache.Count})");
-
                     return globalEmotesCache;
                 }
                 catch
@@ -102,14 +96,9 @@ namespace Multitool.Net.Imaging
             {
                 try
                 {
-                    Trace.TraceInformation("Waiting for cache to be build...");
-
                     // is there a better way to do that ?
                     await globalEmotesDownloadSemaphore.WaitAsync();
                     globalEmotesDownloadSemaphore.Release();
-
-                    Trace.TraceInformation("Cache built, returning");
-
                     return globalEmotesCache;
                 }
                 catch
@@ -126,8 +115,6 @@ namespace Multitool.Net.Imaging
             CheckToken();
             if (semaphores.TryGetValue(channel, out SemaphoreSlim semaphore))
             {
-                Trace.TraceInformation("Semaphore exists, checking emotes status");
-
                 if (await semaphore.WaitAsync(50_000))
                 {
                     semaphore.Release();
@@ -167,14 +154,12 @@ namespace Multitool.Net.Imaging
             else
             {
                 // download emotes
-                Trace.TraceInformation("Semaphore doesn't exist, downloading emotes");
+                Trace.TraceInformation($"Downloading emotes for #{channel}...");
 
                 SemaphoreSlim s = new(1);
                 semaphores.TryAdd(channel, s);
                 await s.WaitAsync();
                 List<Emote> channelEmotes = await emoteFetcher.GetTwitchChannelEmotes(channel);
-
-                Trace.TraceInformation("Downloaded emotes");
 
                 if (await emoteCacheSemaphore.WaitAsync(timeout))
                 {
@@ -184,11 +169,10 @@ namespace Multitool.Net.Imaging
                         emotesCache.Add(channelEmotes[i]);
                     }
                     emoteCacheSemaphore.Release();
-                    Trace.TraceInformation($"Cached emotes from #{channel}");
                 }
                 else
                 {
-                    Trace.TraceWarning($"Failed to get emote cache semaphore, not caching channel emotes (count: {channelEmotes.Count}, channel: {channel})");
+                    Trace.TraceWarning($"Failed to get emote cache semaphore, not caching channel emotes (count: {channelEmotes.Count}, channel: #{channel})");
                 }
                 s.Release();
                 return channelEmotes;
