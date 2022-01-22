@@ -120,6 +120,10 @@
   <data name="GithubUri" xml:space="preserve">
     <value>https://github.com/psyKomicron/multitool/tree/main</value>
   </data>
+  <data name="ReleaseNotes" xml:space="preserve">
+    <value>The application is now using .XML type file to save it's settings. You can find it in the app's package folder.
+NEW - release notes (as you can see)!</value>
+  </data>
   <data name="TwitchUrl" xml:space="preserve">
     <value>https://twitch.tv/</value>
   </data>

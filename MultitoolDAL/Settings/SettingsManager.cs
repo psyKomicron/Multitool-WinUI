@@ -111,16 +111,9 @@ namespace Multitool.DAL.Settings
                                     {
                                         props[i].SetValue(toLoad, settingAttribute.DefaultValue);
                                     }
-                                    else if (settingAttribute.WantsDefaultValue)
+                                    else if (settingAttribute.DefaultInstanciate)
                                     {
-                                        if (settingAttribute.Converter != null)
-                                        {
-                                            props[i].SetValue(toLoad, settingAttribute.Converter.Restore(settingAttribute.DefaultValue));
-                                        }
-                                        else
-                                        {
-                                            props[i].SetValue(toLoad, GetTypeDefaultValue(props[i].PropertyType));
-                                        }
+                                        props[i].SetValue(toLoad, GetTypeDefaultValue(props[i].PropertyType));
                                     }
                                 }
                             }
@@ -160,7 +153,7 @@ namespace Multitool.DAL.Settings
                 }
             }
             SettingsChanged?.Invoke(this, actualKey);
-            Trace.TraceInformation($"Saved '{actualKey}'");
+            //Trace.TraceInformation($"Saved '{actualKey}'");
         }
 
         /// <inheritdoc/>
@@ -248,10 +241,12 @@ namespace Multitool.DAL.Settings
         }
 
         #region event handlers
+
         private void ApplicationData_DataChanged(ApplicationData sender, object args)
         {
             
         }
+
         #endregion
 
         #endregion

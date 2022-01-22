@@ -7,10 +7,15 @@ namespace Multitool.DAL.Settings
     public class SettingAttribute : Attribute
     {
         /// <summary>
-        /// Marks the property as a setting, so that a setting loader will load the corresponding setting. If no corresponding setting is found, the property will be instanciated with an instance of <paramref name="propertyType"/>.
+        /// <para>
+        /// Sets the property to be saved by a <see cref="SettingsManager"/>.
+        /// </para>
+        /// <para>
+        /// The class will create an instance of <see cref="SettingConverter"/> (<paramref name="converterType"/>) to convert saved value back and forth.
+        /// </para>
         /// </summary>
-        /// <param name="propertyType"></param>
-        public SettingAttribute(Type converterType, params object[] parameters)
+        /// <param name="converterType"></param>
+        public SettingAttribute(Type converterType, bool defaultInstanciate = true, string settingName = null)
         {
             if (converterType != null)
             {
@@ -24,24 +29,50 @@ namespace Multitool.DAL.Settings
                 }
                 catch { }
             }
-            DefaultValue = parameters;
-            WantsDefaultValue = true;
+
+            if (string.IsNullOrEmpty(settingName))
+            {
+                SettingName = null;
+            }
+            else
+            {
+                SettingName = settingName;
+            }
+
+            DefaultInstanciate = defaultInstanciate;
         }
 
-        public SettingAttribute(object defaultValue)
+        /// <summary>
+        /// Creates a <see cref="SettingAttribute"/>, the property will be instanciated with <paramref name="defaultValue"/>
+        /// if the setting does not exists
+        /// </summary>
+        /// <param name="defaultValue"></param>
+        public SettingAttribute(object defaultValue, string settingName = null)
         {
             DefaultValue = defaultValue;
             HasDefaultValue = true;
         }
 
+        /// <summary>
+        /// Default parameter-less constructor.
+        /// </summary>
         public SettingAttribute() { }
 
+        /// <summary>
+        /// Setting default value.
+        /// </summary>
+        /// <remarks>
+        /// Do not check if the property is <see langword="null"/>, but use the <see cref="HasDefaultValue"/> property to check if you can use
+        /// the property
+        /// </remarks>
         internal object DefaultValue { get; }
 
         internal bool HasDefaultValue { get; }
 
-        internal bool WantsDefaultValue { get; }
+        internal bool DefaultInstanciate { get; }
 
         internal SettingConverter Converter { get; }
+
+        internal string SettingName { get; set; }
     }
 }

@@ -11,7 +11,6 @@ namespace Multitool.DAL.Settings
     {
         public StringListSettingConverter() : base()
         {
-            IsSingleLineValue = false;
         }
 
         public override object Convert(object toConvert)

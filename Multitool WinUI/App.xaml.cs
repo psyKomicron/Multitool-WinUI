@@ -61,16 +61,22 @@ namespace MultitoolWinUI
         /// will be used such as when the application is launched to open a specific file.
         /// </summary>
         /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs args)
+        protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
-#if DEBUG
+#if false
             Test(); 
 #endif
-            Settings = new SettingsManager(ApplicationData.Current.LocalSettings)
-            {
-                SettingFormat = "{0}/{1}"
-            };
+
+            Settings =
+#if DEBUG
+                await XmlSettingManager.Get();
+#else
+        new SettingsManager(ApplicationData.Current.LocalSettings)
+        {
+            SettingFormat = "{0}/{1}"
+        }; 
+#endif
 
             Debug.WriteLine(ApplicationData.Current.LocalFolder.Path);
 
@@ -107,16 +113,7 @@ namespace MultitoolWinUI
 #if DEBUG
         private async void Test()
         {
-            try
-            {
-                await ApplicationData.Current.LocalFolder.CreateFileAsync("settings.xml", CreationCollisionOption.OpenIfExists);
-                var settingManager = new XmlSettingManager();
-                settingManager.Save(new Test());
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.ToString());
-            }
+            
         } 
 #endif
     }
@@ -126,17 +123,19 @@ namespace MultitoolWinUI
     {
         public Test()
         {
-            String = "flkdsnfeifslkn";
-            Number = 1298;
-            List = new List<int> { 1, 2, 4, 8, 213, 234, 234235, 23, 12, 667, 43358 };
+            /*PropString = "flkdsnfeifslkn";
+            PropNumber = 1298;
+            PropList = new List<int> { 1, 2, 4, 8, 213, 234, 234235, 23, 12, 667, 43358 };*/
         }
 
         [Setting]
-        public string String { get; set; }
+        public string PropString { get; set; }
+
         [Setting]
-        public int Number { get; set; }
+        public int PropNumber { get; set; }
+
         [Setting]
-        public List<int> List { get; set; }
-    } 
+        public List<int> PropList { get; set; }
+    }
 #endif
 }
