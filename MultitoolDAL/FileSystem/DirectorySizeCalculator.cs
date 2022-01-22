@@ -1,29 +1,25 @@
-﻿using System;
+﻿using Multitool.NTInterop;
+
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Windows.Foundation.Metadata;
+
 namespace Multitool.DAL
 {
     /// <summary>
-    /// 
+    /// Calculates the size of a directory.
     /// </summary>
     public class DirectorySizeCalculator : IProgressNotifier
     {
         /// <summary>
-        /// 
+        /// Default constructor.
         /// </summary>
         public DirectorySizeCalculator() { }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="notify"></param>
-        public DirectorySizeCalculator(bool notify)
-        {
-            Notify = notify;
-        }
 
         /// <inheritdoc/>
         public bool Notify { get; set; }
@@ -35,16 +31,15 @@ namespace Multitool.DAL
         public event TaskFailedEventHandler Exception;
 
         /// <summary>
-        /// Calculate the size of a directory asynchronously, directly pumping the size in real time.
+        /// Calculate the size of a directory asynchronously, updating size in real time through <paramref name="setter"/>.
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="path">Directory to calculate the size of</param>
         /// <param name="setter"></param>
+        /// <param name="cancellationToken">Cancellation token</param>
         public async Task CalculateDirectorySizeAsync(string path, Action<long> setter, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             List<Task> tasks = new();
-
             try
             {
                 try
@@ -70,13 +65,11 @@ namespace Multitool.DAL
                     InvokeExceptionAsync(de);
                 }
 
-                await Task.WhenAll(tasks);
-                tasks.Clear();
-
                 try
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     string[] files = Directory.GetFiles(path);
+                    long fileSize = 0;
                     for (int i = 0; i < files.Length; i++)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
@@ -84,20 +77,14 @@ namespace Multitool.DAL
 
                         try
                         {
-                            string filePath = files[i];
-                            Task t = new(() => setter(new FileInfo(filePath).Length), cancellationToken);
-                            tasks.Add(t);
-                            t.Start();
+                            fileSize = new FileInfo(files[i]).Length;
                         }
-                        catch (FileNotFoundException e)
-                        {
-                            InvokeExceptionAsync(e);
-                        }
-                        catch (UnauthorizedAccessException e)
+                        catch (OperationFailedException e)
                         {
                             InvokeExceptionAsync(e);
                         }
                     }
+                    setter(fileSize);
                 }
                 catch (UnauthorizedAccessException e)
                 {
@@ -107,9 +94,6 @@ namespace Multitool.DAL
                 {
                     InvokeExceptionAsync(e);
                 }
-
-                await Task.WhenAll(tasks);
-                tasks.Clear();
             }
             catch (OperationCanceledException opCanceled)
             {
@@ -126,9 +110,10 @@ namespace Multitool.DAL
                         throw aggregate.InnerExceptions[i];
                     }
                 }
-
                 throw;
             }
+            await Task.WhenAll(tasks);
+            tasks.Clear();
         }
 
         /// <summary>
@@ -228,6 +213,13 @@ namespace Multitool.DAL
             return size;
         }
 
+        /// <summary>
+        /// Calculate the size of a directory. The method will not return the size of the directory
+        /// it will instead call <paramref name="setter"/> with the value to add to the current size.
+        /// </summary>
+        /// <param name="path">Path to the directory</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the method</param>
+        /// <param name="setter"></param>
         public void CalculateDirectorySize(string path, Action<long> setter, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -239,7 +231,7 @@ namespace Multitool.DAL
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     InvokeProgressAsync(subDirs[i]);
-                    setter(CalculateDirectorySize(subDirs[i], cancellationToken));
+                    CalculateDirectorySize(subDirs[i], setter, cancellationToken);
                 }
             }
             catch (UnauthorizedAccessException e)
@@ -263,7 +255,7 @@ namespace Multitool.DAL
                     {
                         setter(new FileInfo(files[i]).Length);
                     }
-                    catch (FileNotFoundException e)
+                    catch (OperationFailedException e)
                     {
                         InvokeExceptionAsync(e);
                     }
@@ -280,6 +272,13 @@ namespace Multitool.DAL
             cancellationToken.ThrowIfCancellationRequested();
         }
 
+        /// <summary>
+        /// Calculate the size of a directory.
+        /// </summary>
+        /// <param name="path">Path to the directory</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the method</param>
+        /// <returns>The size of the directory <paramref name="path"/></returns>
+        [Deprecated("Use async methods", DeprecationType.Deprecate, 0)]
         public long CalculateDirectorySize(string path, CancellationToken cancellationToken)
         {
             long size = 0;

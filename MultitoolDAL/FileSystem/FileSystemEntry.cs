@@ -176,22 +176,21 @@ namespace Multitool.DAL
         {
             if (IsDirectory && !other.IsDirectory)
             {
-                return 1;
+                return -1;
             }
             if (!IsDirectory && other.IsDirectory)
             {
-                return -1;
+                return 1;
             }
 
             if (Size > other.Size)
             {
-                return 1;
+                return -1;
             }
             if (Size < other.Size)
             {
-                return -1;
+                return 1;
             }
-
             return 0;
         }
 
@@ -207,12 +206,6 @@ namespace Multitool.DAL
             return other != null && Path.Equals(other.Path, StringComparison.OrdinalIgnoreCase);
         }
 
-        public bool Equals(FileSystemInfo info)
-        {
-            return Path.Equals(info.FullName, StringComparison.OrdinalIgnoreCase) &&
-                Attributes == info.Attributes;
-        }
-
         /// <inheritdoc/>
         public override int GetHashCode()
         {
@@ -226,31 +219,37 @@ namespace Multitool.DAL
         }
 
         #region operators
+        /// <inheritdoc/>
         public static bool operator ==(FileSystemEntry left, FileSystemEntry right)
         {
             return left is null ? right is null : left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(FileSystemEntry left, FileSystemEntry right)
         {
             return !(left == right);
         }
 
+        /// <inheritdoc/>
         public static bool operator <(FileSystemEntry left, FileSystemEntry right)
         {
             return left is null ? right is not null : left.CompareTo(right) < 0;
         }
 
+        /// <inheritdoc/>
         public static bool operator <=(FileSystemEntry left, FileSystemEntry right)
         {
             return left is null || left.CompareTo(right) <= 0;
         }
 
+        /// <inheritdoc/>
         public static bool operator >(FileSystemEntry left, FileSystemEntry right)
         {
             return left is not null && left.CompareTo(right) > 0;
         }
 
+        /// <inheritdoc/>
         public static bool operator >=(FileSystemEntry left, FileSystemEntry right)
         {
             return left is null ? right is null : left.CompareTo(right) >= 0;
@@ -270,6 +269,12 @@ namespace Multitool.DAL
             Name = Info.Name;
         }
 
+        /// <summary>
+        /// Checks if a <see cref="FileSystemEntry"/> can be moved and if not, why.
+        /// </summary>
+        /// <param name="newPath"></param>
+        /// <param name="res"></param>
+        /// <returns></returns>
         protected virtual bool CanMove(string newPath, out MoveCodes res)
         {
             if (File.Exists(newPath))
@@ -328,6 +333,11 @@ namespace Multitool.DAL
             }
         }
 
+        /// <summary>
+        /// Checks if <paramref name="fileInfo"/> can be deleted.
+        /// </summary>
+        /// <param name="fileInfo">File to delete</param>
+        /// <returns><see langword="true"/> if the file can be deleted</returns>
         protected virtual bool CanDelete(FileSystemInfo fileInfo)
         {
             if (((fileInfo.Attributes & FileAttributes.Device) != 0) || ((fileInfo.Attributes & FileAttributes.System) != 0))
@@ -351,11 +361,21 @@ namespace Multitool.DAL
             return true;
         }
 
+        /// <summary>
+        /// Checks if the entry can be deleted.
+        /// </summary>
+        /// <returns><see langword="true"/> if the file can be deleted</returns>
         protected virtual bool CanDelete()
         {
             return CanDelete(Info);
         }
 
+        /// <summary>
+        /// Creates a <see cref="IOException"/> when the entry cannot be
+        /// deleted.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
         protected static IOException CreateDeleteIOException(FileSystemInfo info)
         {
             IOException e = new("Cannot delete " + info.FullName);
@@ -363,54 +383,89 @@ namespace Multitool.DAL
             return e;
         }
 
+        /// <summary>
+        /// Creates a <see cref="IOException"/> when the entry cannot be
+        /// deleted.
+        /// </summary>
+        /// <returns></returns>
         protected IOException CreateDeleteIOException()
         {
             return CreateDeleteIOException(Info);
         }
 
+        /// <summary>
+        /// Removes the readonly attribute.
+        /// </summary>
         protected void RemoveReadOnly()
         {
             Info.Attributes &= ~FileAttributes.ReadOnly;
             RaiseAttributesChangedEvent(FileAttributes.ReadOnly);
         }
 
+        /// <summary>
+        /// Removes the readonly attribute on <paramref name="info"/>.
+        /// </summary>
         protected static void RemoveReadOnly(FileSystemInfo info)
         {
             info.Attributes &= ~FileAttributes.ReadOnly;
         }
 
+        /// <summary>
+        /// Removes the hidden attribute.
+        /// </summary>
         protected void RemoveIsHidden()
         {
             Info.Attributes &= ~FileAttributes.ReadOnly;
             RaiseAttributesChangedEvent(FileAttributes.Hidden);
         }
 
+        /// <summary>
+        /// Adds a readonly attribute.
+        /// </summary>
         protected void SetReadOnly()
         {
             Info.Attributes |= FileAttributes.ReadOnly;
         }
 
+        /// <summary>
+        /// Adds a hidden attribute.
+        /// </summary>
         protected void SetHidden()
         {
             Info.Attributes |= FileAttributes.Hidden;
         }
 
         #region event invoke
+        /// <summary>
+        /// <see langword="protected internal"/>
+        /// </summary>
         protected void RaiseDeletedEvent()
         {
             Deleted?.Invoke(this, new ChangeEventArgs(this, ChangeTypes.FileDeleted));
         }
 
+        /// <summary>
+        /// <see langword="protected internal"/>
+        /// </summary>
+        /// <param name="oldSize"></param>
         protected void RaiseSizeChangedEvent(long oldSize)
         {
             Task.Run(() => SizedChanged?.Invoke(this, oldSize));
         }
 
+        /// <summary>
+        /// <see langword="protected internal"/>
+        /// </summary>
+        /// <param name="attributes"></param>
         protected void RaiseAttributesChangedEvent(FileAttributes attributes)
         {
             AttributesChanged?.Invoke(this, attributes);
         }
 
+        /// <summary>
+        /// <see langword="protected internal"/>
+        /// </summary>
+        /// <param name="oldPath"></param>
         protected void RaiseRenamedEvent(string oldPath)
         {
             Renamed?.Invoke(this, oldPath);

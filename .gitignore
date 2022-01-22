@@ -362,4 +362,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 *.sln
-/irc log.txt
+Multitool WinUI.sln
+Multitool WinUI (Package)/Multitool WinUI (Package).wapproj
+Multitool WinUI (Package)/Package.appxmanifest

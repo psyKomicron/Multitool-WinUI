@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Xml;
 
 using Windows.Storage;
+using Windows.System;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -20,6 +21,7 @@ namespace MultitoolWinUI.Pages
     public sealed partial class MainPage : Page
     {
         private const string settingPath = "main-page-settings.xml";
+        private const string readMe = @"https://github.com/psyKomicron/Multitool-WinUI/blob/master/README.md";
 
         public MainPage()
         {
@@ -54,6 +56,11 @@ namespace MultitoolWinUI.Pages
             {
                 App.TraceError(e.Message);
             }
+        }
+
+        private void ReadmeButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            _ = Launcher.LaunchUriAsync(new(readMe));
         }
     }
 }

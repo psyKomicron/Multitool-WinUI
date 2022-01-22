@@ -57,7 +57,8 @@
 
             <Button
                 x:Name="ReadmeButton"
-                VariableSizedWrapGrid.ColumnSpan="2">
+                VariableSizedWrapGrid.ColumnSpan="2"
+                Click="ReadmeButton_Click">
                 <TextBlock
                     x:Name="ReadmeTextBlock"
                     Text="#README"/>

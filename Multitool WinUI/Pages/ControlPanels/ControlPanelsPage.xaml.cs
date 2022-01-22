@@ -44,7 +44,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
         }
 
         #region private methods
-
         private async void LoadCustoms(string path)
         {
             XmlDocument xmlDocument = new();
@@ -55,7 +54,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             catch (FileNotFoundException)
             {
                 _ = await ApplicationData.Current.LocalFolder.CreateFileAsync(customSettingsPathFileName, CreationCollisionOption.ReplaceExisting);
-                xmlDocument.AppendChild(xmlDocument.CreateElement("pathes"));
+                _ = xmlDocument.AppendChild(xmlDocument.CreateElement("pathes"));
                 xmlDocument.Save(path);
 
                 App.TraceInformation("Custom settings file created (since none was found)");
@@ -268,7 +267,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 App.TraceWarning("NullReferenceException in " + nameof(CopySettingFile));
             }
         }
-
         #endregion
 
         #region event handlers
@@ -352,7 +350,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
         #endregion
 
         #region window
-
         private void LoadSettingsButton_Click(object sender, RoutedEventArgs e)
         {
             _ = Launcher.LaunchUriAsync(new Uri(ApplicationData.Current.LocalFolder.Path));
@@ -367,16 +364,16 @@ namespace MultitoolWinUI.Pages.ControlPanels
         private void SettingsSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             List<string> suggestions = new();
-            Regex query = new("^(" + sender.Text + ")");
+            Regex query = new("(" + sender.Text + ")", RegexOptions.IgnoreCase);
             foreach (KeyValuePair<string, Tuple<Uri, bool>> pair in pathes)
             {
                 if (query.IsMatch(pair.Key))
                 {
                     suggestions.Add(pair.Key);
                 }
-                if (query.IsMatch(pair.Value.Item1.AbsoluteUri))
+                else if (query.IsMatch(pair.Value.Item1.AbsoluteUri))
                 {
-                    suggestions.Add(pair.Value.Item1.AbsoluteUri);
+                    suggestions.Add(pair.Key);
                 }
             }
             _ = DispatcherQueue.TryEnqueue(() => sender.ItemsSource = suggestions);
@@ -413,7 +410,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 LoadNewElements(pathes);
             }
         }
-
         #endregion
 
         #region file change

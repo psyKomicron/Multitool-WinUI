@@ -23,17 +23,19 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button x:Name="PreviousButton"
-                    Click="Previous_Click"
-                    FontSize="30">
+            <Button 
+                x:Name="PreviousButton"
+                Click="Previous_Click"
+                FontSize="30">
                 <Button.Content>
                     <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE830;"/>
                 </Button.Content>
             </Button>
-            <Button x:Name="NextButton"
-                    Click="Next_Click" 
-                    FontSize="30"
-                    Margin="30,0,0,0">
+            <Button 
+                x:Name="NextButton"
+                Click="Next_Click" 
+                FontSize="30"
+                Margin="30,0,0,0">
                 <Button.Content>
                     <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEA47;"/>
                 </Button.Content>
@@ -49,13 +51,14 @@
             <StackPanel Grid.Column="0">
                 <AutoSuggestBox 
                     x:Name="PathInput"
+                    Text="{Binding ElementName=Page, Path=CurrentPath, Mode=TwoWay}"
                     HorizontalAlignment="Stretch"
                     MinHeight="25"
                     MaxHeight="50"
+                    TabFocusNavigation="Local"
+                    GotFocus="PathInput_GotFocus"
                     TextChanged="PathInput_TextChanged"
-                    SuggestionChosen="PathInput_SuggestionChosen"
-                    QuerySubmitted="PathInput_QuerySubmitted"
-                    Text="{Binding ElementName=Page, Path=CurrentPath, Mode=TwoWay}"/>
+                    QuerySubmitted="PathInput_QuerySubmitted"/>
 
                 <TextBox
                     x:Name="Progress_TextBox"
@@ -96,24 +99,43 @@
             </StackPanel>
         </Grid>
         
-        <ListView x:Name="History_ListView"
-                  Grid.Row="1" 
-                  Grid.Column="0" 
-                  ItemsSource="{Binding History, ElementName=Page}"
-                  MinWidth="50"
-                  ItemClick="HistoryListView_ItemClick"
-                  Background="{StaticResource LightBlack}">
+        <ListView 
+            x:Name="History_ListView"
+            Grid.Row="1" 
+            Grid.Column="0" 
+            ItemsSource="{Binding History, ElementName=Page}"
+            MinWidth="50"
+            ItemClick="HistoryListView_ItemClick">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding}" Margin="7"/>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock 
+                            Text="{Binding ShortPath}" 
+                            Margin="7"
+                            Grid.Row="0"/>
+                        <TextBlock 
+                            Text="{Binding FullPath}"
+                            FontSize="8"
+                            FontFamily="Cascadia Code"
+                            FontWeight="Light"
+                            Margin="3"
+                            Grid.Row="1"/>
+                    </Grid>
+                    
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
 
-        <ScrollViewer Grid.Row="1"
-                      Grid.Column="1"
-                      HorizontalScrollMode="Disabled"
-                      VerticalScrollMode="Enabled">
+        <ScrollViewer 
+            Grid.Row="1"
+            Grid.Column="1"
+            HorizontalScrollMode="Disabled"
+            VerticalScrollMode="Enabled">
 
             <ListView
                 x:Name="MainListView"

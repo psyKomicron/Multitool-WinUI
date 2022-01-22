@@ -9,6 +9,10 @@ using Windows.Foundation;
 
 namespace Multitool.DAL.FileSystem
 {
+    /// <summary>
+    /// Represents a object that can list the content of directories and cache them
+    /// for improved performance.
+    /// </summary>
     public interface IFileSystemManager : IProgressNotifier
     {
         /// <summary>
@@ -20,6 +24,10 @@ namespace Multitool.DAL.FileSystem
         /// </summary>
         event TypedEventHandler<IFileSystemManager, CacheUpdatingEventArgs> CacheUpdating;
 
+        /// <summary>
+        /// How often should the <see cref="IFileSystemManager"/> update each individual cache (1 cache 
+        /// per path loaded).
+        /// </summary>
         double CacheTimeout { get; set; }
 
         /// <summary>
