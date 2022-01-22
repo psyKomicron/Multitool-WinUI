@@ -50,7 +50,7 @@ namespace Multitool.Net.Imaging
             //internal set => nameRegex = value;
         }
 
-#if DEBUG
+#if false
         public ImageSource Image { get; private set; } 
 #else
         public BitmapImage Image { get; private set; }
@@ -75,7 +75,7 @@ namespace Multitool.Net.Imaging
             }
 
             stream.Seek(0);
-#if DEBUG
+#if false
             if (mimeType == "image/webp")
             {
                 var encoder = await BitmapDecoder.CreateAsync(BitmapDecoder.WebpDecoderId, stream).AsTask();
@@ -95,6 +95,7 @@ namespace Multitool.Net.Imaging
                 Image = image;
             }
 #else
+            Image = new();
             await Image.SetSourceAsync(stream);
 #endif
         }
