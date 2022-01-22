@@ -70,6 +70,15 @@ namespace MultitoolWinUI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        internal static string ReleaseNotes {
+            get {
+                return ResourceManager.GetString("ReleaseNotes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to https://twitch.tv/.
         /// </summary>
         internal static string TwitchUrl {
