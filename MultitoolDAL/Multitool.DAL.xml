@@ -4,12 +4,21 @@
         <name>Multitool.DAL</name>
     </assembly>
     <members>
-        <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
+        <member name="T:Multitool.DAL.AddDelegate`1">
             <summary>
-            Completes a path by a list of possible choices.
+            Delegate.
             </summary>
-            <param name="input">Path input</param>
-            <returns>A list of possible choices</returns>
+            <typeparam name="ItemType">Type of the item's list</typeparam>
+            <param name="items">Reference to a list of items for the delegate</param>
+            <param name="item">The new item to add</param>
+        </member>
+        <member name="T:Multitool.DAL.FileSystem.ArrayConverter">
+            <summary>
+            Converts a <see cref="T:System.Collections.IList"/> to a string array.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystem.ArrayConverter.Convert(System.Collections.IList)">
+            <inheritdoc/>
         </member>
         <member name="T:Multitool.DAL.FileSystem.Events.CacheUpdatingEventArgs">
             <summary>
@@ -34,15 +43,21 @@
         </member>
         <member name="M:Multitool.DAL.FileSystem.Events.ChangeEventArgs.#ctor">
             <summary>
-            Default constructor
+            Default constructor.
             </summary>
         </member>
         <member name="M:Multitool.DAL.FileSystem.Events.ChangeEventArgs.#ctor(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystem.Events.ChangeTypes)">
             <summary>
-            Constructor
+            Constructor.
             </summary>
             <param name="entry"></param>
-            <param name="changeTypes"></param>
+            <param name="changeTypes">Change types</param>
+        </member>
+        <member name="M:Multitool.DAL.FileSystem.Events.ChangeEventArgs.#ctor(Multitool.DAL.FileSystem.Events.ChangeTypes)">
+            <summary>
+            Constructor.
+            </summary>
+            <param name="changeTypes">Change types</param>
         </member>
         <member name="P:Multitool.DAL.FileSystem.Events.ChangeEventArgs.Entry">
             <summary>
@@ -52,6 +67,51 @@
         <member name="P:Multitool.DAL.FileSystem.Events.ChangeEventArgs.ChangeTypes">
             <summary>
             Why this event was raised
+            </summary>
+        </member>
+        <member name="T:Multitool.DAL.FileSystem.Events.ChangeTypes">
+            <summary>
+            Change types.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.FileSystem.Events.ChangeTypes.DirectoryCreated">
+            <summary>
+            When a directory in watched path has been created.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.FileSystem.Events.ChangeTypes.FileCreated">
+            <summary>
+            When a file in watched path has been created.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.FileSystem.Events.ChangeTypes.FileDeleted">
+            <summary>
+            When a file in a watched path has been deleted.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.FileSystem.Events.ChangeTypes.PathDeleted">
+            <summary>
+            When a watched path has been deleted.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.FileSystem.Events.ChangeTypes.None">
+            <summary>
+            When nothing has been done.
+            </summary>
+        </member>
+        <member name="T:Multitool.DAL.FileSystem.Events.WatcherErrorTypes">
+            <summary>
+            Lists types of <see cref="T:System.IO.FileSystemWatcher"/> errors.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.FileSystem.Events.WatcherErrorTypes.BufferError">
+            <summary>
+            Buffer error.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.FileSystem.Events.WatcherErrorTypes.PathDeleted">
+            <summary>
+            The path that the watcher was watching has been deleted (analog to <see cref="F:Multitool.DAL.FileSystem.Events.ChangeTypes.PathDeleted"/>).
             </summary>
         </member>
         <member name="T:Multitool.DAL.FileSystem.FileSystemCache">
@@ -140,6 +200,12 @@
             <param name="ttl"></param>
             <param name="notifyProgress"></param>
         </member>
+        <member name="P:Multitool.DAL.FileSystem.FileSystemManager.Notify">
+            <inheritdoc/>
+        </member>
+        <member name="P:Multitool.DAL.FileSystem.FileSystemManager.CacheTimeout">
+            <inheritdoc/>
+        </member>
         <member name="E:Multitool.DAL.FileSystem.FileSystemManager.Changed">
             <inheritdoc/>
         </member>
@@ -164,6 +230,12 @@
         <member name="M:Multitool.DAL.FileSystem.FileSystemManager.GetEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
             <inheritdoc/>
         </member>
+        <member name="T:Multitool.DAL.FileSystem.IFileSystemManager">
+            <summary>
+            Represents a object that can list the content of directories and cache them
+            for improved performance.
+            </summary>
+        </member>
         <member name="E:Multitool.DAL.FileSystem.IFileSystemManager.Changed">
             <summary>
             Raised when the one or more items in the cache have changed.
@@ -174,7 +246,13 @@
             Raised when a cached path is updating.
             </summary>
         </member>
-        <member name="M:Multitool.DAL.FileSystem.IFileSystemManager.GetEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
+        <member name="P:Multitool.DAL.FileSystem.IFileSystemManager.CacheTimeout">
+            <summary>
+            How often should the <see cref="T:Multitool.DAL.FileSystem.IFileSystemManager"/> update each individual cache (1 cache 
+            per path loaded).
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystem.IFileSystemManager.GetFileSystemEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
             <summary>
             List the content of a directory as a <see cref="T:System.Collections.Generic.IList`1"/>.
             Because each directory size is calculated, the task can be 
@@ -201,6 +279,26 @@
             Cleans the internal cache.
             </summary>
         </member>
+        <member name="T:Multitool.DAL.Completion.IPathCompletor">
+            <summary>
+            Defines a method to complete pathes.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
+            <summary>
+            Completes a path by a list of possible choices.
+            </summary>
+            <param name="input">Path input</param>
+            <returns>A list of possible choices</returns>
+        </member>
+        <member name="T:Multitool.DAL.Completion.PathCompletor">
+            <summary>
+            Completes filesystem pathes
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.Completion.PathCompletor.Complete(System.String)">
+            <inheritdoc/>
+        </member>
         <member name="P:Multitool.DAL.DirectoryEntry.Size">
             <inheritdoc/>
         </member>
@@ -215,19 +313,13 @@
         </member>
         <member name="T:Multitool.DAL.DirectorySizeCalculator">
             <summary>
-            
+            Calculates the size of a directory.
             </summary>
         </member>
         <member name="M:Multitool.DAL.DirectorySizeCalculator.#ctor">
             <summary>
-            
+            Default constructor.
             </summary>
-        </member>
-        <member name="M:Multitool.DAL.DirectorySizeCalculator.#ctor(System.Boolean)">
-            <summary>
-            
-            </summary>
-            <param name="notify"></param>
         </member>
         <member name="P:Multitool.DAL.DirectorySizeCalculator.Notify">
             <inheritdoc/>
@@ -240,11 +332,11 @@
         </member>
         <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySizeAsync(System.String,System.Action{System.Int64},System.Threading.CancellationToken)">
             <summary>
-            Calculate the size of a directory asynchronously, directly pumping the size in real time.
+            Calculate the size of a directory asynchronously, updating size in real time through <paramref name="setter"/>.
             </summary>
-            <param name="path"></param>
-            <param name="cancellationToken"></param>
+            <param name="path">Directory to calculate the size of</param>
             <param name="setter"></param>
+            <param name="cancellationToken">Cancellation token</param>
         </member>
         <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySizeAsync(System.String,System.Threading.CancellationToken)">
             <summary>
@@ -253,6 +345,23 @@
             <param name="path"></param>
             <param name="cancellationToken"></param>
             <returns></returns>
+        </member>
+        <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySize(System.String,System.Action{System.Int64},System.Threading.CancellationToken)">
+            <summary>
+            Calculate the size of a directory. The method will not return the size of the directory
+            it will instead call <paramref name="setter"/> with the value to add to the current size.
+            </summary>
+            <param name="path">Path to the directory</param>
+            <param name="cancellationToken">Cancellation token to cancel the method</param>
+            <param name="setter"></param>
+        </member>
+        <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySize(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Calculate the size of a directory.
+            </summary>
+            <param name="path">Path to the directory</param>
+            <param name="cancellationToken">Cancellation token to cancel the method</param>
+            <returns>The size of the directory <paramref name="path"/></returns>
         </member>
         <member name="P:Multitool.DAL.FileEntry.Size">
             <inheritdoc/>
@@ -365,10 +474,36 @@
         <member name="M:Multitool.DAL.FileSystemEntry.ToString">
             <inheritdoc/>
         </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.op_Equality(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystemEntry)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.op_Inequality(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystemEntry)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.op_LessThan(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystemEntry)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.op_LessThanOrEqual(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystemEntry)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.op_GreaterThan(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystemEntry)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.op_GreaterThanOrEqual(Multitool.DAL.FileSystemEntry,Multitool.DAL.FileSystemEntry)">
+            <inheritdoc/>
+        </member>
         <member name="M:Multitool.DAL.FileSystemEntry.SetInfos(System.IO.FileSystemInfo)">
             <summary>
             Set path and name of this <see cref="T:Multitool.DAL.FileSystemEntry"/>. Use after refreshing info.
             </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.CanMove(System.String,Multitool.DAL.MoveCodes@)">
+            <summary>
+            Checks if a <see cref="T:Multitool.DAL.FileSystemEntry"/> can be moved and if not, why.
+            </summary>
+            <param name="newPath"></param>
+            <param name="res"></param>
+            <returns></returns>
         </member>
         <member name="M:Multitool.DAL.FileSystemEntry.CanRename(System.String)">
             <summary>
@@ -376,6 +511,82 @@
             </summary>
             <param name="newName"></param>
             <returns></returns>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.CanDelete(System.IO.FileSystemInfo)">
+            <summary>
+            Checks if <paramref name="fileInfo"/> can be deleted.
+            </summary>
+            <param name="fileInfo">File to delete</param>
+            <returns><see langword="true"/> if the file can be deleted</returns>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.CanDelete">
+            <summary>
+            Checks if the entry can be deleted.
+            </summary>
+            <returns><see langword="true"/> if the file can be deleted</returns>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.CreateDeleteIOException(System.IO.FileSystemInfo)">
+            <summary>
+            Creates a <see cref="T:System.IO.IOException"/> when the entry cannot be
+            deleted.
+            </summary>
+            <param name="info"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.CreateDeleteIOException">
+            <summary>
+            Creates a <see cref="T:System.IO.IOException"/> when the entry cannot be
+            deleted.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.RemoveReadOnly">
+            <summary>
+            Removes the readonly attribute.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.RemoveReadOnly(System.IO.FileSystemInfo)">
+            <summary>
+            Removes the readonly attribute on <paramref name="info"/>.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.RemoveIsHidden">
+            <summary>
+            Removes the hidden attribute.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.SetReadOnly">
+            <summary>
+            Adds a readonly attribute.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.SetHidden">
+            <summary>
+            Adds a hidden attribute.
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.RaiseDeletedEvent">
+            <summary>
+            <see langword="protected internal"/>
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.RaiseSizeChangedEvent(System.Int64)">
+            <summary>
+            <see langword="protected internal"/>
+            </summary>
+            <param name="oldSize"></param>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.RaiseAttributesChangedEvent(System.IO.FileAttributes)">
+            <summary>
+            <see langword="protected internal"/>
+            </summary>
+            <param name="attributes"></param>
+        </member>
+        <member name="M:Multitool.DAL.FileSystemEntry.RaiseRenamedEvent(System.String)">
+            <summary>
+            <see langword="protected internal"/>
+            </summary>
+            <param name="oldPath"></param>
         </member>
         <member name="T:Multitool.DAL.IFileSystemEntry">
             <summary>
@@ -507,6 +718,31 @@
             Forces sync with the local filesystem.
             </summary>
         </member>
+        <member name="T:Multitool.DAL.MoveCodes">
+            <summary>
+            Should be internal but <see langword="protected internal"/> method does not work.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.MoveCodes.PathNotFound">
+            <summary>
+            If the target path does not exist.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.MoveCodes.IsSystem">
+            <summary>
+            If the file is a system file/
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.MoveCodes.InfoNotSet">
+            <summary>
+            If the internal <see cref="T:System.IO.FileSystemInfo"/> is <see langword="null"/>.
+            </summary>
+        </member>
+        <member name="F:Multitool.DAL.MoveCodes.Possible">
+            <summary>
+            If the move is possible.
+            </summary>
+        </member>
         <member name="M:Multitool.DAL.WatcherFactory.CreateWatcher(System.String,System.IO.NotifyFilters,Multitool.DAL.WatcherDelegates)">
             <summary>
             Creates an instance of <see cref="T:System.IO.FileSystemWatcher"/> with the specified path and notify filters.
@@ -588,7 +824,7 @@
             Saves a setting to the provided <see cref="P:Multitool.DAL.Settings.ISettingsManager.DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="!:SettingFormat"/>.
             </para>
             <para>
-            If the setting does not exists an entry will be created, if it does the value will be updated.
+                If the setting does not exists an entry will be created, if it does the value will be updated.
             </para>
             </summary>
             <param name="callerName">Name of the caller (should be unique)</param>
@@ -652,6 +888,9 @@
             <inheritdoc/>
         </member>
         <member name="M:Multitool.DAL.Settings.SettingsManager.TryGetSetting(System.Type,System.String,System.String,System.Object@)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Multitool.DAL.Settings.GetAllSettings">
             <inheritdoc/>
         </member>
     </members>

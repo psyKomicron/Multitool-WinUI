@@ -14,6 +14,7 @@ using Multitool.Sorting;
 using Multitool.Threading;
 
 using MultitoolWinUI.Controls;
+using MultitoolWinUI.Models;
 
 using System;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Security.AccessControl;
-using System.Threading;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Windows.System;
@@ -39,15 +40,16 @@ namespace MultitoolWinUI.Pages.Explorer
     {
         private static readonly SolidColorBrush RED = new(Colors.Red);
         private static readonly SolidColorBrush WHITE = new(Colors.White);
-
         private readonly IPathCompletor pathCompletor = new PathCompletor();
         private readonly IFileSystemManager fileSystemManager = new FileSystemManager() { Notify = false };
-        private readonly Stopwatch eventStopwatch = new();
+        private readonly Stopwatch managerEventStopwatch = new();
+        private readonly Stopwatch sortEventStopwatch = new();
         private readonly Stack<string> previousStackPath = new(10);
         private readonly Stack<string> nextPathStack = new(10);
         private readonly Stopwatch taskStopwatch = new();
         private readonly object sortingLock = new();
         private ListenableCancellationTokenSource fsCancellationTokenSource;
+
         private string _currentPath;
 
         public ExplorerPage()
@@ -62,6 +64,12 @@ namespace MultitoolWinUI.Pages.Explorer
             try
             {
                 CurrentPath = App.Settings.GetSetting<string>(nameof(ExplorerPage), nameof(CurrentPath));
+                string[] history = App.Settings.GetSetting<string[]>(nameof(ExplorerPage), nameof(History));
+                History = new();
+                for (int i = 0; i < history.Length; i++)
+                {
+                    History.Add(PathHistoryItem.FromString(history[i], DispatcherQueue));
+                }
             }
             catch (SettingNotFoundException ex)
             {
@@ -86,7 +94,7 @@ namespace MultitoolWinUI.Pages.Explorer
         #region properties
         public ObservableCollection<FileSystemEntryView> CurrentFiles { get; } = new();
 
-        public ObservableCollection<string> History { get; } = new();
+        public ObservableCollection<PathHistoryItem> History { get; }
 
         public string CurrentPath
         {
@@ -124,15 +132,36 @@ namespace MultitoolWinUI.Pages.Explorer
             try
             {
                 string realPath = fileSystemManager.GetRealPath(UriCleaner.RemoveChariotReturns(path));
+                bool contains = false;
+                foreach (var item in History)
+                {
+                    if (item.FullPath == realPath)
+                    {
+                        contains = true;
+                    }
+                }
+                if (!contains)
+                {
+                    string shortPath = Path.GetFileName(realPath);
+                    if (string.IsNullOrEmpty(shortPath))
+                    {
+                        shortPath = realPath;
+                    }
+                    History.Add(new(DispatcherQueue)
+                    {
+                        FullPath = realPath,
+                        ShortPath = shortPath
+                    });
+                }
                 CurrentPath = realPath;
                 CurrentFiles.Clear();
                 Progress_TextBox.Text = string.Empty;
 
-                fileSystemManager.Notify = true;
                 Files_ProgressBar.IsIndeterminate = true;
                 CancelAction_Button.IsEnabled = true;
 
-                eventStopwatch.Restart();
+                managerEventStopwatch.Restart();
+                sortEventStopwatch.Restart();
                 taskStopwatch.Restart();
                 try
                 {
@@ -141,12 +170,14 @@ namespace MultitoolWinUI.Pages.Explorer
                     taskStopwatch.Stop();
                     fsCancellationTokenSource.Dispose();
                     fsCancellationTokenSource = null;
-                    eventStopwatch.Reset();
+
+                    taskStopwatch.Stop();
+                    managerEventStopwatch.Reset();
+                    sortEventStopwatch.Reset();
 
                     CancelAction_Button.IsEnabled = false;
                     SortList();
                     Files_ProgressBar.IsIndeterminate = false;
-
                     Progress_TextBox.Foreground = new SolidColorBrush(Colors.White);
                     if (taskStopwatch.Elapsed.TotalSeconds < 1)
                     {
@@ -169,7 +200,7 @@ namespace MultitoolWinUI.Pages.Explorer
                 }
                 catch (OperationCanceledException)
                 {
-                    eventStopwatch.Reset();
+                    managerEventStopwatch.Reset();
                     CancelAction_Button.IsEnabled = false;
                     Files_ProgressBar.IsIndeterminate = false;
 
@@ -181,7 +212,7 @@ namespace MultitoolWinUI.Pages.Explorer
                 }
                 catch (Exception ex) // we catch everything, and display it to the trace and UI
                 {
-                    eventStopwatch.Reset();
+                    managerEventStopwatch.Reset();
                     CancelAction_Button.IsEnabled = false;
                     Files_ProgressBar.IsIndeterminate = false;
 
@@ -191,7 +222,8 @@ namespace MultitoolWinUI.Pages.Explorer
             }
             catch (DirectoryNotFoundException ex)
             {
-                eventStopwatch.Reset();
+                fsCancellationTokenSource = null;
+                managerEventStopwatch.Reset();
                 CancelAction_Button.IsEnabled = false;
                 Files_ProgressBar.IsIndeterminate = false;
 
@@ -203,20 +235,46 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void AddDelegate(IList<FileSystemEntryView> items, IFileSystemEntry item)
         {
-            _ = DispatcherQueue.TryEnqueue(() => items.Add(new(item)
+            _ = DispatcherQueue.TryEnqueue(() =>
             {
-                ListView = MainListView,
-                Page = this
-            }));
+                FileSystemEntryView view = new(item)
+                {
+                    ListView = MainListView,
+                    Page = this
+                };
+                view.SizedChanged += View_SizeChanged;
+                items.Add(view);
+            });
         }
 
         private void SortList()
         {
-            FileSystemEntryView[] pathItems = ObservableCollectionQuickSort.Sort(CurrentFiles);
-            CurrentFiles.Clear();
-            for (int i = pathItems.Length - 1; i >= 0; i--)
+            lock (sortingLock)
             {
-                CurrentFiles.Add(pathItems[i]);
+                FileSystemEntryView[] pathItems = new FileSystemEntryView[CurrentFiles.Count];
+                CurrentFiles.CopyTo(pathItems, 0);
+                QuickSort.Sort(pathItems, 0, pathItems.Length - 1);
+
+                bool notSame = false;
+                for (int i = 0; i < pathItems.Length; i++)
+                {
+                    if (CurrentFiles[i].Path != pathItems[i].Path)
+                    {
+                        notSame = true;
+                        break;
+                    }
+                }
+                if (notSame)
+                {
+                    for (int i = 0; i < CurrentFiles.Count; i++)
+                    {
+                        CurrentFiles[i] = null;
+                    }
+                    for (int i = 0; i < pathItems.Length; i++)
+                    {
+                        CurrentFiles[i] = pathItems[i];
+                    }
+                }
             }
         }
 
@@ -234,7 +292,7 @@ namespace MultitoolWinUI.Pages.Explorer
         {
             _ = DispatcherQueue.TryEnqueue(() =>
             {
-                if (force || eventStopwatch.ElapsedMilliseconds > 100) //ms interval between each notification
+                if (force || managerEventStopwatch.ElapsedMilliseconds > 100) //ms interval between each notification
                 {
                     if (error)
                     {
@@ -246,7 +304,7 @@ namespace MultitoolWinUI.Pages.Explorer
                         Progress_TextBox.Foreground = WHITE;
                         Progress_TextBox.Text = message;
                     }
-                    eventStopwatch.Restart();
+                    managerEventStopwatch.Restart();
                 }
             });
         }
@@ -284,26 +342,60 @@ namespace MultitoolWinUI.Pages.Explorer
             DisplayFiles(CurrentPath);
         }
 
+        private void CompletePath()
+        {
+            string path = PathInput.Text;
+            try
+            {
+                Regex regex = new(@"^[A-z]:(\\|\/).*", RegexOptions.IgnoreCase & RegexOptions.Compiled);
+                if (!regex.IsMatch(path))
+                {
+                    List<string> items = new();
+                    DriveInfo[] driveInfos = DriveInfo.GetDrives();
+                    for (int i = 0; i < driveInfos.Length; i++)
+                    {
+                        items.Add(driveInfos[i].Name);
+                    }
+                    PathInput.ItemsSource = items;
+                }
+                else
+                {
+                    PathInput.ItemsSource = pathCompletor.Complete(path);
+                }
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Trace.TraceError(e.ToString());
+            }
+        }
+
+        private void SavePage()
+        {
+            App.Settings.SaveSetting(nameof(ExplorerPage), nameof(CurrentPath), CurrentPath);
+            string[] array = new string[History.Count];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = History[i].ToString();
+            }
+            App.Settings.SaveSetting(nameof(ExplorerPage), nameof(History), array);
+        }
         #endregion
 
         #region events
 
         #region navigation events
-
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            base.OnNavigatedTo(e);
             string path = e.Parameter as string;
             if (!string.IsNullOrEmpty(path))
             {
                 DisplayFiles(path);
             }
-            base.OnNavigatedTo(e);
         }
-
         #endregion
 
         #region window events
-
         private void MainListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0)
@@ -349,10 +441,43 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void MainListView_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-#if DEBUG
-            if (((int)e.Key > 64 && (int)e.Key < 91) || ((int)e.Key > 47 && (int)e.Key < 58))
+            if ((int)e.Key is (> 64 and < 91) or (> 47 and < 58))
             {
-                char keyPressed = default;
+                char keyPressed = (char)e.Key;
+                if (!keyPressed.Equals(default))
+                {
+                    int selectIndex = MainListView.SelectedIndex;
+                    char charIndex = CurrentFiles[selectIndex].Name[0];
+                    if (charIndex == keyPressed)
+                    {
+                        for (int i = 0; i < CurrentFiles.Count; i++)
+                        {
+                            if (CurrentFiles[i].Name[0] == keyPressed && i < selectIndex)
+                            {
+                                MainListView.SelectedIndex = i;
+                                return;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        string key = string.Empty + keyPressed;
+                        for (int i = 0; i < CurrentFiles.Count; i++)
+                        {
+                            if (CurrentFiles[i].Name.StartsWith(key, StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (i != selectIndex)// no unnecessary actions
+                                {
+                                    MainListView.SelectedIndex = i;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
                 switch (e.Key)
                 {
                     case VirtualKey.Cancel:
@@ -374,114 +499,6 @@ namespace MultitoolWinUI.Pages.Explorer
                             DisplayFiles(CurrentFiles[MainListView.SelectedIndex].Path);
                         }
                         return;
-                    case VirtualKey.Number0:
-                        keyPressed = '0';
-                        break;
-                    case VirtualKey.Number1:
-                        keyPressed = '1';
-                        break;
-                    case VirtualKey.Number2:
-                        keyPressed = '2';
-                        break;
-                    case VirtualKey.Number3:
-                        keyPressed = '3';
-                        break;
-                    case VirtualKey.Number4:
-                        keyPressed = '4';
-                        break;
-                    case VirtualKey.Number5:
-                        keyPressed = '5';
-                        break;
-                    case VirtualKey.Number6:
-                        keyPressed = '6';
-                        break;
-                    case VirtualKey.Number7:
-                        keyPressed = '7';
-                        break;
-                    case VirtualKey.Number8:
-                        keyPressed = '8';
-                        break;
-                    case VirtualKey.Number9:
-                        keyPressed = '9';
-                        break;
-                    case VirtualKey.A:
-                        keyPressed = 'A';
-                        break;
-                    case VirtualKey.B:
-                        keyPressed = 'B';
-                        break;
-                    case VirtualKey.C:
-                        keyPressed = 'C';
-                        break;
-                    case VirtualKey.D:
-                        keyPressed = 'D';
-                        break;
-                    case VirtualKey.E:
-                        keyPressed = 'E';
-                        break;
-                    case VirtualKey.F:
-                        keyPressed = 'F';
-                        break;
-                    case VirtualKey.G:
-                        keyPressed = 'G';
-                        break;
-                    case VirtualKey.H:
-                        keyPressed = 'H';
-                        break;
-                    case VirtualKey.I:
-                        keyPressed = 'I';
-                        break;
-                    case VirtualKey.J:
-                        keyPressed = 'J';
-                        break;
-                    case VirtualKey.K:
-                        keyPressed = 'K';
-                        break;
-                    case VirtualKey.L:
-                        keyPressed = 'L';
-                        break;
-                    case VirtualKey.M:
-                        keyPressed = 'M';
-                        break;
-                    case VirtualKey.N:
-                        keyPressed = 'N';
-                        break;
-                    case VirtualKey.O:
-                        keyPressed = 'O';
-                        break;
-                    case VirtualKey.P:
-                        keyPressed = 'P';
-                        break;
-                    case VirtualKey.Q:
-                        keyPressed = 'Q';
-                        break;
-                    case VirtualKey.R:
-                        keyPressed = 'R';
-                        break;
-                    case VirtualKey.S:
-                        keyPressed = 'S';
-                        break;
-                    case VirtualKey.T:
-                        keyPressed = 'T';
-                        break;
-                    case VirtualKey.U:
-                        keyPressed = 'U';
-                        break;
-                    case VirtualKey.V:
-                        keyPressed = 'V';
-                        break;
-                    case VirtualKey.W:
-                        keyPressed = 'W';
-                        break;
-                    case VirtualKey.X:
-                        keyPressed = 'X';
-                        break;
-                    case VirtualKey.Y:
-                        keyPressed = 'Y';
-                        break;
-                    case VirtualKey.Z:
-                        keyPressed = 'Z';
-                        break;
                     case VirtualKey.GoBack:
                         Back();
                         return;
@@ -495,49 +512,19 @@ namespace MultitoolWinUI.Pages.Explorer
                         // give focus to the autosuggest box
                         break;
                 }
-                if (keyPressed != default)
-                {
-                    int selectIndex = MainListView.SelectedIndex;
-                    char charIndex = CurrentFiles[selectIndex].Name[0];
-                    if (charIndex == keyPressed)
-                    {
-                        for (int i = 0; i < CurrentFiles.Count; i++)
-                        {
-                            if (CurrentFiles[i].Name[0] == keyPressed && i < selectIndex)
-                            {
-                                MainListView.SelectedIndex = i;
-                                return;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 0; i < CurrentFiles.Count; i++)
-                        {
-                            if (CurrentFiles[i].Name[0] == keyPressed)
-                            {
-                                if (i != selectIndex)// no unnecessary actions
-                                {
-                                    MainListView.SelectedIndex = i;
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                }
+
             }
-#endif
         }
 
         private void Page_CharacterReceived(UIElement sender, CharacterReceivedRoutedEventArgs args)
         {
-            Debug.WriteLine("Char received: " + args.Character);
+            Debug.WriteLine("Char received : " + args.Character);
             args.Handled = true;
         }
 
         private void HistoryListView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            // TODO
+            // TODO : 
         }
 
         private void RefreshFileList_Click(object sender, RoutedEventArgs e)
@@ -562,22 +549,10 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void PathInput_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            string path = PathInput.Text;
-            try
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
-                PathInput.ItemsSource = pathCompletor.Complete(path);
+                CompletePath();
             }
-            catch (UnauthorizedAccessException e)
-            {
-                App.TraceError(e.ToString());
-            }
-        }
-
-        private void PathInput_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        {
-#if DEBUG
-            Debug.WriteLine("PathInput_SuggestionChosen -> " + args.SelectedItem.ToString() + " | " + args.GetType().ToString());
-#endif
         }
 
         private void PathInput_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
@@ -587,6 +562,17 @@ namespace MultitoolWinUI.Pages.Explorer
             {
                 DisplayFiles(text);
             }
+#if TRACE
+            else
+            {
+                Trace.TraceWarning("Submitted path is empty : " + text);
+            }
+#endif
+        }
+
+        private void PathInput_GotFocus(object sender, RoutedEventArgs e)
+        {
+            CompletePath();
         }
 
         private void Page_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -611,13 +597,22 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void OnMainWindowClosed(object sender, WindowEventArgs args)
         {
-            App.Settings.SaveSetting(nameof(ExplorerPage), nameof(CurrentPath), CurrentPath);
-            CancelFileTask();
+            Task.Run(() => CancelFileTask());
+            // saving when the mainwindow is closed because this page is cached and thus never unloaded
+            SavePage();
         }
-
         #endregion
 
         #region manager
+        private void View_SizeChanged(IFileSystemEntry sender, long args)
+        {
+            if (sortEventStopwatch.ElapsedMilliseconds > 120 && Math.Abs(sender.Size - args) > (sender.Size * 0.2))
+            {
+                _ = DispatcherQueue.TryEnqueue(() => SortList());
+                sortEventStopwatch.Restart();
+            }
+        }
+
         private void FileSystemManager_Progress(object sender, string message)
         {
             DisplayMessage(message, false, sender == null);

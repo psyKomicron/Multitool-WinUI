@@ -5,6 +5,10 @@ using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
+using Windows.Win32.Storage.FileSystem;
+using Windows.Win32.Security;
+using Microsoft.Win32.SafeHandles;
+using System.Diagnostics;
 
 namespace Multitool.NTInterop
 {
@@ -69,6 +73,41 @@ namespace Multitool.NTInterop
             if (!PInvoke.SetWindowPos(hwnd, new(-1), newPosition.X, newPosition.Y, s.Width, s.Height, SET_WINDOW_POS_FLAGS.SWP_NOMOVE))
             {
                 throw InteropHelper.GetLastError("'SetWindowPos' failed");
+            }
+        }
+
+        /// <summary>
+        /// Gets the size of a file.
+        /// </summary>
+        /// <param name="fileName">Path to the file</param>
+        /// <returns>The size of the file</returns>
+        /// <exception cref="OperationFailedException">Thrown if one the <see cref="PInvoke"/> functions fails.</exception>
+        public static long GetFileSize(string fileName)
+        {
+            SafeFileHandle handle = PInvoke.CreateFile(
+                fileName,
+                FILE_ACCESS_FLAGS.FILE_READ_DATA,
+                FILE_SHARE_MODE.FILE_SHARE_READ,
+                null,
+                FILE_CREATION_DISPOSITION.OPEN_EXISTING,
+                FILE_FLAGS_AND_ATTRIBUTES.FILE_ATTRIBUTE_READONLY,
+                null
+                );
+            if (handle != null)
+            {
+                if (PInvoke.GetFileSizeEx(handle, out long size))
+                {
+                    return size;
+                }
+                else
+                {
+                    throw new OperationFailedException($"Unable to get \"{fileName}\" size. GetFileSizeEx returned false.", null);
+                }
+            }
+            else
+            {
+                //Trace.TraceError($"{nameof(InteropWrapper)} : Cannot open \"{fileName}\", handle was null.");
+                throw new OperationFailedException($"Cannot open \"{fileName}\", handle was null.", null);
             }
         }
     }

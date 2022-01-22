@@ -5,7 +5,9 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:models="using:MultitoolWinUI.Models" 
-    xmlns:controls="using:MultitoolWinUI.Controls" xmlns:twitch="using:Multitool.Net.Twitch"
+    xmlns:controls="using:MultitoolWinUI.Controls" 
+    xmlns:imaging="using:Multitool.Net.Imaging"
+    Background="{StaticResource DarkBlack}"
     mc:Ignorable="d">
 
     <Grid 
@@ -108,13 +110,14 @@
                             Grid.Row="1"
                             ItemClick="EmoteGridView_ItemClick">
                             <GridView.ItemTemplate>
-                                <DataTemplate x:DataType="twitch:Emote">
+                                <DataTemplate x:DataType="imaging:Emote">
                                     <Image Stretch="Uniform" Source="{x:Bind Image}" Height="30">
                                         <ToolTipService.ToolTip>
                                             <ToolTip>
                                                 <StackPanel Orientation="Vertical">
                                                     <Image Stretch="Uniform" Source="{x:Bind Image}" Height="70"/>
                                                     <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{x:Bind Provider}" HorizontalAlignment="Center"/>
                                                 </StackPanel>
                                             </ToolTip>
                                         </ToolTipService.ToolTip>
@@ -136,13 +139,14 @@
                             Grid.Row="3"
                             ItemClick="EmoteGridView_ItemClick">
                             <GridView.ItemTemplate>
-                                <DataTemplate x:DataType="twitch:Emote">
+                                <DataTemplate x:DataType="imaging:Emote">
                                     <Image Stretch="Uniform" Source="{x:Bind Image}" Height="30">
                                         <ToolTipService.ToolTip>
                                             <ToolTip>
                                                 <StackPanel Orientation="Vertical">
                                                     <Image Stretch="Uniform" Source="{x:Bind Image}" Height="70"/>
                                                     <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{x:Bind Provider}" HorizontalAlignment="Center"/>
                                                 </StackPanel>
                                             </ToolTip>
                                         </ToolTipService.ToolTip>

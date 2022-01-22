@@ -5,8 +5,12 @@ using System.Text;
 
 namespace Multitool.DAL.Completion
 {
+    /// <summary>
+    /// Completes filesystem pathes
+    /// </summary>
     public class PathCompletor : IPathCompletor
     {
+        /// <inheritdoc/>
         public string[] Complete(string input)
         {
             string fileName = GetFileName(input, out int i);

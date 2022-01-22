@@ -187,7 +187,11 @@ namespace MultitoolWinUI
                 ContentPopup.IsOpen = args == Visibility.Visible;
             }
         }
-
         #endregion
+
+        private void Window_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            
+        }
     }
 }

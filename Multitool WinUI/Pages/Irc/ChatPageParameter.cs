@@ -1,6 +1,6 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
-using Multitool.Net.Twitch;
+using Multitool.Net.Imaging;
 using Multitool.Net.Twitch.Irc;
 
 using System.Collections.Generic;

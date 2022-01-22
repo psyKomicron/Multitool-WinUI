@@ -1,7 +1,5 @@
 ﻿using Microsoft.UI.Dispatching;
 
-using System.Diagnostics;
-
 using Windows.Devices.Enumeration;
 
 namespace MultitoolWinUI.Models

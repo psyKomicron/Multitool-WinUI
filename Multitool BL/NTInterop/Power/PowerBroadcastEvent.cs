@@ -1,6 +1,6 @@
 ﻿namespace Multitool.NTInterop.Power
 {
-    public enum PowerBroadcastEvent : int
+    internal enum PowerBroadcastEvent : int
     {
         ApmQuerySuspend = 0x0,
         ApmQueryStandby = 0x1,

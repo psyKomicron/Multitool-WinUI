@@ -21,6 +21,7 @@ using Windows.Foundation;
 
 namespace MultitoolWinUI.Controls
 {
+    [DebuggerDisplay("{Name},{Size}")]
     public sealed partial class FileSystemEntryView : UserControl, IFileSystemEntry, INotifyPropertyChanged
     {
         private const ushort uiUpdateMs = 120;
@@ -43,21 +44,10 @@ namespace MultitoolWinUI.Controls
         public FileSystemEntryView(IFileSystemEntry item)
         {
             InitializeComponent();
-            Loaded += OnLoaded;
-            Unloaded += OnUnloaded;
-            App.MainWindow.SizeChanged += OnWindowSizeChanged;
-
             FileSystemEntry = item;
-
-            item.AttributesChanged += OnAttributesChanged;
-            item.Deleted += OnDeleted;
-            item.SizedChanged += OnSizeChanged;
-            item.PartialChanged += Item_PartialChanged;
-
             Icon = GetIcon();
-
+            AddAttributes();
             Color = IsDirectory ? new SolidColorBrush(Tool.GetAppRessource<Windows.UI.Color>("DevBlue")) : new SolidColorBrush(Microsoft.UI.Colors.White);
-
             if (Partial)
             {
                 PartialIcon = "\xe783";
@@ -70,8 +60,15 @@ namespace MultitoolWinUI.Controls
                 DisplaySizeUnit = ext;
                 DisplaySize = formatted.ToString("F2", CultureInfo.InvariantCulture);
             }
-
             uiUpdateStopwatch.Start();
+
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+            App.MainWindow.SizeChanged += OnWindowSizeChanged;
+            item.AttributesChanged += OnAttributesChanged;
+            item.Deleted += OnDeleted;
+            item.SizedChanged += OnSizeChanged;
+            item.PartialChanged += Item_PartialChanged;
         }
 
         #region decoration
@@ -114,12 +111,12 @@ namespace MultitoolWinUI.Controls
         {
             add
             {
-                ((IFileSystemEntry)FileSystemEntry).AttributesChanged += value;
+                FileSystemEntry.AttributesChanged += value;
             }
 
             remove
             {
-                ((IFileSystemEntry)FileSystemEntry).AttributesChanged -= value;
+                FileSystemEntry.AttributesChanged -= value;
             }
         }
 
@@ -127,12 +124,12 @@ namespace MultitoolWinUI.Controls
         {
             add
             {
-                ((IFileSystemEntry)FileSystemEntry).Deleted += value;
+                FileSystemEntry.Deleted += value;
             }
 
             remove
             {
-                ((IFileSystemEntry)FileSystemEntry).Deleted -= value;
+                FileSystemEntry.Deleted -= value;
             }
         }
 
@@ -140,12 +137,12 @@ namespace MultitoolWinUI.Controls
         {
             add
             {
-                ((IFileSystemEntry)FileSystemEntry).PartialChanged += value;
+                FileSystemEntry.PartialChanged += value;
             }
 
             remove
             {
-                ((IFileSystemEntry)FileSystemEntry).PartialChanged -= value;
+                FileSystemEntry.PartialChanged -= value;
             }
         }
 
@@ -153,12 +150,12 @@ namespace MultitoolWinUI.Controls
         {
             add
             {
-                ((IFileSystemEntry)FileSystemEntry).Renamed += value;
+                FileSystemEntry.Renamed += value;
             }
 
             remove
             {
-                ((IFileSystemEntry)FileSystemEntry).Renamed -= value;
+                FileSystemEntry.Renamed -= value;
             }
         }
 
@@ -166,12 +163,12 @@ namespace MultitoolWinUI.Controls
         {
             add
             {
-                ((IFileSystemEntry)FileSystemEntry).SizedChanged += value;
+                FileSystemEntry.SizedChanged += value;
             }
 
             remove
             {
-                ((IFileSystemEntry)FileSystemEntry).SizedChanged -= value;
+                FileSystemEntry.SizedChanged -= value;
             }
         }
 
@@ -307,6 +304,43 @@ namespace MultitoolWinUI.Controls
             };
         }
 
+        private void AddAttributes()
+        {
+            if (IsHidden)
+            {
+                AttributesGrid.Children.Add(CreateAttributeTextBlock(HiddenIcon, "Hidden"));
+            }
+            if (IsSystem)
+            {
+                AttributesGrid.Children.Add(CreateAttributeTextBlock(SystemIcon, "System"));
+            }
+            if (IsReadOnly)
+            {
+                AttributesGrid.Children.Add(CreateAttributeTextBlock(ReadOnlyIcon, "Read-only"));
+            }
+            if (IsEncrypted)
+            {
+                AttributesGrid.Children.Add(CreateAttributeTextBlock(EncryptedIcon, "Encrypted"));
+            }
+            if (IsCompressed)
+            {
+                AttributesGrid.Children.Add(CreateAttributeTextBlock(CompressedIcon, "Compressed"));
+            }
+            if (IsDevice)
+            {
+                AttributesGrid.Children.Add(CreateAttributeTextBlock(DeviceIcon, "Device"));
+            }
+        }
+
+        private TextBlock CreateAttributeTextBlock(string text, string tooltip)
+        {
+            TextBlock textBlock = new()
+            {
+                Text = text
+            };
+            ToolTipService.SetToolTip(textBlock, tooltip);
+            return textBlock;
+        }
         #endregion
 
         #region events handlers
@@ -422,6 +456,5 @@ namespace MultitoolWinUI.Controls
         #endregion
 
         #endregion
-
     }
 }

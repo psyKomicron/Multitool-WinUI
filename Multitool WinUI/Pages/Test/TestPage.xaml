@@ -8,20 +8,11 @@
     mc:Ignorable="d">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition/>
-            <RowDefinition/>
-        </Grid.RowDefinitions>
-
-        <RichTextBlock Grid.Row="0">
-            <Paragraph CharacterSpacing="15" LineStackingStrategy="MaxHeight" LineHeight="24">
-                <Run Text="03:24" FontWeight="Light"/>
-                <Run Text="psykomicron" FontWeight="Bold"/>
-                <Run>
-                    GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN  GIGACHAD Harry "MANUAL HEADPOP" BROWN
-                </Run>
-            </Paragraph>
-        </RichTextBlock>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="60"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
 
         <TextBox
             x:Name="ChatInput"
@@ -31,6 +22,14 @@
             HorizontalAlignment="Stretch"
             AcceptsReturn="True"
             ScrollViewer.VerticalScrollMode="Auto"
-            Grid.Row="1"/>
+            Grid.Column="0"/>
+
+        <Button Grid.Column="1" Click="Button_Click" Content="☑️"/>
+
+        <TextBlock
+            x:Name="Result"
+            IsTextSelectionEnabled="True"
+            Grid.Column="2"
+            TextWrapping="Wrap"/>
     </Grid>
 </Page>
