@@ -32,7 +32,6 @@ namespace MultitoolWinUI.Pages
     /// </summary>
     public sealed partial class TwitchPage : Page, INotifyPropertyChanged
     {
-        //private readonly object _lock = new();
         private bool saved;
         private TwitchConnectionToken token;
 
