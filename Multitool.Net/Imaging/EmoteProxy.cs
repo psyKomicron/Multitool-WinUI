@@ -5,18 +5,16 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 
 namespace Multitool.Net.Imaging
 {
-    public sealed class TwitchEmoteProxy : IDisposable
+    public sealed class EmoteProxy : EmoteFetcher
     {
         private const int timeout = 500;
-        private static TwitchEmoteProxy instance;
+        private static EmoteProxy instance;
 
         private readonly System.Timers.Timer cacheTimer;
         private readonly ConcurrentDictionary<string, SemaphoreSlim> semaphores = new();
@@ -27,26 +25,16 @@ namespace Multitool.Net.Imaging
         private readonly List<Emote> globalEmotesCache = new();
         private readonly ConcurrentBag<Emote> emotesCache = new();
 
-        private EmoteFetcher emoteFetcher;
-
-        private TwitchEmoteProxy()
+        private EmoteProxy() : base(null)
         {
             cacheTimer = new(5_000);
             cacheTimer.Elapsed += OnCacheTimerElapsed;
+            EmoteFetchers = new(3);
         }
 
-        public TwitchConnectionToken ConnectionToken 
-        { 
-            get => emoteFetcher.ConnectionToken; 
-            set
-            {
-                emoteFetcher.ConnectionToken = value;
-            } 
-        }
+        public List<EmoteFetcher> EmoteFetchers { get; init; }
 
-        public EmoteFetcher EmoteFetcher => emoteFetcher;
-
-        public static TwitchEmoteProxy GetInstance()
+        public static EmoteProxy Get()
         {
             if (instance is null)
             {
@@ -55,23 +43,8 @@ namespace Multitool.Net.Imaging
             return instance;
         }
 
-        public void CreateEmoteFetcher(TwitchConnectionToken token)
+        public override async Task<List<Emote>> FetchGlobalEmotes()
         {
-            if (emoteFetcher == null)
-            {
-                emoteFetcher = new(token);
-            }
-        }
-
-        public void Dispose()
-        {
-            emoteFetcher.Dispose();
-        }
-
-        public async Task<List<Emote>> GetGlobalEmotes()
-        {
-            CheckToken();
-
             if (globalEmotesCache.Count > 0)
             {
                 return globalEmotesCache;
@@ -80,10 +53,23 @@ namespace Multitool.Net.Imaging
             {
                 try
                 {
-                    Trace.TraceInformation("Downloading global emotes...");
                     await globalEmotesDownloadSemaphore.WaitAsync();
-                    globalEmotesCache.AddRange(await emoteFetcher.GetGlobalTwitchEmotes());
+                    Trace.TraceInformation("Downloading global emotes...");
+
+                    List<Task<List<Emote>>> tasks = new(EmoteFetchers.Count);
+                    foreach (var fetcher in EmoteFetchers)
+                    {
+                        tasks.Add(fetcher.FetchGlobalEmotes());
+                    }
+
+                    await Task.WhenAll(tasks);
+
+                    foreach (var task in tasks)
+                    {
+                        globalEmotesCache.AddRange(task.Result);
+                    }
                     globalEmotesDownloadSemaphore.Release();
+
                     return globalEmotesCache;
                 }
                 catch
@@ -109,10 +95,9 @@ namespace Multitool.Net.Imaging
             }
         }
 
-        public async Task<List<Emote>> GetChannelEmotes(string channel)
+        public override async Task<List<Emote>> FetchChannelEmotes(string channel)
         {
             // not the way i want to do it. Maybe will copy behavior from Multitool.DAL.FileSystem
-            CheckToken();
             if (semaphores.TryGetValue(channel, out SemaphoreSlim semaphore))
             {
                 if (await semaphore.WaitAsync(50_000))
@@ -159,23 +144,53 @@ namespace Multitool.Net.Imaging
                 SemaphoreSlim s = new(1);
                 semaphores.TryAdd(channel, s);
                 await s.WaitAsync();
-                List<Emote> channelEmotes = await emoteFetcher.GetTwitchChannelEmotes(channel);
-
-                if (await emoteCacheSemaphore.WaitAsync(timeout))
+                try
                 {
-                    Trace.TraceInformation($"Caching emotes from #{channel}...");
-                    for (int i = 0; i < channelEmotes.Count; i++)
+                    List<Task<List<Emote>>> tasks = new(EmoteFetchers.Count);
+                    foreach (var fetcher in EmoteFetchers)
                     {
-                        emotesCache.Add(channelEmotes[i]);
+                        try
+                        {
+                            tasks.Add(fetcher.FetchChannelEmotes(channel));
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.TraceError(ex.ToString());
+                        }
                     }
-                    emoteCacheSemaphore.Release();
+                    await Task.WhenAll(tasks);
+
+                    List<Emote> channelEmotes = new();
+                    for (int i = 0; i < tasks.Count; i++)
+                    {
+                        if (tasks[i].IsCompletedSuccessfully)
+                        {
+                            channelEmotes.AddRange(tasks[i].Result);
+                        }
+                    }
+
+                    if (await emoteCacheSemaphore.WaitAsync(timeout))
+                    {
+                        Trace.TraceInformation($"Caching emotes from #{channel}...");
+                        for (int i = 0; i < channelEmotes.Count; i++)
+                        {
+                            emotesCache.Add(channelEmotes[i]);
+                        }
+                        emoteCacheSemaphore.Release();
+                    }
+                    else
+                    {
+                        Trace.TraceWarning($"Failed to get emote cache semaphore, not caching channel emotes (count: {channelEmotes.Count}, channel: #{channel})");
+                    }
+
+                    s.Release();
+                    return channelEmotes;
                 }
-                else
+                catch
                 {
-                    Trace.TraceWarning($"Failed to get emote cache semaphore, not caching channel emotes (count: {channelEmotes.Count}, channel: #{channel})");
+                    s.Release();
+                    throw;
                 }
-                s.Release();
-                return channelEmotes;
             }
         }
 
@@ -183,24 +198,6 @@ namespace Multitool.Net.Imaging
         {
             throw new NotImplementedException();
         }
-
-        #region private methods
-        private void CheckToken()
-        {
-            if (ConnectionToken is null)
-            {
-                throw new ArgumentNullException($"{nameof(ConnectionToken)} is null.{nameof(EmoteFetcher)} cannot make calls to the Twitch API without a connection token.");
-            }
-            if (!ConnectionToken.Validated)
-            {
-                throw new ArgumentException("Token has not been validated. Call the appropriate method to validate the token.");
-            }
-            if (ConnectionToken.ClientId is null)
-            {
-                throw new ArgumentNullException("Client id is null.");
-            }
-        }
-        #endregion
 
         #region event handlers
         private void OnCacheTimerElapsed(object sender, ElapsedEventArgs e)

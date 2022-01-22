@@ -1,6 +1,12 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Multitool.Net.Twitch;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
+
+using Multitool.DAL.Settings;
+using Multitool.Net.Imaging;
 using Multitool.Net.Twitch.Irc;
 using Multitool.Net.Twitch.Security;
 
@@ -9,19 +15,12 @@ using MultitoolWinUI.Pages.Irc;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
-using Windows.Web.Http;
-using System.ComponentModel;
-using Multitool.DAL.Settings;
-using Microsoft.UI.Xaml.Navigation;
 using System.Threading.Tasks;
-using Microsoft.UI.Xaml.Media;
+
 using Windows.UI;
-using Multitool.Net.Imaging;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -134,27 +133,12 @@ namespace MultitoolWinUI.Pages
                     }
                     else
                     {
-                        TwitchEmoteProxy proxy = TwitchEmoteProxy.GetInstance();
-                        proxy.CreateEmoteFetcher(token);
-                        proxy.EmoteFetcher.DefaultImageSize = ImageSize.Big;
+                        EmoteProxy proxy = EmoteProxy.Get();
+                        //proxy.EmoteFetchers.Add(new TwitchEmoteFetcher(token));
+                        //proxy.EmoteFetchers.Add(new FfzEmoteFetcher());
+                        proxy.EmoteFetchers.Add(new SevenTVEmoteFetcher());
 
-                        Task<List<Emote>>[] tasks = new Task<List<Emote>>[2];
-                        tasks[0] = proxy.GetGlobalEmotes();
-                        tasks[1] = proxy.EmoteFetcher.GetGlobalFfzEmotes();
-                        //tasks[2] = proxy.EmoteFetcher.GetGlobal7TVEmotes();
-                        //tasks[3] = proxy.EmoteFetcher.GetChannel7TVEmotes("gigi");
-
-                        await Task.WhenAll(tasks);
-
-                        tasks[0].Result.AddRange(tasks[0].Result);
-                        tasks[0].Result.AddRange(tasks[1].Result);
-                        //tasks[1].Result.AddRange(tasks[3].Result);
-                        /*var list = await proxy.EmoteFetcher.GetChannel7TVEmotes("gigi");
-                        foreach (var emote in list)
-                        {
-                            Debug.WriteLine(emote);
-                        }*/
-
+                        var emotes = await proxy.FetchGlobalEmotes();
                     }
                 }
                 else

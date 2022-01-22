@@ -285,23 +285,16 @@ namespace Multitool.Net.Twitch.Irc
 
             if (ClientState != WebSocketState.Open)
             {
-                switch (ClientState)
+                throw ClientState switch
                 {
-                    case WebSocketState.None:
-                        throw new InvalidOperationException("Client has never connected");
-                    case WebSocketState.Connecting:
-                        throw new InvalidOperationException("Client is connecting");
-                    case WebSocketState.CloseSent:
-                        throw new InvalidOperationException("Client is closing it's connection");
-                    case WebSocketState.CloseReceived:
-                        throw new InvalidOperationException("Client has received close request from the connection endpoint");
-                    case WebSocketState.Closed:
-                        throw new InvalidOperationException("Client connection is closed");
-                    case WebSocketState.Aborted:
-                        throw new InvalidOperationException($"{nameof(ClientState)} == WebSocketState.Aborted");
-                    default:
-                        throw new ArgumentException($"Unkown WebSocketState state, argument name : {nameof(ClientState)}");
-                }
+                    WebSocketState.None => new InvalidOperationException("Client has never connected"),
+                    WebSocketState.Connecting => new InvalidOperationException("Client is connecting"),
+                    WebSocketState.CloseSent => new InvalidOperationException("Client is closing it's connection"),
+                    WebSocketState.CloseReceived => new InvalidOperationException("Client has received close request from the connection endpoint"),
+                    WebSocketState.Closed => new InvalidOperationException("Client connection is closed"),
+                    WebSocketState.Aborted => new InvalidOperationException($"{nameof(ClientState)} == WebSocketState.Aborted"),
+                    _ => new ArgumentException($"Unkown WebSocketState state, argument name : {nameof(ClientState)}"),
+                };
             }
         }
 

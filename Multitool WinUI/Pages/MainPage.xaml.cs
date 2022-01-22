@@ -48,11 +48,11 @@ namespace MultitoolWinUI.Pages
             }
             catch (XmlException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e.Message);
             }
             catch (IOException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e.Message);
             }
         }
     }

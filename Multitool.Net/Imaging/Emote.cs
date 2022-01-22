@@ -1,13 +1,18 @@
-﻿using Microsoft.UI.Xaml.Media.Imaging;
+﻿using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+
+using Multitool.Net.Twitch;
 
 using System;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
+using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 
-namespace Multitool.Net.Twitch
+namespace Multitool.Net.Imaging
 {
     public class Emote
     {
@@ -37,7 +42,7 @@ namespace Multitool.Net.Twitch
             get
             {
                 if (nameRegex == null)
-{
+                {
                     nameRegex = new($"^{Regex.Escape(Name)}");
                 }
                 return nameRegex;
@@ -45,7 +50,11 @@ namespace Multitool.Net.Twitch
             //internal set => nameRegex = value;
         }
 
+#if DEBUG
+        public ImageSource Image { get; private set; } 
+#else
         public BitmapImage Image { get; private set; }
+#endif
 
         public string Provider { get; internal set; }
 
@@ -54,10 +63,8 @@ namespace Multitool.Net.Twitch
             return Name;
         }
 
-        internal async Task SetImage(byte[] buffer)
+        internal async Task SetImage(byte[] buffer, string mimeType)
         {
-            Image = new();
-
             using InMemoryRandomAccessStream stream = new();
             using (DataWriter writer = new(stream))
             {
@@ -68,7 +75,28 @@ namespace Multitool.Net.Twitch
             }
 
             stream.Seek(0);
+#if DEBUG
+            if (mimeType == "image/webp")
+            {
+                var encoder = await BitmapDecoder.CreateAsync(BitmapDecoder.WebpDecoderId, stream).AsTask();
+                var softBitmap = await encoder.GetSoftwareBitmapAsync();
+                if (softBitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8 || softBitmap.BitmapAlphaMode == BitmapAlphaMode.Straight)
+                {
+                    softBitmap = SoftwareBitmap.Convert(softBitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                }
+                var source = new SoftwareBitmapSource();
+                await source.SetBitmapAsync(softBitmap);
+                Image = source;
+            }
+            else
+            {
+                BitmapImage image = new();
+                await image.SetSourceAsync(stream);
+                Image = image;
+            }
+#else
             await Image.SetSourceAsync(stream);
+#endif
         }
     }
 }

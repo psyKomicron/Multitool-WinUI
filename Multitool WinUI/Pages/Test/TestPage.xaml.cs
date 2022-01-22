@@ -3,10 +3,11 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
 using Multitool.Net.Imaging;
-using Multitool.Net.Twitch;
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Text;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -27,29 +28,18 @@ namespace MultitoolWinUI.Pages.Test
 
         public string Channel { get; set; }
 
-        private async void LoadGlobalEmotesButton_Click(object sender, RoutedEventArgs e)
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
-            Emotes.Clear();
-            List<Emote> emotes = await TwitchEmoteProxy.GetInstance().GetGlobalEmotes();
-            foreach (var emote in emotes)
+            Trace.TraceError("dsflknbsdflknsdflkn");
+            List<byte> data = new();
+            string[] input = ChatInput.Text.Split(' ');
+            foreach (string c in input)
             {
-                Emotes.Add(emote);
+                byte.TryParse(c, out byte res);
+                data.Add(res);
             }
-        }
-
-        private async void LoadChannelEmotes_Click(object sender, RoutedEventArgs e)
-        {
-            Emotes.Clear();
-            List<Emote> emotes = await TwitchEmoteProxy.GetInstance().GetChannelEmotes(Channel);
-            foreach (var emote in emotes)
-            {
-                Emotes.Add(emote);
-            }
-        }
-
-        private void EmoteGridView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-
+            byte[] vs = data.ToArray();
+            Result.Text = Encoding.UTF8.GetString(vs);
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Multitool.Net.Imaging.Json
 #pragma warning disable IDE1006
     internal class JsonData
     {
-        public List<JsonEmote> data { get; set; }
+        public List<TwitchJsonEmote> data { get; set; }
 
         public string template { get; set; }
     }

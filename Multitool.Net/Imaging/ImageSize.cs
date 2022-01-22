@@ -1,4 +1,4 @@
-﻿namespace Multitool.Net.Twitch
+﻿namespace Multitool.Net.Imaging
 {
     public enum ImageSize
     {

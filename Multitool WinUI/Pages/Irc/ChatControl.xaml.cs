@@ -81,10 +81,11 @@ namespace MultitoolWinUI.Pages.Irc
             {
                 try
                 {
-                    ChannelEmotes.AddRange(await TwitchEmoteProxy.GetInstance().GetChannelEmotes(Channel));
                     await Client.Join(Channel);
                     joined = true;
                     RoomStateDisplay.QueueMessage("Channel", "Joined " + Channel, messageBackground);
+
+                    ChannelEmotes.AddRange(await EmoteProxy.Get().FetchChannelEmotes(Channel));
                 }
                 catch (ArgumentException ex)
                 {
@@ -350,7 +351,7 @@ namespace MultitoolWinUI.Pages.Irc
                 _ = Join();
             }
 
-            Emotes.AddRange(await TwitchEmoteProxy.GetInstance().GetGlobalEmotes());
+            Emotes.AddRange(await EmoteProxy.Get().FetchGlobalEmotes());
 
             loaded = true;
         }
@@ -419,8 +420,11 @@ namespace MultitoolWinUI.Pages.Irc
 
         private void EmoteGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            Debug.WriteLine($"Clicked {(e.ClickedItem as Emote).Name}");
-            ChatInput.Text += $" {(e.ClickedItem as Emote)} ";
+            if (e.ClickedItem is Emote emote)
+            {
+                Debug.WriteLine($"Clicked {emote.Name}");
+                ChatInput.Text += $" {emote} ";
+            }
         }
         #endregion
 
