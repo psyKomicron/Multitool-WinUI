@@ -134,8 +134,8 @@ namespace MultitoolWinUI.Pages
                     else
                     {
                         EmoteProxy proxy = EmoteProxy.Get();
-                        //proxy.EmoteFetchers.Add(new TwitchEmoteFetcher(token));
-                        //proxy.EmoteFetchers.Add(new FfzEmoteFetcher());
+                        proxy.EmoteFetchers.Add(new TwitchEmoteFetcher(token));
+                        proxy.EmoteFetchers.Add(new FfzEmoteFetcher());
                         proxy.EmoteFetchers.Add(new SevenTVEmoteFetcher());
 
                         var emotes = await proxy.FetchGlobalEmotes();
