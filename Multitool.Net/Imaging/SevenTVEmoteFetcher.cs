@@ -10,6 +10,9 @@ using Windows.Web.Http;
 
 namespace Multitool.Net.Imaging
 {
+    /// <summary>
+    /// Emote fetcher for the 7TV (SevenTV) API.
+    /// </summary>
     public class SevenTVEmoteFetcher : EmoteFetcher
     {
         public SevenTVEmoteFetcher() : base(new())
@@ -19,14 +22,13 @@ namespace Multitool.Net.Imaging
         public override async Task<List<Emote>> FetchChannelEmotes(string channel)
         {
             CheckIfDisposed();
-
-            string url = string.Format(Resources.SevenTVApiChannelEmotesEndPoint, channel);
-            using HttpResponseMessage emotesResponse = await Client.GetAsync(new(url), HttpCompletionOption.ResponseHeadersRead);
-            emotesResponse.EnsureSuccessStatusCode();
-            string result = await emotesResponse.Content.ReadAsStringAsync();
-            List<SevenTVJsonEmote> json = JsonSerializer.Deserialize<List<SevenTVJsonEmote>>(result);
-
+            List<SevenTVJsonEmote> json = await ListEmotesJson(channel);
             return await Download7TVEmotesAsync(json);
+        }
+
+        public override Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
+        {
+            throw new NotImplementedException();
         }
 
         public override async Task<List<Emote>> FetchGlobalEmotes()
@@ -40,6 +42,17 @@ namespace Multitool.Net.Imaging
             List<SevenTVJsonEmote> json = JsonSerializer.Deserialize<List<SevenTVJsonEmote>>(s);
 
             return await Download7TVEmotesAsync(json);
+        }
+
+        public override async Task<List<string>> ListChannelEmotes(string channel)
+        {
+            List<SevenTVJsonEmote> json = await ListEmotesJson(channel);
+            List<string> strings = new(json.Count);
+            for (int i = 0; i < json.Count; i++)
+            {
+                strings.Add(json[i].id);
+            }
+            return strings;
         }
 
         private async Task<List<Emote>> Download7TVEmotesAsync(List<SevenTVJsonEmote> json)
@@ -58,6 +71,16 @@ namespace Multitool.Net.Imaging
 
             await Task.WhenAll(downloadTasks);
             return emotes;
+        }
+
+        private async Task<List<SevenTVJsonEmote>> ListEmotesJson(string channel)
+        {
+            string url = string.Format(Resources.SevenTVApiChannelEmotesEndPoint, channel);
+            using HttpResponseMessage emotesResponse = await Client.GetAsync(new(url), HttpCompletionOption.ResponseHeadersRead);
+            emotesResponse.EnsureSuccessStatusCode();
+            string result = await emotesResponse.Content.ReadAsStringAsync();
+            List<SevenTVJsonEmote> json = JsonSerializer.Deserialize<List<SevenTVJsonEmote>>(result);
+            return json;
         }
     }
 }

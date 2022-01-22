@@ -8,7 +8,7 @@ using Windows.Web.Http;
 
 namespace Multitool.Net.Imaging
 {
-    public abstract class EmoteFetcher : IDisposable
+    public abstract class EmoteFetcher : IDisposable, IEmoteFetcher
     {
         private readonly HttpClient client = new();
         private bool disposed;
@@ -26,9 +26,16 @@ namespace Multitool.Net.Imaging
 
         public abstract Task<List<Emote>> FetchChannelEmotes(string channel);
 
+        public abstract Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except);
+
+        public abstract Task<List<string>> ListChannelEmotes(string channel);
+
         public void Dispose()
         {
-            client.Dispose();
+            if (client != null)
+            {
+                client.Dispose();
+            }
             disposed = true;
             GC.SuppressFinalize(this);
         }
@@ -52,8 +59,9 @@ namespace Multitool.Net.Imaging
                 }
                 reponse.EnsureSuccessStatusCode();
 
+                // Can we use the already buffered data to build the image
                 IBuffer stream = await reponse.Content.ReadAsBufferAsync();
-                var mem = Windows.Storage.Streams.Buffer.CreateMemoryBufferOverIBuffer(stream);
+                //var mem = Windows.Storage.Streams.Buffer.CreateMemoryBufferOverIBuffer(stream);
                 using DataReader dataReader = DataReader.FromBuffer(stream);
 
                 byte[] bytes = new byte[dataReader.UnconsumedBufferLength];
@@ -77,5 +85,6 @@ namespace Multitool.Net.Imaging
                 throw;
             }
         }
+
     }
 }

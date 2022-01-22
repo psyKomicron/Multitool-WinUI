@@ -10,6 +10,9 @@ using Windows.Web.Http;
 
 namespace Multitool.Net.Imaging
 {
+    /// <summary>
+    /// Emote fetcher for the FrankerFaceZ API. Not yet implemented.
+    /// </summary>
     public class FfzEmoteFetcher : EmoteFetcher
     {
         public FfzEmoteFetcher() : base(new())
@@ -18,8 +21,16 @@ namespace Multitool.Net.Imaging
 
         public override async Task<List<Emote>> FetchChannelEmotes(string channel)
         {
-            return await Task<List<Emote>>.Run(() => new List<Emote>());
-            //throw new NotImplementedException();
+#if DEBUG
+            return await Task.Run(() => new List<Emote>());
+#else
+            throw new NotImplementedException();
+#endif
+        }
+
+        public override Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
+        {
+            throw new NotImplementedException();
         }
 
         public override async Task<List<Emote>> FetchGlobalEmotes()
@@ -50,6 +61,15 @@ namespace Multitool.Net.Imaging
             await Task.WhenAll(downloadTasks);
 
             return emotes;
+        }
+
+        public override async Task<List<string>> ListChannelEmotes(string channel)
+        {
+#if DEBUG
+            return await Task.Run(() => new List<string>());
+#else
+            throw new NotImplementedException();
+#endif
         }
     }
 }

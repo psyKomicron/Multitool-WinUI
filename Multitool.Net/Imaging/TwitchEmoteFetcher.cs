@@ -44,19 +44,17 @@ namespace Multitool.Net.Imaging
             CheckIfDisposed();
             CheckToken();
 
-            Trace.TraceInformation("Downloading global emotes...");
-
             using HttpResponseMessage emotesResponse = await Client.GetAsync(new(Resources.TwitchApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
             emotesResponse.EnsureSuccessStatusCode();
 
 #if true
             string s = await emotesResponse.Content.ReadAsStringAsync();
-            var data = JsonSerializer.Deserialize<JsonData>(s);
+            var data = JsonSerializer.Deserialize<TwitchJsonData>(s);
 #else
             using DataReader jsonReader = new(await emotesResponse.Content.ReadAsInputStreamAsync());
             JsonData data = await JsonSerializer.DeserializeAsync<JsonData>((await emotesResponse.Content.ReadAsInputStreamAsync()).AsStreamForRead());
 #endif
-            return await DownloadTwitchEmotesAsync(data);
+            return await DownloadTwitchEmotes(data);
         }
 
         public override async Task<List<Emote>> FetchChannelEmotes(string channel)
@@ -64,6 +62,29 @@ namespace Multitool.Net.Imaging
             CheckIfDisposed();
             CheckToken();
 
+            return await DownloadTwitchEmotes(await GetJsonDataForChannel(channel));
+        }
+
+        public override Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override async Task<List<string>> ListChannelEmotes(string channel)
+        {
+            TwitchJsonData data = await GetJsonDataForChannel(channel);
+            List<string> strings = new();
+            var emotes = data.data;
+            for (int i = 0; i < emotes.Count; i++)
+            {
+                strings.Add(emotes[i].id);
+            }
+            return strings;
+        }
+
+        #region private members
+        private async Task<TwitchJsonData> GetJsonDataForChannel(string channel)
+        {
             using HttpResponseMessage getUsersEndpointResponse = await Client.GetAsync(new(string.Format(Resources.TwitchApiGetUsersByLoginEndpoint, channel)), HttpCompletionOption.ResponseHeadersRead);
             getUsersEndpointResponse.EnsureSuccessStatusCode();
 
@@ -74,20 +95,18 @@ namespace Multitool.Net.Imaging
             {
                 if (jsonData.ValueKind != JsonValueKind.Array)
                 {
-                    throw new InvalidOperationException("\"jsonData\" is not an array");
+                    throw new InvalidOperationException($"Twitch api 'channel emotes' did not reply with a correct data type. Expected array, got {jsonData.ValueKind}");
                 }
 
                 if (jsonData[0].TryGetProperty("id", out JsonElement value))
                 {
                     string url = string.Format(Resources.TwitchApiChannelEmoteEndPoint, value.ToString());
-
                     using HttpResponseMessage emotesResponse = await Client.GetAsync(new(url), HttpCompletionOption.ResponseHeadersRead);
                     emotesResponse.EnsureSuccessStatusCode();
 
                     s = await emotesResponse.Content.ReadAsStringAsync();
-                    JsonData data = JsonSerializer.Deserialize<JsonData>(s);
-
-                    return await DownloadTwitchEmotesAsync(data);
+                    TwitchJsonData data = JsonSerializer.Deserialize<TwitchJsonData>(s);
+                    return data;
                 }
                 else
                 {
@@ -104,24 +123,7 @@ namespace Multitool.Net.Imaging
             }
         }
 
-        #region private members
-        private void CheckToken()
-        {
-            if (ConnectionToken is null)
-            {
-                throw new ArgumentNullException($"{nameof(ConnectionToken)} is null.{nameof(EmoteFetcher)} cannot make calls to the Twitch API without a connection token.");
-            }
-            if (!ConnectionToken.Validated)
-            {
-                throw new ArgumentException("Token has not been validated. Call the appropriate method to validate the token.");
-            }
-            if (ConnectionToken.ClientId is null)
-            {
-                throw new ArgumentNullException("Client id is null.");
-            }
-        }
-
-        private async Task<List<Emote>> DownloadTwitchEmotesAsync(JsonData data)
+        private async Task<List<Emote>> DownloadTwitchEmotes(TwitchJsonData data)
         {
             List<TwitchJsonEmote> list = data.data;
             List<Emote> emotes = new();
@@ -146,6 +148,22 @@ namespace Multitool.Net.Imaging
 
             await Task.WhenAll(downloadTasks);
             return emotes;
+        }
+
+        private void CheckToken()
+        {
+            if (ConnectionToken is null)
+            {
+                throw new ArgumentNullException($"{nameof(ConnectionToken)} is null.{nameof(EmoteFetcher)} cannot make calls to the Twitch API without a connection token.");
+            }
+            if (!ConnectionToken.Validated)
+            {
+                throw new ArgumentException("Token has not been validated. Call the appropriate method to validate the token.");
+            }
+            if (ConnectionToken.ClientId is null)
+            {
+                throw new ArgumentNullException("Client id is null.");
+            }
         }
         #endregion
     }

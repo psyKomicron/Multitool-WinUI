@@ -1,11 +1,6 @@
 ﻿namespace Multitool.Net.Imaging.Json.SevenTV
 {
 #pragma warning disable IDE1006 // Naming Styles
-    internal class SevenTVJsonData
-    {
-        public SevenTVJsonEmote[] data { get; set; }
-    }
-
     internal class SevenTVJsonEmote
     {
         public string id { get; set; }

@@ -11,7 +11,7 @@ using System.Timers;
 
 namespace Multitool.Net.Imaging
 {
-    public sealed class EmoteProxy : EmoteFetcher
+    public sealed class EmoteProxy : IEmoteFetcher
     {
         private const int timeout = 500;
         private static EmoteProxy instance;
@@ -25,7 +25,7 @@ namespace Multitool.Net.Imaging
         private readonly List<Emote> globalEmotesCache = new();
         private readonly ConcurrentBag<Emote> emotesCache = new();
 
-        private EmoteProxy() : base(null)
+        private EmoteProxy()
         {
             cacheTimer = new(5_000);
             cacheTimer.Elapsed += OnCacheTimerElapsed;
@@ -33,6 +33,7 @@ namespace Multitool.Net.Imaging
         }
 
         public List<EmoteFetcher> EmoteFetchers { get; init; }
+        public ImageSize DefaultImageSize { get; set; }
 
         public static EmoteProxy Get()
         {
@@ -43,7 +44,7 @@ namespace Multitool.Net.Imaging
             return instance;
         }
 
-        public override async Task<List<Emote>> FetchGlobalEmotes()
+        public async Task<List<Emote>> FetchGlobalEmotes()
         {
             if (globalEmotesCache.Count > 0)
             {
@@ -95,16 +96,17 @@ namespace Multitool.Net.Imaging
             }
         }
 
-        public override async Task<List<Emote>> FetchChannelEmotes(string channel)
+        public async Task<List<Emote>> FetchChannelEmotes(string channel)
         {
             // not the way i want to do it. Maybe will copy behavior from Multitool.DAL.FileSystem
             if (semaphores.TryGetValue(channel, out SemaphoreSlim semaphore))
             {
-                if (await semaphore.WaitAsync(50_000))
+                if (await semaphore.WaitAsync(60_000))
                 {
                     semaphore.Release();
                     try
                     {
+#if false
                         if (await emoteCacheSemaphore.WaitAsync(timeout))
                         {
                             Trace.TraceInformation($"Getting emotes for {channel} from cache...");
@@ -123,7 +125,21 @@ namespace Multitool.Net.Imaging
                         else
                         {
                             throw new OperationCanceledException("Operation cancelled after timeout.");
+                        } 
+#else
+                        Trace.TraceInformation($"Getting emotes from #{channel} from cache...");
+                        List<Emote> channelEmotes = new(10);
+                        for (int i = 0; i < emotesCache.Count; i++)
+                        {
+                            if (emotesCache.TryPeek(out Emote emote) && emote.ChannelOwner == channel)
+                            {
+                                channelEmotes.Add(emote);
+                            }
                         }
+                        emoteCacheSemaphore.Release();
+
+                        return channelEmotes;
+#endif
                     }
                     catch
                     {
@@ -133,13 +149,22 @@ namespace Multitool.Net.Imaging
                 }
                 else
                 {
-                    throw new OperationCanceledException("Operation cancelled after 500ms timeout.");
+                    throw new OperationCanceledException("Operation cancelled after 60s timeout.");
                 }
             }
             else
             {
+                Trace.TraceInformation("Checking cache for emotes");
+                List<string> ids = await ListChannelEmotes(channel);
+                int count = ids.Count;
+                foreach (var emotes in emotesCache)
+                {
+                    ids.Remove(emotes.Id.StringId);
+                    count--;
+                }
+
                 // download emotes
-                Trace.TraceInformation($"Downloading emotes for #{channel}...");
+                Trace.TraceInformation($"Downloading emotes for #{channel}... (skipping {ids.Count - count} emotes already in cache)");
 
                 SemaphoreSlim s = new(1);
                 semaphores.TryAdd(channel, s);
@@ -151,14 +176,28 @@ namespace Multitool.Net.Imaging
                     {
                         try
                         {
-                            tasks.Add(fetcher.FetchChannelEmotes(channel));
+                            if (ids.Count == count)
+                            {
+                                tasks.Add(fetcher.FetchChannelEmotes(channel));
+                            }
+                            else
+                            {
+                                tasks.Add(fetcher.FetchChannelEmotes(channel, ids));
+                            }
                         }
                         catch (Exception ex)
                         {
                             Trace.TraceError(ex.ToString());
                         }
                     }
-                    await Task.WhenAll(tasks);
+                    try
+                    {
+                        await Task.WhenAll(tasks);
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.TraceError(ex.ToString());
+                    }
 
                     List<Emote> channelEmotes = new();
                     for (int i = 0; i < tasks.Count; i++)
@@ -171,12 +210,18 @@ namespace Multitool.Net.Imaging
 
                     if (await emoteCacheSemaphore.WaitAsync(timeout))
                     {
-                        Trace.TraceInformation($"Caching emotes from #{channel}...");
-                        for (int i = 0; i < channelEmotes.Count; i++)
+                        try
                         {
-                            emotesCache.Add(channelEmotes[i]);
+                            Trace.TraceInformation($"Caching emotes from #{channel}...");
+                            for (int i = 0; i < channelEmotes.Count; i++)
+                            {
+                                emotesCache.Add(channelEmotes[i]);
+                            }
                         }
-                        emoteCacheSemaphore.Release();
+                        finally
+                        {
+                            emoteCacheSemaphore.Release();
+                        }
                     }
                     else
                     {
@@ -197,6 +242,16 @@ namespace Multitool.Net.Imaging
         public async Task<List<Emote>> GetEmoteSets(string sets)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<List<string>> ListChannelEmotes(string channel)
+        {
+            List<string> list = new(10 * EmoteFetchers.Count);
+            foreach (var fetcher in EmoteFetchers)
+            {
+                list.AddRange(await fetcher.ListChannelEmotes(channel));
+            }
+            return list;
         }
 
         #region event handlers
