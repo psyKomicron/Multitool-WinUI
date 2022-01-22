@@ -70,7 +70,8 @@ namespace MultitoolWinUI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to The application is now using .XML type file to save it&apos;s settings. You can find it in the app&apos;s package folder.
+        ///NEW - release notes (as you can see)!.
         /// </summary>
         internal static string ReleaseNotes {
             get {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 
 using MultitoolWinUI.Helpers;
 
@@ -37,6 +38,8 @@ namespace MultitoolWinUI.Pages
 #else
         public static string Version => Tool.GetPackageVersion();
 #endif
+
+        public string ReleaseNotes => Properties.Resources.ReleaseNotes;
 
         #endregion
 

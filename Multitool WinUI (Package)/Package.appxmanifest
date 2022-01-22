@@ -53,6 +53,7 @@
     <uap:Capability Name="userAccountInformation"/>
     <uap3:Capability Name="remoteSystem"/>
     <uap:Capability Name="removableStorage"/>
+    <Capability Name="internetClientServer"/>
     <DeviceCapability Name="lowLevel"/>
   </Capabilities>
 </Package>

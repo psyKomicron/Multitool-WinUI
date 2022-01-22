@@ -49,6 +49,16 @@
                     <Run Text="Version: "/>
                     <Run Text="{Binding ElementName=Page, Path=Version, Mode=OneTime}"/>
                 </TextBlock>
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft">
+                        <Flyout.FlyoutPresenterStyle>
+                            <Style TargetType="FlyoutPresenter">
+                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                            </Style>
+                        </Flyout.FlyoutPresenterStyle>
+                        <TextBlock HorizontalAlignment="Stretch" TextWrapping="WrapWholeWords" FontSize="18" Text="{x:Bind ReleaseNotes}"/>
+                    </Flyout>
+                </Button.Flyout>
             </Button>
             <Button 
                 x:Name="BuildTypeButton">
