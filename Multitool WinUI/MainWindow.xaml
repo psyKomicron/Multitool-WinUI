@@ -7,12 +7,13 @@
     Closed="Window_Closed"
     Activated="Window_Activated">
     <Grid>
-        <NavigationView 
+        <NavigationView
             Loaded="NavigationView_Loaded"
             IsPaneOpen="{Binding ElementName=Window, Path=IsPaneOpen, Mode=TwoWay}"
             ItemInvoked="NavigationView_ItemInvoked" 
             BackRequested="NavigationView_BackRequested"
-            IsBackEnabled="{Binding ElementName=ContentFrame, Path=CanGoBack}">
+            IsBackEnabled="{Binding ElementName=ContentFrame, Path=CanGoBack}"
+            Background="{StaticResource NavigationViewDefaultPaneBackground}">
             <NavigationView.MenuItems>
                 <NavigationViewItem Tag="home" 
                                     Icon="Home" 
@@ -80,10 +81,9 @@
         <Popup
             x:Name="ContentPopup"
             HorizontalAlignment="Left">
-            <controls:TraceControl
+            <controls:AppMessageControl
                 x:Name="MessageDisplay"
                 x:FieldModifier="public"
-                HorizontalAlignment="Stretch"
                 Background="{StaticResource DarkDevBlue}"
                 VisibilityChanged="MessageDisplay_VisibilityChanged"/>
         </Popup>

@@ -28,7 +28,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             InitializeComponent();
         }
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (!string.IsNullOrEmpty(FilePathTextBox.Text))
             {
@@ -44,7 +44,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                     }
                     catch (XmlException ex)
                     {
-                        Trace.TraceError(ex.ToString());
+                        App.TraceError(ex.ToString());
                     }
                 }
             }
@@ -69,7 +69,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 }
                 catch (Exception ex)
                 {
-                    Trace.TraceError(ex.ToString());
+                    App.TraceError(ex.ToString());
                 }
             }
         }

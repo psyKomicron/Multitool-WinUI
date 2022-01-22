@@ -6,8 +6,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:controls="using:MultitoolWinUI.Controls"
       mc:Ignorable="d"
-      NavigationCacheMode="Required"
-      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+      NavigationCacheMode="Required">
 
     <Grid x:Name="MainGrid"
           RowSpacing="5"

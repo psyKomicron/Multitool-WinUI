@@ -11,6 +11,7 @@
                 <ResourceDictionary Source="Themes/Animations.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <!-- Other app resources here -->
+            <x:Double x:Key="StackPanelChildElementDefaultMargin">30</x:Double>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

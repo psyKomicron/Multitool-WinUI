@@ -1,8 +1,11 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
-using Multitool.Net.Irc;
+using Multitool.Net.Imaging;
+using Multitool.Net.Twitch.Irc;
+
+using System.Collections.Generic;
 
 namespace MultitoolWinUI.Pages.Irc
 {
-    public record ChatPageParameter(IIrcClient Client, TabViewItem Tab, string Channel);
+    public record ChatPageParameter(ITwitchIrcClient Client, TabViewItem Tab, string Channel, List<Emote> Emotes);
 }

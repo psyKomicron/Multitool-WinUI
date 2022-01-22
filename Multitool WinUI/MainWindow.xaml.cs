@@ -17,6 +17,7 @@ using System.Linq;
 using System.Collections.Generic;
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Pages.Test;
+using MultitoolWinUI.Pages.Settings;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -72,20 +73,15 @@ namespace MultitoolWinUI
                     case nameof(HashGeneratorPage):
                         lastPage = typeof(HashGeneratorPage);
                         break;
-                    case nameof(IrcChatPage):
-                        lastPage = typeof(IrcChatPage);
+                    case nameof(TwitchPage):
+                        lastPage = typeof(TwitchPage);
                         break;
                     default:
-                        Trace.TraceWarning("MainWindow:ctor: Unknown page");
+                        App.TraceWarning("MainWindow:ctor: Unknown page");
                         break;
                 }
             }
             catch (SettingNotFoundException) { }
-#if false
-            Trace.Listeners[0] = new WindowTrace(this) { Name = "Debug_WindowTrace" };
-#else
-            Trace.Listeners.Add(new WindowTrace(this) { Name = "WindowTrace" });
-#endif
         }
 
         public bool IsPaneOpen { get; set; }
@@ -140,15 +136,18 @@ namespace MultitoolWinUI
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
                     case "irc":
-                        lastPage = typeof(IrcChatPage);
-                        _ = ContentFrame.Navigate(typeof(IrcChatPage));
+                        lastPage = typeof(TwitchPage);
+                        _ = ContentFrame.Navigate(typeof(TwitchPage));
                         break;
                     case "test":
                         lastPage = typeof(TestPage);
                         _ = ContentFrame.Navigate(typeof(TestPage));
                         break;
+                    case "Settings":
+                        _ = ContentFrame.Navigate(typeof(SettingsPage));
+                        break;
                     default:
-                        Trace.TraceWarning("Trying to navigate to : " + tag);
+                        App.TraceWarning("Trying to navigate to : " + tag);
                         break;
                 }
             }
@@ -172,15 +171,8 @@ namespace MultitoolWinUI
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
+            MessageDisplay.Silence();
             closed = true;
-            IEnumerable<WindowTrace> tracers = Trace.Listeners.OfType<WindowTrace>();
-            for (int i = 0; i < Trace.Listeners.Count; i++)
-            {
-                if (Trace.Listeners[i].GetType().IsAssignableFrom(typeof(WindowTrace)))
-                {
-                    Trace.Listeners.RemoveAt(i);
-                }
-            }
             if (lastPage != null)
             {
                 App.Settings.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
@@ -188,7 +180,7 @@ namespace MultitoolWinUI
             App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
         }
 
-        private void MessageDisplay_VisibilityChanged(TraceControl sender, Visibility args)
+        private void MessageDisplay_VisibilityChanged(AppMessageControl sender, Visibility args)
         {
             if (!closed)
             {

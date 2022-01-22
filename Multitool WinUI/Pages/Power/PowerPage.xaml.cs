@@ -53,7 +53,7 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
                 //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to shutdown the system. The operation failed.");
             }
         }
@@ -66,7 +66,7 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
                 //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to restart the system. The operation failed");
             }
         }
@@ -79,7 +79,7 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
                 //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to lock the system. The operation failed");
             }
         }
@@ -92,7 +92,7 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
                 //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to suspend the system. The operation failed");
             }
         }
@@ -105,7 +105,7 @@ namespace MultitoolWinUI.Pages.Power
             }
             catch (OperationFailedException ex)
             {
-                Trace.TraceError(ex.ToString());
+                App.TraceError(ex.ToString());
                 //App.MainWindow.DisplayMessage("Error", "Operation failed", "Unable to hibernate the system. The operation failed");
             }
         }
@@ -154,7 +154,7 @@ namespace MultitoolWinUI.Pages.Power
                     throw new FormatException("You need to set an action");
 #else
                     //App.MainWindow.DisplayMessage("Error", "User input required", "You need to set an action for when the timer ends");
-                    Trace.TraceError("User input required. You need to set an action for when the timer ends");
+                    App.TraceError("User input required. You need to set an action for when the timer ends");
 #endif
                 }
             });

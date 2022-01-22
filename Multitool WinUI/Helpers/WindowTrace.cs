@@ -40,8 +40,11 @@ namespace MultitoolWinUI.Helpers
 
         public Color DefaultColor { get; set; }
 
-        #region trace methods
+        public bool ShowTimestamp { get; set; } = true;
 
+        public int ShowStackTrace { get; set; } = 0;
+
+        #region trace methods
         /// <inheritdoc />
         public override void Write(string message)
         {
@@ -51,9 +54,9 @@ namespace MultitoolWinUI.Helpers
         /// <inheritdoc />
         public override void WriteLine(string message)
         {
-            if (string.IsNullOrEmpty(message))
+            if (!string.IsNullOrEmpty(message))
             {
-                Write(message);
+                Write(message + "\n");
             }
         }
 
@@ -65,13 +68,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, data.ToString(), errorBrush);
+                        TraceMessage("Error", data.ToString(), errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, data.ToString(), warningBrush);
+                        TraceMessage("Warning", data.ToString(), warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, data.ToString(), infoBrush);
+                        TraceMessage("Information", data.ToString(), infoBrush, eventCache);
                         break;
                 }
             });
@@ -85,13 +88,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, data.ToString(), errorBrush);
+                        TraceMessage("Error", data.ToString(), errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, data.ToString(), warningBrush);
+                        TraceMessage("Warning", data.ToString(), warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, data.ToString(), infoBrush);
+                        TraceMessage("Information", data.ToString(), infoBrush, eventCache);
                         break;
                 }
             });
@@ -105,19 +108,19 @@ namespace MultitoolWinUI.Helpers
                 StringBuilder builder = new();
                 for (int i = 0; i < args.Length; i++)
                 {
-                    builder.Append(string.Format(format, args[i]) + "\n");
+                    builder.Append(string.Format(format, args[i])).Append('\n');
                 }
                 string message = builder.ToString();
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, message, errorBrush);
+                        TraceMessage("Error", message, errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, message, warningBrush);
+                        TraceMessage("Warning", message, warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, message, infoBrush);
+                        TraceMessage("Information", message, infoBrush, eventCache);
                         break;
                 }
             });
@@ -131,13 +134,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, string.Empty, errorBrush);
+                        TraceMessage("Error", string.Empty, errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, string.Empty, warningBrush);
+                        TraceMessage("Warning", string.Empty, warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, string.Empty, infoBrush);
+                        TraceMessage("Information", string.Empty, infoBrush, eventCache);
                         break;
                 }
             });
@@ -151,13 +154,13 @@ namespace MultitoolWinUI.Helpers
                 switch (eventType)
                 {
                     case TraceEventType.Error:
-                        TraceMessage("Error", source, message, errorBrush);
+                        TraceMessage("Error", message, errorBrush, eventCache);
                         break;
                     case TraceEventType.Warning:
-                        TraceMessage("Warning", source, message, warningBrush);
+                        TraceMessage("Warning", message, warningBrush, eventCache);
                         break;
                     case TraceEventType.Information:
-                        TraceMessage("Information", source, message, infoBrush);
+                        TraceMessage("Information", message, infoBrush, eventCache);
                         break;
                 }
             });
@@ -166,9 +169,17 @@ namespace MultitoolWinUI.Helpers
         #endregion
 
         #region private methods
-        private void TraceMessage(string title, string header, string message, Brush background)
+        private void TraceMessage(string title, string message, Brush background, TraceEventCache eventCache)
         {
-            window.MessageDisplay.QueueMessage(title, header, message, background);
+            if (ShowTimestamp && ShowStackTrace == 0)
+            {
+
+                window.MessageDisplay.QueueMessage(title, eventCache.DateTime.ToLongTimeString() + " - " + message, background);
+            }
+            else
+            {
+                window.MessageDisplay.QueueMessage(title, message, background);
+            }
         }
         #endregion
     }

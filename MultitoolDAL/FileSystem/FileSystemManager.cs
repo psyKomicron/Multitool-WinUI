@@ -18,13 +18,6 @@ namespace Multitool.DAL.FileSystem
     /// </summary>
     public class FileSystemManager : IFileSystemManager
     {
-        [Deprecated("Use property or build configuration", DeprecationType.Deprecate, 0)]
-#if !DEBUG
-        public const double DEFAULT_CACHE_TIMEOUT = double.NaN;
-#else
-        internal const double DEFAULT_CACHE_TIMEOUT = 300_000;
-#endif
-
         private static readonly Dictionary<string, FileSystemCache> cache = new();
         private readonly DirectorySizeCalculator calculator = new();
         private double _ttl;
@@ -36,8 +29,12 @@ namespace Multitool.DAL.FileSystem
         /// </summary>
         public FileSystemManager()
         {
-            _ttl = DEFAULT_CACHE_TIMEOUT;
-            Notify = false;
+#if DEBUG
+            _ttl = double.NaN;
+#else
+            _ttl = 300_000;
+#endif
+            Notify = true;
             calculator.Progress += OnCalculatorProgress;
         }
 
@@ -197,7 +194,7 @@ namespace Multitool.DAL.FileSystem
         }
 
         /// <inheritdoc/>
-        public async Task GetFileSystemEntries<TItem>(string path, IList<TItem> list, AddDelegate<TItem> addDelegate, CancellationToken cancellationToken) where TItem : IFileSystemEntry
+        public async Task GetEntries<TItem>(string path, IList<TItem> list, AddDelegate<TItem> addDelegate, CancellationToken cancellationToken) where TItem : IFileSystemEntry
         {
             #region not null
             if (list is null)

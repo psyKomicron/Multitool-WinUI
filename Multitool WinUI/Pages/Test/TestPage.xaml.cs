@@ -1,20 +1,13 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 
-using System;
+using Multitool.Net.Imaging;
+
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Text;
-
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,43 +21,25 @@ namespace MultitoolWinUI.Pages.Test
     {
         public TestPage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
         }
+
+        public ObservableCollection<Emote> Emotes { get; set; } = new();
+
+        public string Channel { get; set; }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            /*
-            try
+            Trace.TraceError("dsflknbsdflknsdflkn");
+            List<byte> data = new();
+            string[] input = ChatInput.Text.Split(' ');
+            foreach (string c in input)
             {
-                string value = ValueTextBox.Text;
-                string[] values = value.Split(' ');
-                List<byte> chars = new();
-                foreach (string v in values)
-                {
-                    chars.Add((byte)int.Parse(v));
-                }
-                ReadOnlySpan<byte> span = new(chars.ToArray());
-
-                ResultTextBlock.Text = Encoding.UTF8.GetString(span);
+                byte.TryParse(c, out byte res);
+                data.Add(res);
             }
-            catch (Exception ex)
-            {
-                ResultTextBlock.Text = ex.ToString();
-            }*/
-        }
-
-        private void Button_Click_1(object sender, RoutedEventArgs e)
-        {/*
-            try
-            {
-                string value = ValueTextBox.Text;
-                ResultTextBlock.Text = Encoding.UTF8.GetBytes(value).ToString();
-            }
-            catch (Exception ex)
-            {
-                ResultTextBlock.Text = ex.ToString();
-            }
-            */
+            byte[] vs = data.ToArray();
+            Result.Text = Encoding.UTF8.GetString(vs);
         }
     }
 }
