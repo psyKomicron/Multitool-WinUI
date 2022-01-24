@@ -7,10 +7,7 @@ using Multitool.DAL.Settings;
 using MultitoolWinUI.Helpers;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
 
 using Windows.Storage;
 using Windows.UI;
@@ -65,9 +62,6 @@ namespace MultitoolWinUI
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
-#if false
-            Test(); 
-#endif
 
             Settings =
 #if DEBUG
@@ -110,33 +104,5 @@ namespace MultitoolWinUI
                 MainWindow.MessageDisplay.QueueMessage(title, message, background);
             }
         }
-
-#if DEBUG
-        private async void Test()
-        {
-            
-        } 
-#endif
     }
-
-#if DEBUG
-    class Test
-    {
-        public Test()
-        {
-            /*PropString = "flkdsnfeifslkn";
-            PropNumber = 1298;
-            PropList = new List<int> { 1, 2, 4, 8, 213, 234, 234235, 23, 12, 667, 43358 };*/
-        }
-
-        [Setting]
-        public string PropString { get; set; }
-
-        [Setting]
-        public int PropNumber { get; set; }
-
-        [Setting]
-        public List<int> PropList { get; set; }
-    }
-#endif
 }
