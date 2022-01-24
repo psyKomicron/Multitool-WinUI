@@ -21,7 +21,6 @@ using Windows.Foundation;
 
 namespace MultitoolWinUI.Controls
 {
-    [DebuggerDisplay("{Name},{Size}")]
     public sealed partial class FileSystemEntryView : UserControl, IFileSystemEntry, INotifyPropertyChanged
     {
         private const ushort uiUpdateMs = 120;
@@ -287,7 +286,6 @@ namespace MultitoolWinUI.Controls
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region private
-
         private void RaiseNotifyPropertyChanged([CallerMemberName] string propName = "")
         {
             _ = DispatcherQueue?.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)));
@@ -346,7 +344,6 @@ namespace MultitoolWinUI.Controls
         #region events handlers
 
         #region filesystementry events
-
         private void Item_PartialChanged(IFileSystemEntry sender, bool args)
         {
             if (Partial)
@@ -424,7 +421,6 @@ namespace MultitoolWinUI.Controls
                     break;
             }
         }
-
         #endregion
 
         #region control events
