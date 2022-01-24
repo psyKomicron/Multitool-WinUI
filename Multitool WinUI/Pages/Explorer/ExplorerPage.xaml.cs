@@ -9,11 +9,13 @@ using Multitool.DAL;
 using Multitool.DAL.Completion;
 using Multitool.DAL.FileSystem;
 using Multitool.DAL.FileSystem.Events;
+using Multitool.DAL.Settings;
 using Multitool.Parsers;
 using Multitool.Sorting;
 using Multitool.Threading;
 
 using MultitoolWinUI.Controls;
+using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Models;
 
 using System;
@@ -41,7 +43,7 @@ namespace MultitoolWinUI.Pages.Explorer
         private static readonly SolidColorBrush RED = new(Colors.Red);
         private static readonly SolidColorBrush WHITE = new(Colors.White);
         private readonly IPathCompletor pathCompletor = new PathCompletor();
-        private readonly IFileSystemManager fileSystemManager = new FileSystemManager() { Notify = false };
+        private readonly IFileSystemManager fileSystemManager = new FileSystemManager() { Notify = true };
         private readonly Stopwatch managerEventStopwatch = new();
         private readonly Stopwatch sortEventStopwatch = new();
         private readonly Stack<string> previousStackPath = new(10);
@@ -63,30 +65,16 @@ namespace MultitoolWinUI.Pages.Explorer
 
             try
             {
-                CurrentPath = App.Settings.GetSetting<string>(nameof(ExplorerPage), nameof(CurrentPath));
-                string[] history = App.Settings.GetSetting<string[]>(nameof(ExplorerPage), nameof(History));
-                History = new();
-                for (int i = 0; i < history.Length; i++)
+                App.Settings.Load(this);
+                foreach (var item in History)
                 {
-                    History.Add(PathHistoryItem.FromString(history[i], DispatcherQueue));
+                    item.DispatcherQueue = DispatcherQueue;
                 }
             }
             catch (SettingNotFoundException ex)
             {
                 App.TraceError(ex.ToString());
             }
-
-#if DEBUG
-            Button button = new()
-            {
-                Content = "R"
-            };
-            button.Click += (object sender, RoutedEventArgs e) =>
-            {
-                FileSystemManager.RefreshAllCache();
-            };
-            ButtonsStackPanel.Children.Add(button);
-#endif
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -94,8 +82,10 @@ namespace MultitoolWinUI.Pages.Explorer
         #region properties
         public ObservableCollection<FileSystemEntryView> CurrentFiles { get; } = new();
 
-        public ObservableCollection<PathHistoryItem> History { get; }
+        [Setting(typeof(PathHistoryItemSettingConverter))]
+        public ObservableCollection<PathHistoryItem> History { get; set; }
 
+        [Setting("C:\\")]
         public string CurrentPath
         {
             get => _currentPath;
@@ -371,13 +361,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void SavePage()
         {
-            App.Settings.SaveSetting(nameof(ExplorerPage), nameof(CurrentPath), CurrentPath);
-            string[] array = new string[History.Count];
-            for (int i = 0; i < array.Length; i++)
-            {
-                array[i] = History[i].ToString();
-            }
-            App.Settings.SaveSetting(nameof(ExplorerPage), nameof(History), array);
+            App.Settings.Save(this);
         }
         #endregion
 
@@ -589,6 +573,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            //App.Settings.Load(this);
             if (!string.IsNullOrEmpty(CurrentPath))
             {
                 DisplayFiles(CurrentPath);
@@ -600,6 +585,11 @@ namespace MultitoolWinUI.Pages.Explorer
             Task.Run(() => CancelFileTask());
             // saving when the mainwindow is closed because this page is cached and thus never unloaded
             SavePage();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = History_ListView.SelectedItem;
         }
         #endregion
 
@@ -652,5 +642,10 @@ namespace MultitoolWinUI.Pages.Explorer
         #endregion
 
         #endregion
+
+        private void History_ListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+
+        }
     }
 }
