@@ -9,7 +9,6 @@
     xmlns:imaging="using:Multitool.Net.Imaging"
     Background="{StaticResource DarkBlack}"
     mc:Ignorable="d">
-
     <Grid 
         x:Name="ContentGrid"
         Background="{x:Bind Background}">
