@@ -144,7 +144,7 @@ namespace MultitoolWinUI
                         _ = ContentFrame.Navigate(typeof(TestPage));
                         break;
                     case "Settings":
-                        _ = ContentFrame.Navigate(typeof(SettingsPage));
+                        _ = ContentFrame.Navigate(typeof(SettingsPage), lastPage);
                         break;
                     default:
                         App.TraceWarning("Trying to navigate to : " + tag);

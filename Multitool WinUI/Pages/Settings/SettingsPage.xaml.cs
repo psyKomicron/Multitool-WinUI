@@ -37,24 +37,55 @@ namespace MultitoolWinUI.Pages.Settings
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            ISettingsManager settingsManager = App.Settings;
-            var settings = settingsManager.DataContainer.Values;
-            foreach (var setting in settings)
+            Debug.WriteLine(e.SourcePageType.Name);
+            if (e.Parameter is string page)
             {
-                Debug.WriteLine(setting);
+                // handle navigation to the wanted page
             }
+            else if (e.Parameter is Type type)
+            {
+                string typeName = type.Name;
+                Debug.WriteLine($"Settings: Navigating to {typeName}");
+                if (!NavigateTo(typeName, true))
+                {
+                    App.TraceWarning($"Setting page not found for {typeName}");
+                }
+            }
+            ISettingsManager settingsManager = App.Settings;
         }
         #endregion
 
-        #region page event handlers
-        private void NavigationView_Loaded(object sender, RoutedEventArgs e)
+        private bool NavigateTo(string tag, bool focus = false)
         {
-
+            bool success;
+            switch (tag)
+            {
+                case "ExplorerPage":
+                    ContentFrame.Navigate(typeof(ExplorerSettingsPage), string.Empty);
+                    success = true;
+                    break;
+                default:
+                    success = false;
+                    break;
+            }
+            if (success && focus)
+            {
+                var o = PagesNavigationView.Items.First((object item) =>
+                {
+                    return (((item as ListViewItem)?.Content as TextBlock)?.Tag as string) == tag;
+                });
+                PagesNavigationView.SelectedItem = o;
+            }
+            return success;
         }
 
-        private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+        #region page event handlers
+        private void PagesNavigationView_ItemClick(object sender, ItemClickEventArgs e)
         {
-
+            if (e.ClickedItem is TextBlock block && block.Tag is string tag)
+            {
+                NavigateTo(tag);
+            }
         }
         #endregion
     }

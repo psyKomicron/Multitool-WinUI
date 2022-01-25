@@ -9,12 +9,7 @@ namespace Multitool.DAL.Settings
     /// Defines behavior for classes handling app settings.
     /// </summary>
     public interface ISettingsManager
-    {
-        /// <summary>
-        /// The <see cref="ApplicationDataContainer"/> associated with this instance.
-        /// </summary>
-        ApplicationDataContainer DataContainer { get; }
-        
+    {   
         event TypedEventHandler<ISettingsManager, string> SettingsChanged;
 
         /// <summary>
@@ -47,10 +42,10 @@ namespace Multitool.DAL.Settings
         /// <param name="settingKey"></param>
         /// <returns></returns>
         T GetSetting<T>(string globalKey, string settingKey);
-
         /// <summary>
         /// <para>
-        /// Saves a setting to the provided <see cref="DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="SettingFormat"/>.
+        /// Saves a setting to the provided <see cref="DataContainer"/>, formatting <paramref name="callerName"/> and 
+        /// <paramref name="name"/> with <see cref="SettingFormat"/>.
         /// </para>
         /// <para>
         /// If the setting does not exists an entry will be created, if it does the value will be updated.
@@ -80,5 +75,6 @@ namespace Multitool.DAL.Settings
         /// <param name="value">If the setting is found, <paramref name="value"/> will be valued to the setting's value.</param>
         /// <returns>The setting value if found (usually a string) or null if the setting was not found.</returns>
         bool TryGetSetting(Type settingType, string callerName, string name, out object value);
+        void RemoveSetting(string globalKey, string settingKey);
     }
 }

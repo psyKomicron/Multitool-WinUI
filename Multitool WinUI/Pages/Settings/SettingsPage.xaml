@@ -21,14 +21,37 @@
             x:Name="SettingSearch"
             Grid.Row="0"
             Grid.Column="0"/>
-        <NavigationView
+        <ListView
             x:Name="PagesNavigationView"
-            Loaded="NavigationView_Loaded"
-            ItemInvoked="NavigationView_ItemInvoked"
-            IsBackEnabled="False"
-            IsBackButtonVisible="Collapsed"
+            ItemClick="PagesNavigationView_ItemClick"
+            IsItemClickEnabled="True"
             Grid.Row="1"
             Grid.Column="0">
-        </NavigationView>
+            <ListViewItem>
+                <TextBlock Text="Main window" Tag="MainPage"/>
+            </ListViewItem>
+
+            <ListViewItem>
+                <TextBlock Text="Explorer" Tag="ExplorerPage"/>
+            </ListViewItem>
+
+            <ListViewItem>
+                <TextBlock Text="Control panels" Tag="ControlPanelsPage"/>
+            </ListViewItem>
+
+            <ListViewItem>
+                <TextBlock Text="Power controls" Tag="PowerPage"/>
+            </ListViewItem>
+
+            <ListViewItem>
+                <TextBlock Text="General" Tag="General"/>
+            </ListViewItem>
+        </ListView>
+
+        <Frame 
+            x:Name="ContentFrame"
+            CornerRadius="7"
+            Grid.Column="1"
+            Grid.Row="1"/>
     </Grid>
 </Page>

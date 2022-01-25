@@ -30,15 +30,7 @@ namespace Multitool.DAL.Settings
                 catch { }
             }
 
-            if (string.IsNullOrEmpty(settingName))
-            {
-                SettingName = null;
-            }
-            else
-            {
-                SettingName = settingName;
-            }
-
+            SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
             DefaultInstanciate = defaultInstanciate;
         }
 
@@ -51,12 +43,16 @@ namespace Multitool.DAL.Settings
         {
             DefaultValue = defaultValue;
             HasDefaultValue = true;
+            SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
         }
 
         /// <summary>
         /// Default parameter-less constructor.
         /// </summary>
-        public SettingAttribute() { }
+        public SettingAttribute()
+        {
+            DefaultInstanciate = true;
+        }
 
         /// <summary>
         /// Setting default value.
@@ -65,14 +61,14 @@ namespace Multitool.DAL.Settings
         /// Do not check if the property is <see langword="null"/>, but use the <see cref="HasDefaultValue"/> property to check if you can use
         /// the property
         /// </remarks>
-        internal object DefaultValue { get; }
+        public object DefaultValue { get; init; }
 
-        internal bool HasDefaultValue { get; }
+        public bool HasDefaultValue { get; init; }
 
-        internal bool DefaultInstanciate { get; }
+        public bool DefaultInstanciate { get; init; }
 
-        internal SettingConverter Converter { get; }
+        public SettingConverter Converter { get; init; }
 
-        internal string SettingName { get; set; }
+        public string SettingName { get; init; }
     }
 }

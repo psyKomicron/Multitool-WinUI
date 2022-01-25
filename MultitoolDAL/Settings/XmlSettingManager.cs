@@ -93,59 +93,34 @@ namespace Multitool.DAL.Settings
 
         public void Load<T>(T toLoad, bool useSettingAttribute = true)
         {
-#if !DEBUG
-            throw new NotImplementedException(); 
-#endif
             if (!useSettingAttribute)
             {
                 throw new NotSupportedException("Function is not implemented to save all object properties.");
             }
 
             XmlNode values = settingsRootNode.SelectSingleNode(".//" + typeof(T).FullName);
-            if (values == null)
-            {
-                throw new SettingNotFoundException(string.Empty, $"SettingsManager cannot load {typeof(T).Name}, no corresponding node in the settings file.");
-            }
-
             PropertyInfo[] props = typeof(T).GetProperties();
             for (int i = 0; i < props.Length; i++)
             {
                 IEnumerable<Attribute> attributes = props[i].GetCustomAttributes();
-
                 foreach (Attribute attribute in attributes)
                 {
                     if (attribute is SettingAttribute settingAttribute)
                     {
                         try
                         {
-                            // get prop name with SettingName property
-                            string propName = settingAttribute.SettingName ?? props[i].Name;
-                            XmlNode node = settingsRootNode.SelectSingleNode($".//{propName}");
-                            if (node == null)
+                            if (values != null)
                             {
-                                if (settingAttribute.HasDefaultValue)
+                                // get prop name with SettingName property
+                                string propName = settingAttribute.SettingName ?? props[i].Name;
+                                XmlNode node = values.SelectSingleNode($".//{propName}");
+                                if (node == null)
                                 {
-                                    props[i].SetValue(toLoad, settingAttribute.DefaultValue);
-                                }
-                                else if (settingAttribute.DefaultInstanciate)
-                                {
-                                    props[i].SetValue(toLoad, GetTypeDefaultValue(typeof(T)));
-                                }
-                                else
-                                {
-                                    Trace.TraceWarning($"'{propName}', setting not found");
-                                }
-                            }
-                            else
-                            {
-                                if (settingAttribute.Converter != null)
-                                {
-                                    props[i].SetValue(toLoad, settingAttribute.Converter.Restore(node));
+                                    SetPropertyValue(props[i], toLoad, settingAttribute);
                                 }
                                 else
                                 {
                                     object value;
-
                                     if (IsList(props[i].PropertyType))
                                     {
                                         var xmlGenericType = node.Attributes["type"];
@@ -158,36 +133,51 @@ namespace Multitool.DAL.Settings
 
                                         var childNodes = node.ChildNodes;
                                         IList list = (IList)GetTypeDefaultValue(props[i].PropertyType);
-                                        foreach (XmlNode childNode in childNodes)
+                                        if (settingAttribute.Converter == null)
                                         {
-                                            list.Add(Convert.ChangeType(childNode.InnerText, genericType));
+                                            foreach (XmlNode childNode in childNodes)
+                                            {
+                                                list.Add(Convert.ChangeType(childNode.InnerText, genericType));
+                                            }
                                         }
+                                        else
+                                        {
+                                            foreach (XmlNode childNode in childNodes)
+                                            {
+                                                object restored = settingAttribute.Converter.Restore(childNode);
+                                                list.Add(restored);
+                                            }
+                                        }
+                                        
                                         value = list;
                                     }
                                     else
                                     {
-                                        XmlAttribute xmlAttribute = node.Attributes["value"];
-                                        if (xmlAttribute != null)
+                                        if (settingAttribute.Converter != null)
                                         {
-                                            value = xmlAttribute.Value;
+                                            value = settingAttribute.Converter.Restore(node);
                                         }
                                         else
                                         {
-                                            value = node.InnerText;
+                                            XmlAttribute xmlAttribute = node.Attributes["value"];
+                                            value = xmlAttribute != null ? xmlAttribute.Value : node.InnerText;
                                         }
                                     }
-
-                                    props[i].SetValue(toLoad, Convert.ChangeType(value, props[i].PropertyType));
+                                    SetPropertyValue(props[i], toLoad, settingAttribute, value);
                                 }
+                            }
+                            else
+                            {
+                                SetPropertyValue(props[i], toLoad, settingAttribute);
                             }
                         }
                         catch (TargetException ex)
                         {
-                            Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
+                            Trace.TraceError($"Failed to load {typeof(T).Name}.{props[i].Name} :\n{ex}");
                         }
                         catch (TargetInvocationException ex)
                         {
-                            Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
+                            Trace.TraceError($"Failed to load {typeof(T).Name}.{props[i].Name} :\n{ex}");
                         }
                         break;
                     }
@@ -230,10 +220,10 @@ namespace Multitool.DAL.Settings
                 }
             }
 
-            PropertyInfo[] propertyInfos = typeof(T).GetProperties();
-            for (int i = 0; i < propertyInfos.Length; i++)
+            PropertyInfo[] props = typeof(T).GetProperties();
+            for (int i = 0; i < props.Length; i++)
             {
-                IEnumerable<Attribute> attributes = propertyInfos[i].GetCustomAttributes();
+                IEnumerable<Attribute> attributes = props[i].GetCustomAttributes();
 
                 foreach (Attribute attribute in attributes)
                 {
@@ -241,27 +231,37 @@ namespace Multitool.DAL.Settings
                     {
                         try
                         {
-                            object propValue = propertyInfos[i].GetValue(toSave);
+                            object propValue = props[i].GetValue(toSave);
                             if (propValue != null)
                             {
                                 XmlNode settingNode;
-                                string settingName = settingAttribute.SettingName ?? propertyInfos[i].Name;
-
+                                string settingName = settingAttribute.SettingName ?? props[i].Name;
                                 XmlNode previousNode = rootNode.SelectSingleNode($".//{settingName}");
                                 if (previousNode != null)
                                 {
                                     rootNode.RemoveChild(previousNode);
                                 }
-                                settingNode = document.CreateElement(settingAttribute.SettingName ?? propertyInfos[i].Name);
+                                settingNode = document.CreateElement(settingAttribute.SettingName ?? props[i].Name);
 
                                 if (settingAttribute.Converter != null)
                                 {
-                                    XmlElement xml = (XmlElement)settingAttribute.Converter.Convert(propValue);
-                                    settingNode.AppendChild(xml);
+                                    if (IsList(props[i].PropertyType))
+                                    {
+                                        var list = (IList)propValue;
+                                        foreach (var item in list)
+                                        {
+                                            settingNode.AppendChild(document.ImportNode(settingAttribute.Converter.Convert(item), true));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        XmlElement xml = (XmlElement)settingAttribute.Converter.Convert(propValue);
+                                        settingNode.AppendChild(xml);
+                                    }
                                 }
                                 else // auto convert
                                 {
-                                    if (propertyInfos[i].PropertyType.IsPrimitive || propertyInfos[i].PropertyType == typeof(string))
+                                    if (props[i].PropertyType.IsPrimitive || props[i].PropertyType == typeof(string))
                                     {
                                         XmlAttribute valueAttribute = document.CreateAttribute("value");
                                         valueAttribute.Value = propValue.ToString();
@@ -269,14 +269,14 @@ namespace Multitool.DAL.Settings
                                     }
                                     else
                                     {
-                                        if (IsList(propertyInfos[i].PropertyType))
+                                        if (IsList(props[i].PropertyType))
                                         {
                                             // can crash with casting exception
-                                            FlattenList(settingNode, (IList)propValue, propertyInfos[i].PropertyType);
+                                            FlattenList(settingNode, (IList)propValue, props[i].PropertyType);
                                         }
                                         else
                                         {
-                                            throw new ArgumentException($"Cannot save {propertyInfos[i].DeclaringType}.{propertyInfos[i].Name}. It is neither a primitive type (string included) or a list and it does not have a custom converter.");
+                                            throw new ArgumentException($"Cannot save {props[i].DeclaringType}.{props[i].Name}. It is neither a primitive type (string included) or a list and it does not have a custom converter.");
                                         }
                                     }
                                 }
@@ -286,17 +286,17 @@ namespace Multitool.DAL.Settings
 #if DEBUG
                             else
                             {
-                                Trace.TraceWarning($"Not saving {propertyInfos[i].Name}, property value is null");
+                                Trace.TraceWarning($"Not saving {props[i].Name}, property value is null");
                             }
 #endif
                         }
                         catch (TargetException ex)
                         {
-                            Trace.TraceError($"Failed to save {typeof(T).Name}.{propertyInfos[i].Name} :\n{ex}");
+                            Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
                         }
                         catch (TargetInvocationException ex)
                         {
-                            Trace.TraceError($"Failed to save {typeof(T).Name}.{propertyInfos[i].Name} :\n{ex}");
+                            Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
                         }
                     }
                 }
@@ -311,9 +311,11 @@ namespace Multitool.DAL.Settings
 
         public void SaveSetting(string callerName, string name, object value)
         {
-#if !DEBUG
-            throw new NotImplementedException(); 
-#endif
+            if (value == null)
+            {
+                Trace.TraceWarning($"Not saving {callerName}/{name}, value is null");
+            }
+
             XmlNode node = settingsRootNode.SelectSingleNode($".//{callerName}");
             if (node != null)
             {
@@ -394,6 +396,7 @@ namespace Multitool.DAL.Settings
         public void Commit()
         {
             // TODO
+            document.Save(filePath);
         }
 
         public static async Task<XmlSettingManager> Get()
@@ -401,10 +404,39 @@ namespace Multitool.DAL.Settings
             await ApplicationData.Current.LocalFolder.CreateFileAsync("settings.xml", CreationCollisionOption.OpenIfExists);
             return new();
         }
-
         #endregion
 
         #region private methods
+        private void SetPropertyValue<T>(PropertyInfo prop, T toLoad, SettingAttribute settingAttribute, object value = null)
+        {
+            if (prop.CanWrite)
+            {
+                if (value == null)
+                {
+                    if (settingAttribute.HasDefaultValue)
+                    {
+                        prop.SetValue(toLoad, settingAttribute.DefaultValue);
+                    }
+                    else if (settingAttribute.DefaultInstanciate)
+                    {
+                        prop.SetValue(toLoad, GetTypeDefaultValue(prop.PropertyType));
+                    }
+                }
+                else
+                {
+                    prop.SetValue(toLoad, Convert.ChangeType(value, prop.PropertyType));
+                }
+            }
+            else
+            {
+#if DEBUG
+                Trace.TraceWarning($"Cannot set {typeof(T).Name}.{prop.Name}, property is readonly.");
+#else
+                throw new TargetException($"Cannot set {typeof(T).Name}.{prop.Name}, property is readonly.");
+#endif
+            }
+        }
+
         private static object GetValueFromLeaf(XmlNode settingNode)
         {
             if (settingNode.Attributes != null)
