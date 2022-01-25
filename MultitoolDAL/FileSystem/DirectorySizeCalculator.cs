@@ -22,13 +22,13 @@ namespace Multitool.DAL
         public DirectorySizeCalculator() { }
 
         /// <inheritdoc/>
-        public bool Notify { get; set; }
-
-        /// <inheritdoc/>
         public event TaskProgressEventHandler Progress;
         
         /// <inheritdoc/>
         public event TaskFailedEventHandler Exception;
+
+        /// <inheritdoc/>
+        public bool Notify { get; set; }
 
         /// <summary>
         /// Calculate the size of a directory asynchronously, updating size in real time through <paramref name="setter"/>.
