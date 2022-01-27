@@ -47,7 +47,7 @@
                 x:Name="VersionButton">
                 <TextBlock x:Name="VersionTextBlock">
                     <Run Text="Version: "/>
-                    <Run Text="{Binding ElementName=Page, Path=Version, Mode=OneTime}"/>
+                    <Run Text="{x:Bind Version, Mode=OneTime}"/>
                 </TextBlock>
                 <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedLeft">
