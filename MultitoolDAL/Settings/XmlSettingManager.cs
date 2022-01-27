@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -48,49 +46,18 @@ namespace Multitool.DAL.Settings
             }
         }
 
+        public event TypedEventHandler<ISettingsManager, string> SettingsChanged;
+
         #region properties
-        public ApplicationDataContainer DataContainer { get; init; }
-
-        public string SettingFormat { get; set; }
-
         public bool AutoCommit { get; set; } = true;
+        public ApplicationDataContainer DataContainer { get; init; }
+        public string SettingFilePath => filePath;
         #endregion
 
-        public event TypedEventHandler<ISettingsManager, string> SettingsChanged;
 
         #region public methods
 
         #region ISettingsManager
-        public T GetSetting<T>(string globalKey, string settingKey)
-        {
-            XmlNode globalNode = settingsRootNode.SelectSingleNode(".//" + globalKey);
-            if (globalNode != null)
-            {
-                XmlNode settingNode = globalNode.SelectSingleNode(".//" + settingKey);
-
-                if (settingNode != null)
-                {
-                    object value = GetValueFromLeaf(settingNode);
-                    if (value != null)
-                    {
-                        return (T)Convert.ChangeType(value, typeof(T));
-                    }
-                    else
-                    {
-                        return default;
-                    }
-                }
-                else
-                {
-                    throw new SettingNotFoundException(settingKey);
-                }
-            }
-            else
-            {
-                throw new SettingNotFoundException(globalKey, "Root node was not found");
-            }
-        }
-
         public void Load<T>(T toLoad, bool useSettingAttribute = true)
         {
             if (!useSettingAttribute)
@@ -305,7 +272,7 @@ namespace Multitool.DAL.Settings
             settingsRootNode.AppendChild(rootNode);
             if (AutoCommit)
             {
-                document.Save(filePath);
+                Commit();
             }
         }
 
@@ -320,22 +287,26 @@ namespace Multitool.DAL.Settings
             if (node != null)
             {
                 XmlNode settingNode = node.SelectSingleNode($".//{name}");
+
                 if (settingNode == null)
                 {
-                    XmlNode toSave = document.CreateElement(name);
-                    node.AppendChild(toSave);
-                    toSave.InnerText = value.ToString();
+                    settingNode = document.CreateElement(name);   
                 }
-                else
-                {
-                    settingNode.InnerText = value.ToString();
-                }
+
+                XmlAttribute valueAttribute = document.CreateAttribute("value");
+                valueAttribute.Value = value.ToString();
+                settingNode.Attributes.Append(valueAttribute);
+
+                node.AppendChild(settingNode);
             }
             else
             {
                 node = document.CreateElement(callerName);
                 XmlNode toSave = document.CreateElement(name);
-                toSave.InnerText = value.ToString();
+
+                XmlAttribute valueAttribute = document.CreateAttribute("value");
+                valueAttribute.Value = value.ToString();
+                toSave.Attributes.Append(valueAttribute);
 
                 node.AppendChild(toSave);
                 settingsRootNode.AppendChild(node);
@@ -343,7 +314,37 @@ namespace Multitool.DAL.Settings
 
             if (AutoCommit)
             {
-                document.Save(filePath);
+                Commit();
+            }
+        }
+
+        public T GetSetting<T>(string globalKey, string settingKey)
+        {
+            XmlNode globalNode = settingsRootNode.SelectSingleNode(".//" + globalKey);
+            if (globalNode != null)
+            {
+                XmlNode settingNode = globalNode.SelectSingleNode(".//" + settingKey);
+
+                if (settingNode != null)
+                {
+                    object value = GetValueFromLeaf(settingNode);
+                    if (value != null)
+                    {
+                        return (T)Convert.ChangeType(value, typeof(T));
+                    }
+                    else
+                    {
+                        return default;
+                    }
+                }
+                else
+                {
+                    throw new SettingNotFoundException(settingKey);
+                }
+            }
+            else
+            {
+                throw new SettingNotFoundException(globalKey, "Root node was not found");
             }
         }
 
@@ -368,21 +369,20 @@ namespace Multitool.DAL.Settings
             }
         }
 
-        public bool TryGetSetting(Type settingType, string callerName, string name, out object value)
+        public bool TryGetSetting<T>(string callerName, string name, out T value)
         {
-            XmlNode globalNode = settingsRootNode.SelectSingleNode(".//" + callerName);
-            value = null;
-            if (globalNode != null)
+            value = default;
+            XmlNode settingNode = settingsRootNode.SelectSingleNode($".//{callerName}/{name}");
+            if (settingNode != null)
             {
-                XmlNode settingNode = globalNode.SelectSingleNode("//" + name);
-
-                if (settingNode != null)
+                try
                 {
-
+                    value = (T)Convert.ChangeType(GetValueFromLeaf(settingNode), typeof(T));
                     return true;
                 }
-                else
+                catch (Exception ex)
                 {
+                    Trace.TraceError(ex.ToString());
                     return false;
                 }
             }
@@ -390,7 +390,81 @@ namespace Multitool.DAL.Settings
             {
                 return false;
             }
-        } 
+        }
+
+        public void RemoveSetting(string globalKey, string settingKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public List<string> ListSettingsKeys()
+        {
+            List<string> keys = new();
+            var nodes = settingsRootNode.ChildNodes;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                keys.Add(nodes[i].Name);
+            }
+            return keys;
+        }
+
+        public List<string> ListSettingsKeys(string globalKey)
+        {
+            List<string> keys = new();
+            var node = settingsRootNode.SelectSingleNode($".//{globalKey}");
+            if (node != null)
+            {
+                var nodes = node.ChildNodes;
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    keys.Add(nodes[i].Name);
+                }
+            }
+            return keys;
+        }
+
+        public void EditSetting(string globalKey, string settingKey, object value)
+        {
+            XmlNode node = settingsRootNode.SelectSingleNode($".//{globalKey}/{settingKey}");
+            if (node != null)
+            {
+                if (node.Attributes != null && node.Attributes.Count > 0)
+                {
+                    for (int i = 0; i < node.Attributes.Count; i++)
+                    {
+                        if (node.Attributes[i].Name == "value")
+                        {
+                            node.Attributes[i].Value = value.ToString();
+                        }
+                    }
+                }
+                else
+                {
+                    node.InnerText = value.ToString();
+                }
+            }
+
+            /*if (AutoCommit)
+            {
+                Commit();
+            }*/
+        }
+
+        public void EditSetting(string xpath, SettingConverter converter, object value)
+        {
+            XmlNode node = settingsRootNode.SelectSingleNode(xpath);
+            if (node != null)
+            {
+                node.AppendChild(converter.Convert(value));
+            }
+        }
+
+        public void Reset()
+        {
+            document.RemoveAll();
+            Commit();
+            Trace.TraceInformation("Cleared setting file.");
+        }
         #endregion
 
         public void Commit()
