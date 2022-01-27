@@ -43,7 +43,6 @@
     <None Remove="Pages\IrcChatPage.xaml" />
     <None Remove="Pages\Irc\ChatControl.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
-    <None Remove="Pages\Settings\ExplorerSettingsPage.xaml" />
     <None Remove="Pages\Settings\SettingsPage.xaml" />
     <None Remove="Pages\Test\TestPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
@@ -105,9 +104,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Pages\Settings\ExplorerSettingsPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <None Update="Resources\Images\ico151.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
