@@ -6,9 +6,9 @@ using System.Xml;
 
 namespace MultitoolWinUI.Helpers
 {
-    internal class PathHistoryItemSettingConverter : SettingConverter
+    internal class PathHistoryItemSettingConverter : ISettingConverter
     {
-        public override XmlNode Convert(object toConvert)
+        public XmlNode Convert(object toConvert)
         {
             if (toConvert is PathHistoryItem item)
             {
@@ -31,7 +31,7 @@ namespace MultitoolWinUI.Helpers
             }
         }
 
-        public override object Restore(XmlNode toRestore)
+        public object Restore(XmlNode toRestore)
         {
             XmlAttribute fullPath = toRestore.Attributes["fullpath"];
             XmlAttribute shortPath = toRestore.Attributes["shortpath"];
