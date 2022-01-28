@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Pages.Test;
 using MultitoolWinUI.Pages.Settings;
+using Multitool.DAL.Settings;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -29,7 +30,6 @@ namespace MultitoolWinUI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
-        private Type lastPage;
         private bool closed;
 
         public MainWindow()
@@ -37,67 +37,25 @@ namespace MultitoolWinUI
             InitializeComponent();
             Title = "Multitool v." + Tool.GetPackageVersion();
             SizeChanged += MainWindow_SizeChanged;
-
             try
             {
-                IsPaneOpen = App.Settings.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
+                App.Settings.Load(this);
             }
-            catch (SettingNotFoundException)
+            catch
             {
-                IsPaneOpen = true;
+                Trace.TraceWarning("Failed to load main window settings");
             }
-
-            try
-            {
-                string lastPageName = App.Settings.GetSetting<string>(nameof(MainWindow), nameof(lastPage));
-                switch (lastPageName)
-                {
-                    case nameof(MainPage):
-                        lastPage = typeof(MainPage);
-                        break;
-                    case nameof(ComputerDevicesPage):
-                        lastPage = typeof(ComputerDevicesPage);
-                        break;
-                    case nameof(ExplorerPage):
-                        lastPage = typeof(ExplorerPage);
-                        break;
-                    case nameof(ExplorerHomePage):
-                        lastPage = typeof(ExplorerHomePage);
-                        break;
-                    case nameof(PowerPage):
-                        lastPage = typeof(PowerPage);
-                        break;
-                    case nameof(ControlPanelsPage):
-                        lastPage = typeof(ControlPanelsPage);
-                        break;
-                    case nameof(HashGeneratorPage):
-                        lastPage = typeof(HashGeneratorPage);
-                        break;
-                    case nameof(TwitchPage):
-                        lastPage = typeof(TwitchPage);
-                        break;
-                    default:
-                        App.TraceWarning("MainWindow:ctor: Unknown page");
-                        break;
-                }
-            }
-            catch (SettingNotFoundException) { }
         }
 
+        [Setting(true)]
         public bool IsPaneOpen { get; set; }
+        [Setting(HasDefaultValue = true, DefaultValue = typeof(MainPage))]
+        public Type LastPage { get; set; }
 
         #region navigation events
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
-            if (lastPage != null)
-            {
-                _ = ContentFrame.Navigate(lastPage);
-            }
-            else
-            {
-                lastPage = typeof(MainPage);
-                _ = ContentFrame.Navigate(typeof(MainPage));
-            }
+            _ = ContentFrame.Navigate(LastPage);
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -108,43 +66,43 @@ namespace MultitoolWinUI
                 switch (tag)
                 {
                     case "home":
-                        lastPage = typeof(MainPage);
+                        LastPage = typeof(MainPage);
                         _ = ContentFrame.Navigate(typeof(MainPage));
                         break;
                     case "devices":
-                        lastPage = typeof(ComputerDevicesPage);
+                        LastPage = typeof(ComputerDevicesPage);
                         _ = ContentFrame.Navigate(typeof(ComputerDevicesPage));
                         break;
                     case "explorer":
-                        lastPage = typeof(ExplorerPage);
+                        LastPage = typeof(ExplorerPage);
                         _ = ContentFrame.Navigate(typeof(ExplorerPage));
                         break;
                     case "explorerhome":
-                        lastPage = typeof(ExplorerHomePage);
+                        LastPage = typeof(ExplorerHomePage);
                         _ = ContentFrame.Navigate(typeof(ExplorerHomePage));
                         break;
                     case "power":
-                        lastPage = typeof(PowerPage);
+                        LastPage = typeof(PowerPage);
                         _ = ContentFrame.Navigate(typeof(PowerPage));
                         break;
                     case "controlpanels":
-                        lastPage = typeof(ControlPanelsPage);
+                        LastPage = typeof(ControlPanelsPage);
                         _ = ContentFrame.Navigate(typeof(ControlPanelsPage));
                         break;
                     case "hashgenerator":
-                        lastPage = typeof(HashGeneratorPage);
+                        LastPage = typeof(HashGeneratorPage);
                         _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
                         break;
                     case "irc":
-                        lastPage = typeof(TwitchPage);
+                        LastPage = typeof(TwitchPage);
                         _ = ContentFrame.Navigate(typeof(TwitchPage));
                         break;
                     case "test":
-                        lastPage = typeof(TestPage);
+                        LastPage = typeof(TestPage);
                         _ = ContentFrame.Navigate(typeof(TestPage));
                         break;
                     case "Settings":
-                        _ = ContentFrame.Navigate(typeof(SettingsPage), lastPage);
+                        _ = ContentFrame.Navigate(typeof(SettingsPage), LastPage);
                         break;
                     default:
                         App.TraceWarning("Trying to navigate to : " + tag);
@@ -173,11 +131,7 @@ namespace MultitoolWinUI
             // save settings
             MessageDisplay.Silence();
             closed = true;
-            if (lastPage != null)
-            {
-                App.Settings.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
-            }
-            App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
+            App.Settings.Save(this);
         }
 
         private void MessageDisplay_VisibilityChanged(AppMessageControl sender, Visibility args)
@@ -187,11 +141,11 @@ namespace MultitoolWinUI
                 ContentPopup.IsOpen = args == Visibility.Visible;
             }
         }
-        #endregion
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
             
         }
+        #endregion
     }
 }
