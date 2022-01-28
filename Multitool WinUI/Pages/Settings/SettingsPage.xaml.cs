@@ -126,12 +126,31 @@ namespace MultitoolWinUI.Pages.Settings
                 }
             }
 
-            var settings = settingsManager.ListSettingsKeys(typeof(TwitchPage).FullName);
-            if (settings.Contains("LoadWebView") && settings.Contains("Login") && settings.Contains("ChatMaxNumberOfMessages"))
+            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, "LoadWebView", out bool loadWebView))
             {
-                LoadWebView = settingsManager.GetSetting<bool>(typeof(TwitchPage).FullName, "LoadWebView");
-                Login = settingsManager.GetSetting<string>(typeof(TwitchPage).FullName, "Login");
-                ChatMaxNumberOfMessages = settingsManager.GetSetting<int>(typeof(TwitchPage).FullName, "ChatMaxNumberOfMessages");
+                LoadWebView = loadWebView;
+            }
+            else
+            {
+                Trace.TraceWarning("LoadWebView not found");
+            }
+
+            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, "Login", out string login))
+            {
+                Login = login;
+            }
+            else
+            {
+                Trace.TraceWarning("Login not found");
+            }
+
+            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, "ChatMaxNumberOfMessages", out int n))
+            {
+                ChatMaxNumberOfMessages = n;
+            }
+            else
+            {
+                Trace.TraceWarning("ChatMaxNumberOfMessages not found");
             }
 
             if (settingsManager.TryGetSetting(typeof(MainPage).FullName, "LoadShortcuts", out bool loadShortcuts))
@@ -157,6 +176,7 @@ namespace MultitoolWinUI.Pages.Settings
         #region page event handlers
         private void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
         {
+            // i can use a flag to not save already saved values
             settingsManager.EditSetting(typeof(MainPage).FullName, "LoadShortcuts", LoadShortcutsToggleSwitch.IsOn);
 
             settingsManager.EditSetting(typeof(ExplorerPage).FullName, nameof(LoadLastPath), LoadLastPath);
@@ -295,14 +315,14 @@ namespace MultitoolWinUI.Pages.Settings
 
         private void ChatEmoteSize_Slider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            int value = (int)e.NewValue;
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, , value);
+            //int value = (int)e.NewValue;
+            //settingsManager.EditSetting(typeof(TwitchPage).FullName, , value);
         }
 
         private void PasswordBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            string value = LoginPasswordBox.Password;
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, "ChatMaxNumberOfMessages", value);
+            /*string value = LoginPasswordBox.Password;
+            settingsManager.EditSetting(typeof(TwitchPage).FullName, "ChatMaxNumberOfMessages", value);*/
         }
 
         private void LoadOAuth_Click(object sender, RoutedEventArgs e)

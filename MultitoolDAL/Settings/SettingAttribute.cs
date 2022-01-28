@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Multitool.DAL.Settings
@@ -24,10 +25,13 @@ namespace Multitool.DAL.Settings
                     ConstructorInfo ctorInfo = converterType.GetConstructor(Array.Empty<Type>());
                     if (ctorInfo != null)
                     {
-                        Converter = (SettingConverter)Convert.ChangeType(ctorInfo.Invoke(Array.Empty<object>()), converterType);
+                        Converter = (ISettingConverter)Convert.ChangeType(ctorInfo.Invoke(Array.Empty<object>()), converterType);
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Trace.TraceError($"Failed to create custom setting converter: {ex}");
+                }
             }
 
             SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
@@ -61,14 +65,14 @@ namespace Multitool.DAL.Settings
         /// Do not check if the property is <see langword="null"/>, but use the <see cref="HasDefaultValue"/> property to check if you can use
         /// the property
         /// </remarks>
-        public object DefaultValue { get; init; }
+        public object DefaultValue { get; set; }
 
-        public bool HasDefaultValue { get; init; }
+        public bool HasDefaultValue { get; set; }
 
-        public bool DefaultInstanciate { get; init; }
+        public bool DefaultInstanciate { get; set; }
 
-        public SettingConverter Converter { get; init; }
+        public ISettingConverter Converter { get; set; }
 
-        public string SettingName { get; init; }
+        public string SettingName { get; set; }
     }
 }

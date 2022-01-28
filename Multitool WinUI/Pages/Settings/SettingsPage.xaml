@@ -44,7 +44,7 @@
             x:Name="PageScrollViewer"
             Grid.Row="1"
             Grid.ColumnSpan="2"
-            Margin="40,10,0,0">
+            Margin="40,10,0,10">
             <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
                 <!--#region General settings -->
                 <TextBlock 
@@ -81,11 +81,23 @@
                         Header="Auto-load setting page"
                         IsOn="{x:Bind AutoLoadPageSetting}"
                         ToolTipService.ToolTip="Load corresponding setting page when navigating from a page"/>
+                </StackPanel>
+                <!--#endregion-->
 
-                    <!-- always bottom -->
-                    <HyperlinkButton
-                        Content="Go to project repository"
-                        NavigateUri="{x:Bind GithubUri}"/>
+                <!--#region Home settings -->
+                <TextBlock 
+                    x:Name="MainPageHeader"
+                    Text="Home" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"
+                    Margin="0,0,0,10"/>
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
+                    <ToggleSwitch
+                        x:Name="LoadShortcutsToggleSwitch"
+                        Header="Load saved shortcuts on start-up"
+                        IsOn="{x:Bind MainPageLoadShortcuts}"
+                        OnContent="Yes"
+                        OffContent="No"/>
                 </StackPanel>
                 <!--#endregion-->
 
@@ -147,16 +159,17 @@
                         StepFrequency="30"
                         TickPlacement="Outside"
                         TickFrequency="30"
-                        ValueChanged="ChatEmoteSize_Slider_ValueChanged"/>
+                        Margin="3,0"/>
 
                     <Slider 
                         x:Name="ChatHistorySize_Slider"
+                        Header="Maximum number of messages"
                         VerticalAlignment="Center"
                         Minimum="50"
                         Maximum="2000"
                         MinWidth="300"
                         StepFrequency="10"
-                        Header="Maximum number of messages"
+                        Margin="3,0"
                         Value="{x:Bind ChatMaxNumberOfMessages, Mode=TwoWay}"/>
                 </StackPanel>
                 <!--#endregion-->
@@ -189,20 +202,16 @@
                 </StackPanel>
                 <!--#endregion-->
 
-                <!--#region Home settings -->
-                <TextBlock 
-                    x:Name="MainPageHeader"
-                    Text="Home" 
+                <!--#region Miscellaneous -->
+                <TextBlock
+                    Text="Miscellaneous" 
                     FontSize="{StaticResource SettingTitleFontSize}" 
                     FontWeight="{StaticResource SettingTitleFontWeight}"
                     Margin="0,0,0,10"/>
-                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
-                    <ToggleSwitch
-                        x:Name="LoadShortcutsToggleSwitch"
-                        Header="Load saved shortcuts on start-up"
-                        IsOn="{x:Bind MainPageLoadShortcuts}"
-                        OnContent="Yes"
-                        OffContent="No"/>
+                <StackPanel>
+                    <HyperlinkButton
+                        Content="Go to project repository"
+                        NavigateUri="{x:Bind GithubUri}"/>
                 </StackPanel>
                 <!--#endregion-->
             </StackPanel>

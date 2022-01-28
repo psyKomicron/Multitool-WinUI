@@ -54,7 +54,6 @@ namespace Multitool.DAL.Settings
         public string SettingFilePath => filePath;
         #endregion
 
-
         #region public methods
 
         #region ISettingsManager
@@ -65,7 +64,7 @@ namespace Multitool.DAL.Settings
                 throw new NotSupportedException("Function is not implemented to save all object properties.");
             }
 
-            XmlNode values = settingsRootNode.SelectSingleNode(".//" + typeof(T).FullName);
+            XmlNode values = settingsRootNode.SelectSingleNode($".//{typeof(T).FullName}");
             PropertyInfo[] props = typeof(T).GetProperties();
             for (int i = 0; i < props.Length; i++)
             {
@@ -217,13 +216,20 @@ namespace Multitool.DAL.Settings
                                         var list = (IList)propValue;
                                         foreach (var item in list)
                                         {
-                                            settingNode.AppendChild(document.ImportNode(settingAttribute.Converter.Convert(item), true));
+                                            XmlNode node = settingAttribute.Converter.Convert(item);
+                                            if (node != null)
+                                            {
+                                                settingNode.AppendChild(document.ImportNode(node, true));
+                                            }
                                         }
                                     }
                                     else
                                     {
-                                        XmlElement xml = (XmlElement)settingAttribute.Converter.Convert(propValue);
-                                        settingNode.AppendChild(xml);
+                                        XmlNode xml = settingAttribute.Converter.Convert(propValue);
+                                        if (xml != null)
+                                        {
+                                            settingNode.AppendChild(xml); settingNode.AppendChild(xml);
+                                        }
                                     }
                                 }
                                 else // auto convert
@@ -450,7 +456,7 @@ namespace Multitool.DAL.Settings
             }*/
         }
 
-        public void EditSetting(string xpath, SettingConverter converter, object value)
+        public void EditSetting(string xpath, ISettingConverter converter, object value)
         {
             XmlNode node = settingsRootNode.SelectSingleNode(xpath);
             if (node != null)
@@ -481,7 +487,7 @@ namespace Multitool.DAL.Settings
         #endregion
 
         #region private methods
-        private void SetPropertyValue<T>(PropertyInfo prop, T toLoad, SettingAttribute settingAttribute, object value = null)
+        private static void SetPropertyValue<T>(PropertyInfo prop, T toLoad, SettingAttribute settingAttribute, object value = null)
         {
             if (prop.CanWrite)
             {
