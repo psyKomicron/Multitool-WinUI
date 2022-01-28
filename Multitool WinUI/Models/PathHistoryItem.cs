@@ -12,6 +12,10 @@ namespace MultitoolWinUI.Models
         private string _fullPath;
         private string _shortPath;
 
+        public PathHistoryItem() : base(null)
+        {
+        }
+
         public PathHistoryItem(DispatcherQueue dispatcherQueue) : base(dispatcherQueue)
         {
         }

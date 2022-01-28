@@ -1,6 +1,8 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
+using Multitool.DAL.Settings;
+
 using MultitoolWinUI.Helpers;
 
 using System.Diagnostics;
@@ -32,32 +34,37 @@ namespace MultitoolWinUI.Pages
         }
 
         #region properties
-
 #if DEBUG
-        public static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        public string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 #else
-        public static string Version => Tool.GetPackageVersion();
+        public string Version => Tool.GetPackageVersion();
 #endif
 
         public string ReleaseNotes => Properties.Resources.ReleaseNotes;
 
+        [Setting(true)]
+        public bool LoadShortcuts { get; set; }
         #endregion
 
         private void InitializeWindow()
         {
-            XmlDocument doc = new();
-            try
+            App.Settings.Load(this);
+            if (LoadShortcuts)
             {
-                App.TraceInformation("Loading main page shortcuts");
-                doc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, settingPath));
-            }
-            catch (XmlException e)
-            {
-                App.TraceError(e.Message);
-            }
-            catch (IOException e)
-            {
-                App.TraceError(e.Message);
+                XmlDocument doc = new();
+                try
+                {
+                    App.TraceInformation("Loading main page shortcuts");
+                    doc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, settingPath));
+                }
+                catch (XmlException e)
+                {
+                    App.TraceError(e.Message);
+                }
+                catch (IOException e)
+                {
+                    App.TraceError(e.Message);
+                } 
             }
         }
 

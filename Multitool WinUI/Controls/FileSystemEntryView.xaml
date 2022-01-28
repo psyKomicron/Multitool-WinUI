@@ -33,6 +33,7 @@
         <TextBlock 
             Grid.Column="1"
             Text="{x:Bind Name}"
+            FontWeight="SemiLight"
             VerticalAlignment="Center"
             Foreground="{x:Bind Color, Mode=OneWay}"
             Margin="0,0,30,0"/>

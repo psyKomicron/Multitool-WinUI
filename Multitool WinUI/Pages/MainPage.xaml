@@ -47,7 +47,7 @@
                 x:Name="VersionButton">
                 <TextBlock x:Name="VersionTextBlock">
                     <Run Text="Version: "/>
-                    <Run Text="{Binding ElementName=Page, Path=Version, Mode=OneTime}"/>
+                    <Run Text="{x:Bind Version, Mode=OneTime}"/>
                 </TextBlock>
                 <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedLeft">
@@ -56,9 +56,16 @@
                                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
                             </Style>
                         </Flyout.FlyoutPresenterStyle>
-                        <TextBlock HorizontalAlignment="Stretch" TextWrapping="WrapWholeWords" FontSize="18" Text="{x:Bind ReleaseNotes}"/>
+                        <TextBlock Width="400" HorizontalAlignment="Stretch" TextWrapping="WrapWholeWords" Text="{x:Bind ReleaseNotes}"/>
                     </Flyout>
                 </Button.Flyout>
+                <ToolTipService.ToolTip>
+                    <ToolTip>
+                        <TextBlock>
+                            Click to show release notes.
+                        </TextBlock>
+                    </ToolTip>
+                </ToolTipService.ToolTip>
             </Button>
             <Button 
                 x:Name="BuildTypeButton">

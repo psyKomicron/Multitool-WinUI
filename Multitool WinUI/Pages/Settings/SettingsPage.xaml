@@ -6,29 +6,215 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
+    <Page.Resources>
+        <x:Double x:Key="SettingTitleFontSize">25</x:Double>
+        <x:Double x:Key="StackPanelDefaultSpacing">15</x:Double>
+        <FontWeight x:Key="SettingTitleFontWeight">SemiBold</FontWeight>
+    </Page.Resources>
 
-    <Grid>
+    <Grid ColumnSpacing="5">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" MaxWidth="300"/>
-            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition MinHeight="30" Height="40" MaxHeight="100"/>
-            <RowDefinition/>
+            <RowDefinition Height="52"/>
+            <RowDefinition />
         </Grid.RowDefinitions>
 
         <AutoSuggestBox
             x:Name="SettingSearch"
+            PlaceholderText="Search setting"
+            QueryIcon="Zoom"
             Grid.Row="0"
-            Grid.Column="0"/>
-        <NavigationView
-            x:Name="PagesNavigationView"
-            Loaded="NavigationView_Loaded"
-            ItemInvoked="NavigationView_ItemInvoked"
-            IsBackEnabled="False"
-            IsBackButtonVisible="Collapsed"
+            Margin="0,10"/>
+        <Button
+            x:Name="SaveSettingsButton"
+            Grid.Row="0"
+            Grid.Column="1"
+            HorizontalAlignment="Right"
+            Click="SaveSettingsButton_Click">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                <SymbolIcon Symbol="Save"/>
+                <TextBlock Text="Save settings"/>
+            </StackPanel>
+        </Button>
+
+        <ScrollViewer
+            x:Name="PageScrollViewer"
             Grid.Row="1"
-            Grid.Column="0">
-        </NavigationView>
+            Grid.ColumnSpan="2"
+            Margin="40,10,0,10">
+            <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
+                <!--#region General settings -->
+                <TextBlock 
+                    x:Name="GeneralHeader"
+                    Text="General" 
+                    FontSize="{StaticResource SettingTitleFontSize}"
+                    FontWeight="{StaticResource SettingTitleFontWeight}"
+                    Margin="0,0,0,10"/>
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
+                    <Button
+                        x:Name="OpenSettingsFile"
+                        Click="OpenSettingsFile_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                            <SymbolIcon Symbol="OpenFile"/>
+                            <TextBlock Text="Open setting file (default editor)"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        x:Name="ResetSettingsFile"
+                        Click="ResetSettingsFile_Click"
+                        Content="Reset/clear settings file"/>
+
+                    <StackPanel Spacing="15">
+                        <TextBlock Text="Select application theme"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ToggleButton x:Name="DarkThemeButton" Click="DarkThemeButton_Click" Content="Dark" CornerRadius="5,0,0,5" />
+                            <ToggleButton x:Name="LightThemeButton" Click="LightThemeButton_Click" Content="Light" CornerRadius="0" />
+                            <ToggleButton x:Name="DefaultThemeButton" Click="DefaultThemeButton_Click" Content="Default" CornerRadius="0,5,5,0" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ToggleSwitch
+                        Header="Auto-load setting page"
+                        IsOn="{x:Bind AutoLoadPageSetting}"
+                        ToolTipService.ToolTip="Load corresponding setting page when navigating from a page"/>
+                </StackPanel>
+                <!--#endregion-->
+
+                <!--#region Home settings -->
+                <TextBlock 
+                    x:Name="MainPageHeader"
+                    Text="Home" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"
+                    Margin="0,0,0,10"/>
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
+                    <ToggleSwitch
+                        x:Name="LoadShortcutsToggleSwitch"
+                        Header="Load saved shortcuts on start-up"
+                        IsOn="{x:Bind MainPageLoadShortcuts}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+                </StackPanel>
+                <!--#endregion-->
+
+                <!--#region Twitch settings -->
+                <TextBlock 
+                    x:Name="TwitchHeader"
+                    Text="Twitch" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"
+                    Margin="0,0,0,10"/>
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
+                    <ToggleSwitch
+                        x:Name="LoadWebViewButton"
+                        IsOn="{x:Bind LoadWebView, Mode=TwoWay}"
+                        OffContent="Webview off"
+                        OnContent="Webview on"
+                        VerticalAlignment="Center"/>
+
+                    <Button
+                        x:Name="LoadOAuth"
+                        Click="LoadOAuth_Click"
+                        VerticalContentAlignment="Center">
+                        <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
+                    </Button>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Spacing="{StaticResource StackPanelDefaultSpacing}">
+                        <PasswordBox
+                            x:Name="LoginPasswordBox"
+                            Password="{x:Bind Login, Mode=TwoWay}"
+                            Header="Twitch login"
+                            PlaceholderText="Login"
+                            KeyDown="PasswordBox_KeyDown"
+                            MinWidth="230"
+                            MaxWidth="250"
+                            Grid.Row="0"/>
+                        <Button
+                            x:Name="ValidateTokenButton"
+                            VerticalAlignment="Center"
+                            Click="ValidateTokenButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                                <FontIcon 
+                                    Glyph="&#xE73E;"/>
+                                <TextBlock Text="Validate token"/>
+                                <ProgressRing
+                                    x:Name="TokenValidationProgressRing"
+                                    IsIndeterminate="False"
+                                    Height="20"
+                                    Width="20"
+                                    Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <Slider 
+                        x:Name="ChatEmoteSize_Slider"
+                        Header="Emote size"
+                        Minimum="30"
+                        Maximum="90"
+                        StepFrequency="30"
+                        TickPlacement="Outside"
+                        TickFrequency="30"
+                        Margin="3,0"/>
+
+                    <Slider 
+                        x:Name="ChatHistorySize_Slider"
+                        Header="Maximum number of messages"
+                        VerticalAlignment="Center"
+                        Minimum="50"
+                        Maximum="2000"
+                        MinWidth="300"
+                        StepFrequency="10"
+                        Margin="3,0"
+                        Value="{x:Bind ChatMaxNumberOfMessages, Mode=TwoWay}"/>
+                </StackPanel>
+                <!--#endregion-->
+
+                <!--#region Explorer settings -->
+                <TextBlock 
+                    x:Name="ExplorerHeader"
+                    Text="Explorer" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"
+                    Margin="0,0,0,10"/>
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
+                    <ToggleSwitch
+                        Header="Load last path on start"
+                        IsOn="{x:Bind LoadLastPath}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+
+                    <ToggleSwitch
+                        Header="Keep history"
+                        IsOn="{x:Bind KeepHistory}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+
+                    <Button
+                        x:Name="ClearHistoryButton"
+                        IsEnabled="{x:Bind ClearHistoryButtonEnabled}"
+                        Click="ClearHistoryButton_Click"
+                        Content="Clear path history"/>
+                </StackPanel>
+                <!--#endregion-->
+
+                <!--#region Miscellaneous -->
+                <TextBlock
+                    Text="Miscellaneous" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"
+                    Margin="0,0,0,10"/>
+                <StackPanel>
+                    <HyperlinkButton
+                        Content="Go to project repository"
+                        NavigateUri="{x:Bind GithubUri}"/>
+                </StackPanel>
+                <!--#endregion-->
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

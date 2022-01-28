@@ -337,13 +337,7 @@ namespace Multitool.DAL.FileSystem
             {
                 ResetTimer();
                 FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
-                item.RefreshInfos();
-                if (timer != null)
-                {
-                    timer.Start();
-                }
-                FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
-                if (item is not null)
+                if (item != null)
                 {
                     item.RefreshInfos();
                 }

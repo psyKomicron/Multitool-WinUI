@@ -1,13 +1,10 @@
-﻿namespace Multitool.DAL.Settings
-{
-    public abstract class SettingConverter
-    {
-        /// <summary>
-        /// Default constructor
-        /// </summary>
-        public SettingConverter() { }
+﻿using System.Xml;
 
-        public abstract object Convert(object toConvert);
-        public abstract object Restore(object toRestore);
+namespace Multitool.DAL.Settings
+{
+    public interface ISettingConverter
+    {
+        XmlNode Convert(object toConvert);
+        object Restore(XmlNode toRestore);
     }
 }

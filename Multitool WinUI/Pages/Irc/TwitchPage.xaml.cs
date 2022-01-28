@@ -49,9 +49,6 @@ namespace MultitoolWinUI.Pages
         [Setting("")]
         public string Login { get; set; }
 
-        [Setting(true)]
-        public bool RequestTags { get; set; }
-
         [Setting]
         public bool LoadWebView { get; set; }
 
@@ -203,8 +200,7 @@ namespace MultitoolWinUI.Pages
                     ITwitchIrcClient client = new TwitchIrcClient(token, true)
                     {
                         NickName = "psykomicron",
-                        Encoding = encoding,
-                        RequestTags = RequestTags
+                        Encoding = encoding
                     };
 
                     TabViewItem tab = new();
@@ -213,7 +209,7 @@ namespace MultitoolWinUI.Pages
                         Client = client,
                         Tab = tab,
                         MaxMessages = ChatMaxNumberOfMessages,
-                        EmoteSize = ChatEmoteSize_Slider.Value
+                        EmoteSize = 30
                     };
                     tab.Content = chat;
 
@@ -238,80 +234,9 @@ namespace MultitoolWinUI.Pages
             }
         }
 
-        private void Flyout_Opening(object sender, object e)
-        {
-            SettingsButton.BorderBrush = new SolidColorBrush(Helpers.Tool.GetAppRessource<Color>("SystemAccentColor"));
-        }
-
-        private void Flyout_Closing(FlyoutBase sender, FlyoutBaseClosingEventArgs args)
-        {
-            SettingsButton.BorderBrush = null;
-        }
-
-        private async void ValidateTokenButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (token == null)
-                {
-                    token = new(Login);
-                }
-
-                if (await token.ValidateToken())
-                {
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.Green);
-                    });
-                }
-                else
-                {
-                    Trace.TraceWarning("Token is not valid, try creating a new one or check if it is the right one");
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.IndianRed);
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.ToString());
-            }
-        }
-
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             NavigateTo("https://www." + args.QueryText);
-        }
-
-        private void PasswordBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                Login = LoginPasswordBox.Password;
-            }
-        }
-
-        private void ChatHistoryLength_Slider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
-        {
-            foreach (var tab in Tabs)
-            {
-                if (tab.Content is ChatControl control)
-                {
-                    control.MaxMessages = (int)e.NewValue;
-                }
-            }
-        }
-
-        private void ChatEmoteSize_Slider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
-        {
-            foreach (var tab in Tabs)
-            {
-                if (tab.Content is ChatControl control)
-                {
-                    control.EmoteSize = e.NewValue;
-                }
-            }
         }
         #endregion
 

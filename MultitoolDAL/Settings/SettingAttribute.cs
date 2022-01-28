@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Multitool.DAL.Settings
@@ -24,21 +25,16 @@ namespace Multitool.DAL.Settings
                     ConstructorInfo ctorInfo = converterType.GetConstructor(Array.Empty<Type>());
                     if (ctorInfo != null)
                     {
-                        Converter = (SettingConverter)Convert.ChangeType(ctorInfo.Invoke(Array.Empty<object>()), converterType);
+                        Converter = (ISettingConverter)Convert.ChangeType(ctorInfo.Invoke(Array.Empty<object>()), converterType);
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Trace.TraceError($"Failed to create custom setting converter: {ex}");
+                }
             }
 
-            if (string.IsNullOrEmpty(settingName))
-            {
-                SettingName = null;
-            }
-            else
-            {
-                SettingName = settingName;
-            }
-
+            SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
             DefaultInstanciate = defaultInstanciate;
         }
 
@@ -51,12 +47,16 @@ namespace Multitool.DAL.Settings
         {
             DefaultValue = defaultValue;
             HasDefaultValue = true;
+            SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
         }
 
         /// <summary>
         /// Default parameter-less constructor.
         /// </summary>
-        public SettingAttribute() { }
+        public SettingAttribute()
+        {
+            DefaultInstanciate = true;
+        }
 
         /// <summary>
         /// Setting default value.
@@ -65,14 +65,14 @@ namespace Multitool.DAL.Settings
         /// Do not check if the property is <see langword="null"/>, but use the <see cref="HasDefaultValue"/> property to check if you can use
         /// the property
         /// </remarks>
-        internal object DefaultValue { get; }
+        public object DefaultValue { get; set; }
 
-        internal bool HasDefaultValue { get; }
+        public bool HasDefaultValue { get; set; }
 
-        internal bool DefaultInstanciate { get; }
+        public bool DefaultInstanciate { get; set; }
 
-        internal SettingConverter Converter { get; }
+        public ISettingConverter Converter { get; set; }
 
-        internal string SettingName { get; set; }
+        public string SettingName { get; set; }
     }
 }

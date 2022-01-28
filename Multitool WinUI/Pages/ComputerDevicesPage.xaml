@@ -13,7 +13,7 @@
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal">
+        <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Orientation="Horizontal">
 
             <Button Content="Load devices"
                     FontSize="20"
