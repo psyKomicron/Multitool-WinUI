@@ -49,9 +49,6 @@ namespace MultitoolWinUI.Pages
         [Setting("")]
         public string Login { get; set; }
 
-        [Setting(true)]
-        public bool RequestTags { get; set; }
-
         [Setting]
         public bool LoadWebView { get; set; }
 
@@ -203,8 +200,7 @@ namespace MultitoolWinUI.Pages
                     ITwitchIrcClient client = new TwitchIrcClient(token, true)
                     {
                         NickName = "psykomicron",
-                        Encoding = encoding,
-                        RequestTags = RequestTags
+                        Encoding = encoding
                     };
 
                     TabViewItem tab = new();

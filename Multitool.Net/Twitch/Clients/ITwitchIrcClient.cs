@@ -18,7 +18,6 @@ namespace Multitool.Net.Twitch.Irc
         Encoding Encoding { get; set; }
         bool IsConnected { get; }
         string NickName { get; set; }
-        bool RequestTags { get; init; }
         CancellationTokenSource RootCancellationToken { get; }
 
         /// <summary>

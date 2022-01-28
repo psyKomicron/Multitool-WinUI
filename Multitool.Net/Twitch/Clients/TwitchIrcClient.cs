@@ -92,9 +92,6 @@ namespace Multitool.Net.Twitch.Irc
         public string NickName { get; set; }
 
         /// <inheritdoc/>
-        public bool RequestTags { get; init; }
-
-        /// <inheritdoc/>
         public CancellationTokenSource RootCancellationToken => rootCancelToken;
         #endregion
 
@@ -140,44 +137,41 @@ namespace Multitool.Net.Twitch.Irc
 
             if (Interlocked.Read(ref loggedIn) == 0)
             {
-                if (RequestTags)
+                Regex nak = new(@"NAK");
+                await SendStringAsync(@"CAP REQ :twitch.tv/membership");
+                string rep = await ReceiveStringAsync();
+                if (nak.IsMatch(rep))
                 {
-                    Regex nak = new(@"NAK");
-                    await SendStringAsync(@"CAP REQ :twitch.tv/membership");
-                    string rep = await ReceiveStringAsync();
-                    if (nak.IsMatch(rep))
-                    {
-                        await Disconnect();
-                        throw new InvalidOperationException("Failed to request membership capability from tmi.twitch.tv");
-                    }
+                    await Disconnect();
+                    throw new InvalidOperationException("Failed to request membership capability from tmi.twitch.tv");
+                }
 
-                    await SendStringAsync(@"CAP REQ :twitch.tv/commands");
-                    rep = await ReceiveStringAsync();
-                    if (nak.IsMatch(rep))
-                    {
-                        await Disconnect();
-                        throw new InvalidOperationException("Failed to request commands capability from tmi.twitch.tv");
-                    }
+                await SendStringAsync(@"CAP REQ :twitch.tv/commands");
+                rep = await ReceiveStringAsync();
+                if (nak.IsMatch(rep))
+                {
+                    await Disconnect();
+                    throw new InvalidOperationException("Failed to request commands capability from tmi.twitch.tv");
+                }
 
-                    await SendStringAsync(@"CAP REQ :twitch.tv/tags");
-                    rep = await ReceiveStringAsync();
-                    if (nak.IsMatch(rep))
-                    {
-                        await Disconnect();
-                        throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
-                    }
+                await SendStringAsync(@"CAP REQ :twitch.tv/tags");
+                rep = await ReceiveStringAsync();
+                if (nak.IsMatch(rep))
+                {
+                    await Disconnect();
+                    throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
+                }
 
-                    await SendStringAsync(@"CAP LS 302");
-                    rep = await ReceiveStringAsync();
-                    if (nak.IsMatch(rep))
-                    {
-                        await Disconnect();
-                        throw new InvalidOperationException("Failed to request chathistory capability from tmi.twitch.tv");
-                    }
-                    else
-                    {
-                        Debug.WriteLine(rep);
-                    }
+                await SendStringAsync(@"CAP LS 302");
+                rep = await ReceiveStringAsync();
+                if (nak.IsMatch(rep))
+                {
+                    await Disconnect();
+                    throw new InvalidOperationException("Failed to request chathistory capability from tmi.twitch.tv");
+                }
+                else
+                {
+                    Debug.WriteLine(rep);
                 }
 
                 await LogIn();
@@ -450,11 +444,6 @@ namespace Multitool.Net.Twitch.Irc
         private ArraySegment<byte> GetBytes(string text)
         {
             return new(Encoding.GetBytes(text));
-        }
-
-        private ArraySegment<byte> GetBytes(Memory<char> text)
-        {
-            return new(Encoding.GetBytes(text.ToArray()));
         }
 
         private async Task SendStringAsync(string message, bool end = true)
