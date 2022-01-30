@@ -35,7 +35,7 @@ namespace Multitool.Net.Twitch.Irc
         /// <summary>
         /// Fired when the room/channel underwent a change (sub-only mode...)
         /// </summary>
-        event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
+        event TypedEventHandler<ITwitchIrcClient, RoomStateEventArgs> RoomChanged;
 
         /// <summary>
         /// Disconnects the client from the server.

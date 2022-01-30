@@ -17,10 +17,6 @@ namespace Multitool.Net.Twitch.Irc
     public class TwitchIrcClient : ITwitchIrcClient
     {
         #region fields
-        private const string wssUri = @"wss://irc-ws.chat.twitch.tv:443";
-        private const int bufferSize = 16_000;
-        private const int charReplacement = 0;
-
         #region static regexes
         // commands
         private static readonly Regex joinRegex = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv JOIN .))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -28,20 +24,29 @@ namespace Multitool.Net.Twitch.Irc
         private static readonly Regex pingRegex = new(@"^PING", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         // message
         private static readonly Regex messageRegex = new(@".+ *PRIVMSG .+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex userStateRegex = new(@"USERSTATE", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex roomStateRegex = new(@"ROOMSTATE", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex userStateRegex = new("USERSTATE", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex roomStateRegex = new("ROOMSTATE", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex clearChatRegex = new("CLEARCHAT", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         #endregion
+        private const int bufferSize = 16_000;
+        private const int charReplacement = 0;
+        private const int sendSemaphoreWait = 1_000;
+        private const string wssUri = @"wss://irc-ws.chat.twitch.tv:443";
 
-        private readonly bool silentExit;
+        private readonly Dictionary<uint, Regex> commands = new();
+        private readonly MessageFactory factory = new() { UseLocalTimestamp = false };
+        private readonly Thread receiveThread;
         private readonly CancellationTokenSource rootCancelToken = new();
         private readonly ClientWebSocket socket = new();
-        private readonly MessageFactory factory = new() { UseLocalTimestamp = false };
-        private readonly Dictionary<uint, Regex> commands = new();
-        private readonly Thread receiveThread;
+        private readonly bool silentExit;
 
+        private SemaphoreSlim webSocketReceiveSemaphore = new(1);
+        private SemaphoreSlim webSocketSendSemaphore = new(1);
+
+        private string channel;
         private bool disposed;
         private bool hasJoined;
-        private string channel;
+        //private string channel;
         // thread safe attributes -- using 64 bits adresses because programm is compiled for x64
         private long disconnected = 1;
         private long loggedIn = 0;
@@ -69,6 +74,7 @@ namespace Multitool.Net.Twitch.Irc
             commands.Add(3, pingRegex);
             commands.Add(4, userStateRegex);
             commands.Add(5, roomStateRegex);
+            commands.Add(6, clearChatRegex);
         }
         #endregion
 
@@ -103,18 +109,15 @@ namespace Multitool.Net.Twitch.Irc
         public event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
 
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, RoomStates> RoomChanged;
+        public event TypedEventHandler<ITwitchIrcClient, RoomStateEventArgs> RoomChanged;
         #endregion
 
         #region public methods
         /// <inheritdoc/>
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public async Task SendMessage(string message)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             AssertConnectionValid();
-
-            throw new NotImplementedException();
+            await SendStringAsync($"PRIVMSG #{channel} :{message}");
         }
 
         /// <inheritdoc/>
@@ -162,7 +165,7 @@ namespace Multitool.Net.Twitch.Irc
                     throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
                 }
 
-                await SendStringAsync(@"CAP LS 302");
+                /*await SendStringAsync(@"CAP LS 302");
                 rep = await ReceiveStringAsync();
                 if (nak.IsMatch(rep))
                 {
@@ -172,11 +175,11 @@ namespace Multitool.Net.Twitch.Irc
                 else
                 {
                     Debug.WriteLine(rep);
-                }
+                }*/
 
                 await LogIn();
             }
-    
+
             await SendStringAsync($"JOIN #{channel}");
             string response = await ReceiveStringAsync();
             if (!joinRegex.IsMatch(response))
@@ -194,11 +197,8 @@ namespace Multitool.Net.Twitch.Irc
         {
             AssertConnectionValid();
             AssertChannelNameValid(channel);
-            if (hasJoined)
-            {
-                await SendStringAsync($"PART #{channel}");
-                hasJoined = false;
-            }
+            await SendStringAsync($"PART #{channel}");
+            hasJoined = false;
         }
 
         /// <inheritdoc/>
@@ -258,63 +258,13 @@ namespace Multitool.Net.Twitch.Irc
         #endregion
 
         #region non-public methods
-
-        #region assertion methods
-        /// <summary>
-        /// Asserts that the connection is not disposed and open.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown if the socket is not open (<see cref="WebSocketState.Open"/>)</exception>
-        /// <exception cref="ArgumentException">Thrown when the socket state is not recognized (default clause in the switch)</exception>
-        protected void AssertConnectionValid()
-        {
-            if (disposed)
-            {
-                throw new ObjectDisposedException(GetType().FullName);
-            }
-
-            if (Interlocked.Read(ref disconnected) == 1)
-            {
-                throw new InvalidOperationException("Client has disconnected");
-            }
-
-            if (ClientState != WebSocketState.Open)
-            {
-                throw ClientState switch
-                {
-                    WebSocketState.None => new InvalidOperationException("Client has never connected"),
-                    WebSocketState.Connecting => new InvalidOperationException("Client is connecting"),
-                    WebSocketState.CloseSent => new InvalidOperationException("Client is closing it's connection"),
-                    WebSocketState.CloseReceived => new InvalidOperationException("Client has received close request from the connection endpoint"),
-                    WebSocketState.Closed => new InvalidOperationException("Client connection is closed"),
-                    WebSocketState.Aborted => new InvalidOperationException($"{nameof(ClientState)} == WebSocketState.Aborted"),
-                    _ => new ArgumentException($"Unkown WebSocketState state, argument name : {nameof(ClientState)}"),
-                };
-            }
-        }
-
-        /// <summary>
-        /// Asserts that the channel name is valid.
-        /// </summary>
-        /// <param name="channel"></param>
-        /// <exception cref="ArgumentException">Thrown if the channel name is not valid (will carry the value of <paramref name="channel"/>)</exception>
-        protected static void AssertChannelNameValid(string channel)
-        {
-            if (string.IsNullOrWhiteSpace(channel))
-            {
-                throw new ArgumentException($"Channel name cannot be empty (value: \"{channel}\")", nameof(channel));
-            }
-        }
-        #endregion
-
         #region irc
-
         private async Task Connect()
         {
             if (Interlocked.Read(ref disconnected) == 1)
             {
                 await socket.ConnectAsync(new(wssUri), RootCancellationToken.Token);
                 Interlocked.Exchange(ref disconnected, 0);
-
                 AssertConnectionValid();
             }
         }
@@ -340,11 +290,7 @@ namespace Multitool.Net.Twitch.Irc
 
         private void InvokeMessageReceived(Message message)
         {
-#if true
             MessageReceived?.Invoke(this, message);
-#else
-            Task.Run(() => MessageReceived?.Invoke(this, message));
-#endif
         }
 
         private void OnMessageReceived(ReadOnlyMemory<char> message)
@@ -358,7 +304,7 @@ namespace Multitool.Net.Twitch.Irc
 
         private void OnCommandReceived(uint tag, ReadOnlyMemory<char> command)
         {
-            int index = default;
+            int index = 0;
             Dictionary<string, string> tags = MessageFactory.ParseTags(command, ref index);
 
             switch (tag)
@@ -370,8 +316,7 @@ namespace Multitool.Net.Twitch.Irc
                     break;
 
                 case 3:
-                    const string pong = "PONG";
-                    socket.SendAsync(GetBytes(pong), WebSocketMessageType.Text, true, RootCancellationToken.Token);
+                    socket.SendAsync(GetBytes("PONG"), WebSocketMessageType.Text, true, RootCancellationToken.Token);
                     break;
 
                 case 4:
@@ -384,63 +329,84 @@ namespace Multitool.Net.Twitch.Irc
                     break;
 
                 case 5:
-                    RoomStates changes = RoomStates.None;
-                    if (tags.ContainsKey("followers-only"))
-                    {
-                        if (tags["followers-only"] == "0")
-                        {
-                            changes = RoomStates.FollowersOnlyOff;
-                        }
-                        else
-                        {
-                            Trace.TraceInformation($"#{channel} switched to {tags["followers-only"]} min followers only");
-                            changes = RoomStates.FollowersOnlyOn;
-                        }
-                    }
-
-                    if (tags.ContainsKey("emote-only"))
-                    {
-                        changes = tags["emote-only"][0] == '1' ? RoomStates.EmoteOnlyOn : RoomStates.EmoteOnlyOff;
-                    }
-
-                    if (tags.ContainsKey("r9k"))
-                    {
-                        changes = tags["r9k"][0] == '1' ? RoomStates.R9KOn : RoomStates.R9KOff;
-                    }
-
-                    if (tags.ContainsKey("slow"))
-                    {
-                        if (tags["slow"] == "0")
-                        {
-                            changes = RoomStates.SlowModeOff;
-                        }
-                        else
-                        {
-                            Trace.TraceInformation($"#{channel} switched to {tags["slow"]} s slow mode");
-                            changes = RoomStates.SlowModeOn;
-                        }
-                    }
-
-                    if (tags.ContainsKey("subs-only"))
-                    {
-                        changes = tags["subs-only"][0] == '1' ? RoomStates.SubsOnlyOn : RoomStates.SubsOnlyOff;
-                    }
-
-                    RoomChanged?.Invoke(this, changes);
+                    OnRoomStateChange(tags);
                     break;
-                default:
-#if DEBUG
-                    Debug.WriteLine("> Dropping: " + command.ToString());
+                case 6:
+                    var banDuration = tags["ban-duration"];
+                    var user = tags["target-user-id"];
+                    var remains = command[index..];
+                    int i = 1;
+                    for (; i < remains.Length; i++)
+                    {
+                        if (remains.Span[i] == ':')
+                        {
+                            i++;
+                            break;
+                        }
+                    }
+                    var name = remains[i..];
+                    Debug.WriteLine($"{name}({user}) banned/timeout for {banDuration}");
                     break;
-#else
-                    throw new ArgumentOutOfRangeException(nameof(tag));
-#endif
             }
-        } 
+        }
+
+        private void OnRoomStateChange(Dictionary<string, string> tags)
+        {
+            RoomStateEventArgs args = new();
+            if (tags.ContainsKey("followers-only"))
+            {
+                if (tags["followers-only"] == "0")
+                {
+                    args.States = RoomStates.FollowersOnlyOff;
+                }
+                else
+                {
+                    args.Data.Add(RoomStates.FollowersOnlyOn, int.Parse(tags["followers-only"]));
+                    args.States = RoomStates.FollowersOnlyOn;
+                }
+            }
+
+            if (tags.ContainsKey("emote-only"))
+            {
+                if (tags["emote-only"] == "0")
+                {
+                    args.States |= RoomStates.EmoteOnlyOff;
+                }
+                else
+                {
+                    args.Data.Add(RoomStates.EmoteOnlyOn, int.Parse(tags["emote-only"]));
+                    args.States |= RoomStates.EmoteOnlyOn;
+                }
+            }
+
+            if (tags.ContainsKey("slow"))
+            {
+                if (tags["slow"] == "0")
+                {
+                    args.States = RoomStates.SlowModeOff;
+                }
+                else
+                {
+                    args.Data.Add(RoomStates.SlowModeOff, int.Parse(tags["slow"]));
+                    args.States = RoomStates.SlowModeOff;
+                }
+            }
+
+            if (tags.ContainsKey("r9k"))
+            {
+                args.States |= tags["r9k"][0] == '1' ? RoomStates.R9KOn : RoomStates.R9KOff;
+            }
+
+            if (tags.ContainsKey("subs-only"))
+            {
+                args.States |= tags["subs-only"][0] == '1' ? RoomStates.SubsOnlyOn : RoomStates.SubsOnlyOff;
+            }
+
+            RoomChanged?.Invoke(this, args);
+        }
         #endregion
 
         #region socket methods
-
         private ArraySegment<byte> GetBytes(string text)
         {
             return new(Encoding.GetBytes(text));
@@ -450,7 +416,21 @@ namespace Multitool.Net.Twitch.Irc
         {
             try
             {
-                await socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+                if (await webSocketSendSemaphore.WaitAsync(sendSemaphoreWait))
+                {
+                    try
+                    {
+                        await socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+                    }
+                    finally
+                    {
+                        webSocketSendSemaphore.Release();
+                    }
+                }
+                else
+                {
+                    Trace.TraceWarning($"Failed to get send {message}");
+                }
             }
             catch (WebSocketException)
             {
@@ -493,7 +473,8 @@ namespace Multitool.Net.Twitch.Irc
 
         private void RouteMessage(ReadOnlyMemory<char> message)
         {
-            if (messageRegex.IsMatch(message.ToString()))
+            string s = message.ToString();
+            if (messageRegex.IsMatch(s))
             {
                 try
                 {
@@ -512,7 +493,7 @@ namespace Multitool.Net.Twitch.Irc
             {
                 foreach (var command in commands)
                 {
-                    if (command.Value.IsMatch(message.ToString()))
+                    if (command.Value.IsMatch(s))
                     {
                         try
                         {
@@ -526,9 +507,10 @@ namespace Multitool.Net.Twitch.Irc
 #else
                         catch { }
 #endif
-                        break;
+                        return;
                     }
                 }
+                Debug.WriteLine($"Dropping : {s}");
             }
         }
 
@@ -615,7 +597,6 @@ namespace Multitool.Net.Twitch.Irc
                         // clear buffer
                         for (int i = 0; i < data.Count; i++)
                         {
-#if DEBUG
                             if (data[i] != 0x0)
                             {
                                 data[i] = default;
@@ -623,10 +604,7 @@ namespace Multitool.Net.Twitch.Irc
                             else
                             {
                                 break;
-                            } 
-#else
-                            data[i] = default;
-#endif
+                            }
                         }
                         commandMessages.Clear();
                     }
@@ -654,6 +632,52 @@ namespace Multitool.Net.Twitch.Irc
         }
         #endregion
 
+        #region assertion methods
+        /// <summary>
+        /// Asserts that the connection is not disposed and open.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if the socket is not open (<see cref="WebSocketState.Open"/>)</exception>
+        /// <exception cref="ArgumentException">Thrown when the socket state is not recognized (default clause in the switch)</exception>
+        protected void AssertConnectionValid()
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException(GetType().FullName);
+            }
+
+            if (Interlocked.Read(ref disconnected) == 1)
+            {
+                throw new InvalidOperationException("Client has disconnected");
+            }
+
+            if (ClientState != WebSocketState.Open)
+            {
+                throw ClientState switch
+                {
+                    WebSocketState.None => new InvalidOperationException("Client has never connected"),
+                    WebSocketState.Connecting => new InvalidOperationException("Client is connecting"),
+                    WebSocketState.CloseSent => new InvalidOperationException("Client is closing it's connection"),
+                    WebSocketState.CloseReceived => new InvalidOperationException("Client has received close request from the connection endpoint"),
+                    WebSocketState.Closed => new InvalidOperationException("Client connection is closed"),
+                    WebSocketState.Aborted => new InvalidOperationException($"{nameof(ClientState)} == WebSocketState.Aborted"),
+                    _ => new ArgumentException($"Unkown WebSocketState state, argument name : {nameof(ClientState)}"),
+                };
+            }
+        }
+
+        /// <summary>
+        /// Asserts that the channel name is valid.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <exception cref="ArgumentException">Thrown if the channel name is not valid (will carry the value of <paramref name="channel"/>)</exception>
+        protected static void AssertChannelNameValid(string channel)
+        {
+            if (string.IsNullOrWhiteSpace(channel))
+            {
+                throw new ArgumentException($"Channel name cannot be empty (value: \"{channel}\")", nameof(channel));
+            }
+        }
+        #endregion
         #endregion
     }
 }
