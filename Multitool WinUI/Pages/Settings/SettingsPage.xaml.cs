@@ -3,7 +3,6 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
@@ -14,15 +13,9 @@ using Multitool.Net.Twitch.Security;
 using MultitoolWinUI.Pages.Explorer;
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System.Text.RegularExpressions;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -35,10 +28,12 @@ namespace MultitoolWinUI.Pages.Settings
     public sealed partial class SettingsPage : Page, INotifyPropertyChanged
     {
         private readonly ISettingsManager settingsManager = App.Settings;
+        private string typeToNavigateTo;
 
         public SettingsPage()
         {
             InitializeComponent();
+            Loaded += OnPageLoaded;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -88,6 +83,41 @@ namespace MultitoolWinUI.Pages.Settings
             return success;
         }
 
+        private void LoadSettings()
+        {
+            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.LoadWebView), out bool loadWebView))
+            {
+                LoadWebView = loadWebView;
+            }
+
+            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.Login), out string login))
+            {
+                Login = login;
+            }
+
+            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMaxNumberOfMessages), out int n))
+            {
+                ChatMaxNumberOfMessages = n;
+            }
+
+            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMentionRegex), out login))
+            {
+                MentionsTextBox.Text = login;
+            }
+
+            if (settingsManager.TryGetSetting(typeof(MainPage).FullName, "LoadShortcuts", out bool loadShortcuts))
+            {
+                MainPageLoadShortcuts = loadShortcuts;
+            }
+            else
+            {
+                MainPageLoadShortcuts = true;
+                settingsManager.SaveSetting(typeof(MainPage).FullName, "LoadShortcuts", true);
+            }
+
+            PropertyChanged?.Invoke(this, new(string.Empty));
+        }
+
         #region navigation events
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -101,11 +131,7 @@ namespace MultitoolWinUI.Pages.Settings
             }
             else if (e.Parameter is Type type)
             {
-                string typeName = type.Name;
-                if (!NavigateTo(typeName))
-                {
-                    App.TraceWarning($"Setting page not found for {typeName}");
-                }
+                typeToNavigateTo = type.Name;
             }
             #endregion
 
@@ -125,45 +151,7 @@ namespace MultitoolWinUI.Pages.Settings
                         break;
                 }
             }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, "LoadWebView", out bool loadWebView))
-            {
-                LoadWebView = loadWebView;
-            }
-            else
-            {
-                Trace.TraceWarning("LoadWebView not found");
-            }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, "Login", out string login))
-            {
-                Login = login;
-            }
-            else
-            {
-                Trace.TraceWarning("Login not found");
-            }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, "ChatMaxNumberOfMessages", out int n))
-            {
-                ChatMaxNumberOfMessages = n;
-            }
-            else
-            {
-                Trace.TraceWarning("ChatMaxNumberOfMessages not found");
-            }
-
-            if (settingsManager.TryGetSetting(typeof(MainPage).FullName, "LoadShortcuts", out bool loadShortcuts))
-            {
-                MainPageLoadShortcuts = loadShortcuts;
-            }
-            else
-            {
-                MainPageLoadShortcuts = true;
-                settingsManager.SaveSetting(typeof(MainPage).FullName, "LoadShortcuts", true);
-            }
-
-            PropertyChanged?.Invoke(this, new(string.Empty));
+            LoadSettings();
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -174,9 +162,34 @@ namespace MultitoolWinUI.Pages.Settings
         #endregion
 
         #region page event handlers
+        private void OnPageLoaded(object sender, RoutedEventArgs e)
+        {
+            if (typeToNavigateTo != null)
+            {
+                if (!NavigateTo(typeToNavigateTo))
+                {
+                    App.TraceWarning($"Setting page not found for {typeToNavigateTo}");
+                }
+            }
+            typeToNavigateTo = null;
+        }
+
         private void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
         {
             // i can use a flag to not save already saved values
+#if DEBUG
+            settingsManager.SaveSetting(typeof(MainPage).FullName, "LoadShortcuts", LoadShortcutsToggleSwitch.IsOn);
+
+            settingsManager.SaveSetting(typeof(ExplorerPage).FullName, nameof(LoadLastPath), LoadLastPath);
+            settingsManager.SaveSetting(typeof(ExplorerPage).FullName, nameof(KeepHistory), KeepHistory);
+
+            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.LoadWebView), LoadWebView);
+            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.Login), Login);
+            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMaxNumberOfMessages), ChatMaxNumberOfMessages);
+
+            Regex reg = new(MentionsTextBox.Text);
+            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMentionRegex), new RegexSettingConverter().Convert(reg));
+#else
             settingsManager.EditSetting(typeof(MainPage).FullName, "LoadShortcuts", LoadShortcutsToggleSwitch.IsOn);
 
             settingsManager.EditSetting(typeof(ExplorerPage).FullName, nameof(LoadLastPath), LoadLastPath);
@@ -186,7 +199,8 @@ namespace MultitoolWinUI.Pages.Settings
             settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(Login), Login);
             settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(ChatMaxNumberOfMessages), ChatMaxNumberOfMessages);
 
-            settingsManager.Commit();
+            settingsManager.Commit(); 
+#endif
         }
 
         private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e)
@@ -328,6 +342,10 @@ namespace MultitoolWinUI.Pages.Settings
         private void LoadOAuth_Click(object sender, RoutedEventArgs e)
         {
             // load webpage in a webview (maybe new window ?)
+            /*if (token.Validated)
+            {
+                PageWebView.Source = new(@"https://id.twitch.tv/oauth2/authorize?client_id=" + token.ClientId.ToString() + @"&redirect_uri=http://localhost&scope&response_type=token&scope=");
+            }*/
         }
 
         private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
@@ -338,6 +356,11 @@ namespace MultitoolWinUI.Pages.Settings
         private void ResetSettingsFile_Click(object sender, RoutedEventArgs e)
         {
             settingsManager.Reset();
+        }
+
+        private void ShowMentionsHelp_Click(object sender, RoutedEventArgs e)
+        {
+            MentionsTeachingTip.IsOpen = !MentionsTeachingTip.IsOpen;
         }
         #endregion
     }

@@ -116,13 +116,6 @@
                         OnContent="Webview on"
                         VerticalAlignment="Center"/>
 
-                    <Button
-                        x:Name="LoadOAuth"
-                        Click="LoadOAuth_Click"
-                        VerticalContentAlignment="Center">
-                        <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
-                    </Button>
-
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Spacing="{StaticResource StackPanelDefaultSpacing}">
                         <PasswordBox
                             x:Name="LoginPasswordBox"
@@ -150,6 +143,12 @@
                             </StackPanel>
                         </Button>
                     </StackPanel>
+                    <Button
+                        x:Name="LoadOAuth"
+                        Click="LoadOAuth_Click"
+                        VerticalContentAlignment="Center">
+                        <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
+                    </Button>
 
                     <Slider 
                         x:Name="ChatEmoteSize_Slider"
@@ -171,6 +170,67 @@
                         StepFrequency="10"
                         Margin="3,0"
                         Value="{x:Bind ChatMaxNumberOfMessages, Mode=TwoWay}"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                        <TextBox
+                            x:Name="MentionsTextBox"
+                            Header="Chat mentions"
+                            PlaceholderText="Set how you will be mentionned in chat"/>
+                        <TeachingTip 
+                            x:Name="MentionsTeachingTip" 
+                            Target="{x:Bind MentionsTextBox}"
+                            Title="How to create mentions"
+                            IsLightDismissEnabled="True">
+                            <TeachingTip.Content>
+                                <RichTextBlock TextWrapping="Wrap" HorizontalAlignment="Stretch">
+                                    <Paragraph Margin="0,0,0,10">
+                                        <Run>
+                                            Mentions are made with Regex, so if you are familiar with them it should not be a problem. If you are not here's a quick help (for more in-depth i invite you to use your favorite browser 🙂).
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,10">
+                                        <Run>
+                                            To use the classic
+                                        </Run>
+                                        <Run FontStyle="Italic">
+                                            @user,
+                                        </Run>
+                                        <Run>
+                                            just set the mention to @your username. This will ping you whenever a user types @[your username] in his message.
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,10" FontStyle="Italic">
+                                        Example: @psykomicron, my username being 'psykomicron'
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,5">
+                                        <Run>
+                                            If you want multiple choices to be pinged, like your alias or a cute name, set to ([cute name]|[normal username]|[another username]).
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph FontStyle="Italic">
+                                        Example:
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,15">
+                                        <Run FontFamily="Cascadia Code" FontWeight="Light" FontSize="12">
+                                            (psykomicron|psyko|degenerate chatter)
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph Foreground="MediumPurple">
+                                        <Run>
+                                            Have fun 💜
+                                        </Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </TeachingTip.Content>
+                        </TeachingTip>
+                        <Button
+                            x:Name="ShowMentionsHelp"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="ShowMentionsHelp_Click">
+                            <SymbolIcon Symbol="Help"/>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
                 <!--#endregion-->
 
