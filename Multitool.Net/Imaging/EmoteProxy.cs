@@ -1,6 +1,4 @@
-﻿using Multitool.Net.Twitch;
-using Multitool.Net.Twitch.Security;
-
+﻿
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -159,7 +157,7 @@ namespace Multitool.Net.Imaging
                 int count = ids.Count;
                 foreach (var emotes in emotesCache)
                 {
-                    ids.Remove(emotes.Id.StringId);
+                    ids.Remove(emotes.Id.Id);
                     count--;
                 }
 
