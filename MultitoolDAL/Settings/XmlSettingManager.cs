@@ -114,7 +114,7 @@ namespace Multitool.DAL.Settings
                                                 list.Add(restored);
                                             }
                                         }
-                                        
+
                                         value = list;
                                     }
                                     else
@@ -216,19 +216,19 @@ namespace Multitool.DAL.Settings
                                         var list = (IList)propValue;
                                         foreach (var item in list)
                                         {
-                                            XmlNode node = settingAttribute.Converter.Convert(item);
-                                            if (node != null)
+                                            XmlNode convertedNode = settingAttribute.Converter.Convert(item);
+                                            if (convertedNode != null)
                                             {
-                                                settingNode.AppendChild(document.ImportNode(node, true));
+                                                settingNode.AppendChild(document.ImportNode(convertedNode, true));
                                             }
                                         }
                                     }
                                     else
                                     {
-                                        XmlNode xml = settingAttribute.Converter.Convert(propValue);
-                                        if (xml != null)
+                                        XmlNode convertedNode = settingAttribute.Converter.Convert(propValue);
+                                        if (convertedNode != null)
                                         {
-                                            settingNode.AppendChild(xml); settingNode.AppendChild(xml);
+                                            settingNode.AppendChild(document.ImportNode(convertedNode, true));
                                         }
                                     }
                                 }
@@ -296,7 +296,7 @@ namespace Multitool.DAL.Settings
 
                 if (settingNode == null)
                 {
-                    settingNode = document.CreateElement(name);   
+                    settingNode = document.CreateElement(name);
                 }
 
                 XmlAttribute valueAttribute = document.CreateAttribute("value");
@@ -491,29 +491,37 @@ namespace Multitool.DAL.Settings
         {
             if (prop.CanWrite)
             {
-                if (value == null)
+                try
                 {
-                    if (settingAttribute.HasDefaultValue)
+                    if (value == null)
                     {
-                        prop.SetValue(toLoad, settingAttribute.DefaultValue);
+                        if (settingAttribute.HasDefaultValue)
+                        {
+                            prop.SetValue(toLoad, settingAttribute.DefaultValue);
+                        }
+                        else if (settingAttribute.DefaultInstanciate)
+                        {
+                            prop.SetValue(toLoad, GetTypeDefaultValue(prop.PropertyType));
+                        }
                     }
-                    else if (settingAttribute.DefaultInstanciate)
+                    else
                     {
-                        prop.SetValue(toLoad, GetTypeDefaultValue(prop.PropertyType));
+                        prop.SetValue(toLoad, Convert.ChangeType(value, prop.PropertyType));
                     }
                 }
-                else
+                catch (InvalidCastException ex)
                 {
-                    prop.SetValue(toLoad, Convert.ChangeType(value, prop.PropertyType));
+                    prop.SetValue(toLoad, value);
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError(ex.ToString());
+                    throw;
                 }
             }
             else
             {
-#if DEBUG
-                Trace.TraceWarning($"Cannot set {typeof(T).Name}.{prop.Name}, property is readonly.");
-#else
                 throw new TargetException($"Cannot set {typeof(T).Name}.{prop.Name}, property is readonly.");
-#endif
             }
         }
 
@@ -522,7 +530,7 @@ namespace Multitool.DAL.Settings
             if (settingNode.Attributes != null)
             {
                 XmlAttributeCollection attributes = settingNode.Attributes;
-                
+
                 for (int i = 0; i < attributes.Count; i++)
                 {
                     if (attributes[i].Name == "value")
@@ -531,7 +539,7 @@ namespace Multitool.DAL.Settings
                     }
                 }
             }
-            
+
             if (settingNode.FirstChild != null)
             {
                 return settingNode.FirstChild.InnerText;
