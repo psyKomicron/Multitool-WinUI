@@ -1,8 +1,5 @@
-﻿using Microsoft.UI;
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.DAL.Settings;
@@ -18,9 +15,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
-using System.Threading.Tasks;
-
-using Windows.UI;
+using System.Text.RegularExpressions;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -49,7 +44,7 @@ namespace MultitoolWinUI.Pages
         [Setting("")]
         public string Login { get; set; }
 
-        [Setting]
+        [Setting(true)]
         public bool LoadWebView { get; set; }
 
         [Setting("twitch.tv")]
@@ -58,8 +53,16 @@ namespace MultitoolWinUI.Pages
         [Setting(500)]
         public int ChatMaxNumberOfMessages { get; set; }
 
-        public List<string> Channels { get; set; }
+        [Setting(30)]
+        public int ChatEmoteSize { get; set; }
 
+        [Setting(typeof(RegexSettingConverter), DefaultInstanciate = false)]
+        public Regex ChatMentionRegex { get; set; }
+
+        [Setting("t")]
+        public string TimestampFormat { get; set; }
+
+        public List<string> Channels { get; set; }
         public ObservableCollection<TabViewItem> Tabs { get; } = new();
         #endregion
 
@@ -203,13 +206,15 @@ namespace MultitoolWinUI.Pages
                         Encoding = encoding
                     };
 
-                    TabViewItem tab = new();
-                    ChatControl chat = new()
+                    TabViewItem tab = new()
                     {
-                        Client = client,
+                        MaxWidth = 200
+                    };
+                    ChatControl chat = new(client)
+                    {
                         Tab = tab,
-                        MaxMessages = ChatMaxNumberOfMessages,
-                        EmoteSize = 30
+                        MentionRegex = ChatMentionRegex,
+                        MaxMessages = ChatMaxNumberOfMessages
                     };
                     tab.Content = chat;
 
@@ -225,14 +230,6 @@ namespace MultitoolWinUI.Pages
         }
 
         private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Tabs.Remove(args.Tab);
-
-        private void LoadOAuth_Click(object sender, RoutedEventArgs e)
-        {
-            if (token.Validated)
-            {
-                PageWebView.Source = new(@"https://id.twitch.tv/oauth2/authorize?client_id=" + token.ClientId.ToString() + @"&redirect_uri=http://localhost&scope&response_type=token&scope=");
-            }
-        }
 
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {

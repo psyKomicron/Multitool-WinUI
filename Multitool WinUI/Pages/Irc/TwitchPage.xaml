@@ -38,15 +38,12 @@
         </Grid>
 
         <Grid Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="1*" />
-                <RowDefinition Height="40px" />
-            </Grid.RowDefinitions>
 
             <TabView
                 x:Name="Chats"
                 TabItemsSource="{x:Bind Tabs}"
                 VerticalAlignment="Stretch"
+                Margin="0,0,0,5"
                 CornerRadius="3"
                 Grid.Row="0"
                 AddTabButtonClick="Chats_AddTabButtonClick"
