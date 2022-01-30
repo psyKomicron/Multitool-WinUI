@@ -38,6 +38,12 @@ namespace Multitool.DAL.Settings
             DefaultInstanciate = defaultInstanciate;
         }
 
+        public SettingAttribute(Type memberType, string settingName)
+        {
+            SettingMember = memberType.FullName;
+            SettingName = settingName;
+        }
+
         /// <summary>
         /// Creates a <see cref="SettingAttribute"/>, the property will be instanciated with <paramref name="defaultValue"/>
         /// if the setting does not exists
@@ -58,6 +64,8 @@ namespace Multitool.DAL.Settings
             DefaultInstanciate = true;
         }
 
+        public ISettingConverter Converter { get; set; }
+
         /// <summary>
         /// Setting default value.
         /// </summary>
@@ -71,8 +79,8 @@ namespace Multitool.DAL.Settings
 
         public bool DefaultInstanciate { get; set; }
 
-        public ISettingConverter Converter { get; set; }
-
         public string SettingName { get; set; }
+
+        public string SettingMember { get; set; }
     }
 }

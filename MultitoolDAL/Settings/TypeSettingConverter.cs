@@ -26,20 +26,25 @@ namespace Multitool.DAL.Settings
 
         public object Restore(XmlNode toRestore)
         {
-            if (toRestore != null && toRestore.Name == "Type")
+            if (toRestore != null && toRestore.HasChildNodes && toRestore.FirstChild.Name == "Type")
             {
-                var attributes = toRestore.Attributes;
+                var attributes = toRestore.FirstChild.Attributes;
                 var value = attributes["value"]?.Value;
                 if (value is string typeAssemblyQualifiedName && !string.IsNullOrWhiteSpace(typeAssemblyQualifiedName))
                 {
-                    var assemblyTypes = Assembly.GetExecutingAssembly().GetTypes();
+                    var loadedType = Type.GetType(typeAssemblyQualifiedName);
+                    if (loadedType != null)
+                    {
+                        return loadedType;
+                    }
+                    /*var assemblyTypes = Assembly.GetCallingAssembly().GetTypes();
                     for (int i = 0; i < assemblyTypes.Length; i++)
                     {
                         if (assemblyTypes[i].AssemblyQualifiedName == typeAssemblyQualifiedName)
                         {
                             return assemblyTypes[i];
                         }
-                    }
+                    }*/
                 }
             }
 

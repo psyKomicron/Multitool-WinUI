@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Windows.Foundation;
-using Windows.Storage;
 
 namespace Multitool.DAL.Settings
 {
@@ -10,7 +8,7 @@ namespace Multitool.DAL.Settings
     /// Defines behavior for classes handling app settings.
     /// </summary>
     public interface ISettingsManager
-    {   
+    {
         event TypedEventHandler<ISettingsManager, string> SettingsChanged;
 
         string SettingFilePath { get; }

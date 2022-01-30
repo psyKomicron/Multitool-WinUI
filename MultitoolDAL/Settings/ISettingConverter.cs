@@ -1,4 +1,4 @@
-﻿namespace Multitool.DAL
+﻿namespace Multitool.DAL.Settings
 {
     public interface ISettingConverter<in TIn, out TOut>
     {
