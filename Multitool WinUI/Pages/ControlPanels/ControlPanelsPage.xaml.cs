@@ -1,24 +1,18 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.DAL;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 
-using WinRT;
-
 using Windows.Storage;
 using Windows.System;
-using Multitool.NTInterop;
-using System.Runtime.InteropServices;
-using Microsoft.UI.Xaml.Navigation;
-using System.Runtime.CompilerServices;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -321,7 +315,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             {
                 doc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
                 XmlElement root = doc.DocumentElement;
-                
+
                 foreach (XmlNode node in root)
                 {
                     if (node.Name == "path" && node.Attributes != null && node.Attributes["name"]?.Value == sender.ButtonName)
@@ -437,7 +431,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 catch (IOException ex)
                 {
                     App.TraceError("IOException: Unable to parse changes from the .XML settings file.\n" + ex);
-                    
+
                     if (ex.HResult != -0x7FF8FFE0)
                     {
                         App.TraceError("Unable to parse changes from the .XML settings file.");

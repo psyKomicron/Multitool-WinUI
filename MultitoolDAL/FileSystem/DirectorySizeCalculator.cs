@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +22,7 @@ namespace Multitool.DAL
 
         /// <inheritdoc/>
         public event TaskProgressEventHandler Progress;
-        
+
         /// <inheritdoc/>
         public event TaskFailedEventHandler Exception;
 

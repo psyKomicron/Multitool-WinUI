@@ -1,11 +1,9 @@
-﻿using Multitool.Net.Imaging;
-using Multitool.Net.Imaging.Json;
+﻿using Multitool.Net.Imaging.Json;
 using Multitool.Net.Properties;
 using Multitool.Net.Twitch.Security;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Threading.Tasks;
 

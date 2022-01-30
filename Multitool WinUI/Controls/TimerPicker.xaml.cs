@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Controls;
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Timers;
 
@@ -349,9 +348,9 @@ namespace MultitoolWinUI.Controls
             }
         }
 
-#endregion
+        #endregion
 
-#endregion
+        #endregion
 
         private void AnimationTimer_Tick(DispatcherQueueTimer sender, object args)
         {

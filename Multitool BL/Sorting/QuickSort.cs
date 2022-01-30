@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Multitool.Sorting
 {
@@ -9,7 +7,7 @@ namespace Multitool.Sorting
     {
         public static void Sort<T>(T[] array, int low, int high) where T : IComparable<T>
         {
-            CheckParameters(array, low, high);
+            CheckParameters(array, ref low, ref high);
 
             if (low < high)
             {
@@ -22,7 +20,7 @@ namespace Multitool.Sorting
 
         public static void Sort<T>(T[] array, IComparer<T> comparer, int low, int high)
         {
-            CheckParameters(array, low, high);
+            CheckParameters(array, ref low, ref high);
 
             if (low < high)
             {
@@ -44,7 +42,7 @@ namespace Multitool.Sorting
         /// <returns></returns>
         public static List<Tuple<int, int>> SortIndexes<T>(T[] array, int low, int high) where T : class, IComparable<T>
         {
-            CheckParameters(array, low, high);
+            CheckParameters(array, ref low, ref high);
             List<Tuple<int, int>> indexes = new(array.Length + 1);
             T[] copy = new T[array.Length];
             array.CopyTo(copy, 0);
@@ -69,9 +67,7 @@ namespace Multitool.Sorting
 
         private static void Swap<T>(T[] array, int i, int j)
         {
-            T item = array[i];
-            array[i] = array[j];
-            array[j] = item;
+            (array[j], array[i]) = (array[i], array[j]);
         }
 
         private static int PartitionWithComparer<T>(T[] array, IComparer<T> comparer, int low, int high)
@@ -112,7 +108,7 @@ namespace Multitool.Sorting
         /// <param name="array"></param>
         /// <param name="low"></param>
         /// <param name="high"></param>
-        private static void CheckParameters<T>(T[] array, int low, int high)
+        private static void CheckParameters<T>(T[] array, ref int low, ref int high)
         {
             if (high >= array.Length)
             {

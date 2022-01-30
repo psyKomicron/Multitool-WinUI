@@ -24,7 +24,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -587,9 +586,9 @@ namespace MultitoolWinUI.Pages.Explorer
             SavePage();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void History_ListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var selected = History_ListView.SelectedItem;
+
         }
         #endregion
 
@@ -642,10 +641,5 @@ namespace MultitoolWinUI.Pages.Explorer
         #endregion
 
         #endregion
-
-        private void History_ListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        {
-
-        }
     }
 }

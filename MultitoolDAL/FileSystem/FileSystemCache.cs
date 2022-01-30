@@ -22,7 +22,7 @@ namespace Multitool.DAL.FileSystem
         private static readonly object _lock = new();
         private static readonly List<string> watchedPaths = new();
 
-        private readonly DirectorySizeCalculator calculator = new();
+        //private readonly DirectorySizeCalculator calculator = new();
         private readonly List<FileSystemEntry> watchedItems;
         private readonly FileSystemWatcher watcher;
         private readonly ObjectPool<CacheChangedEventArgs> cacheChangedPool = new(7);
@@ -341,7 +341,7 @@ namespace Multitool.DAL.FileSystem
                 {
                     item.RefreshInfos();
                 }
-                
+
                 if (timer != null)
                 {
                     timer.Start();

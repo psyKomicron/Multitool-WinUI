@@ -23,7 +23,7 @@ namespace MultitoolWinUI.Models
         public string ShortPath
         {
             get
-            { 
+            {
                 return _shortPath;
             }
             set
@@ -36,12 +36,12 @@ namespace MultitoolWinUI.Models
 
         public string FullPath
         {
-            get 
-            { 
-                return _fullPath; 
+            get
+            {
+                return _fullPath;
             }
             set
-            { 
+            {
                 _fullPath = value;
                 RaiseNotifyPropertyChanged();
             }

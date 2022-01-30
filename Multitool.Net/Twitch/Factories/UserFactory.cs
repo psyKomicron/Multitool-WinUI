@@ -1,4 +1,4 @@
-﻿using Multitool.UI;
+﻿using Multitool.Drawing;
 
 using System;
 using System.Collections.Concurrent;
@@ -15,7 +15,7 @@ namespace Multitool.Net.Twitch.Factories
         private const string userKey = "user-name";
         private readonly ConcurrentDictionary<string, User> cache = new();
         private readonly SemaphoreSlim semaphore = new(1);
-        private readonly ColorConverter colorConverter = new(0xFF);
+        private readonly ColorConverter colorConverter = new();
 
         public User CreateUser(Dictionary<string, string> tags)
         {
@@ -27,7 +27,7 @@ namespace Multitool.Net.Twitch.Factories
                 return user;
             }
             else
-{
+            {
                 User user = BuildUser(tags);
                 if (semaphore.Wait(100))
                 {

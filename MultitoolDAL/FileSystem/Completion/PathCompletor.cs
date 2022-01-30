@@ -24,7 +24,7 @@ namespace Multitool.DAL.Completion
             return list.ToArray();
         }
 
-        private void PutEntries(string fileName, IList<string> list, string[] joins)
+        private static void PutEntries(string fileName, IList<string> list, string[] joins)
         {
             if (string.IsNullOrEmpty(fileName)) // no file name, list all directory
             {
@@ -57,7 +57,7 @@ namespace Multitool.DAL.Completion
             }
         }
 
-        private string GetFileName(string input, out int i)
+        private static string GetFileName(string input, out int i)
         {
             if (input.Length > 1)
             {
@@ -85,7 +85,7 @@ namespace Multitool.DAL.Completion
             }
         }
 
-        private string GetFileName(string input)
+        private static string GetFileName(string input)
         {
             string fileName = string.Empty;
             for (int i = input.Length - 1; i > 0; i--)
@@ -119,7 +119,7 @@ namespace Multitool.DAL.Completion
             }
             else
             {
-                directory = input.Substring(0, i);
+                directory = input[..i];
             }
             return directory;
         }
@@ -149,7 +149,7 @@ namespace Multitool.DAL.Completion
             }
         }
 
-        private string Reverse(string input)
+        private static string Reverse(string input)
         {
             if (input.Length > 100)
             {
@@ -168,7 +168,7 @@ namespace Multitool.DAL.Completion
                     reverse += input[i];
                 }
                 return reverse;
-            } 
+            }
         }
     }
 }

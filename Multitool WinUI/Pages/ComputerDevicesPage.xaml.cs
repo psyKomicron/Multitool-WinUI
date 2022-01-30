@@ -5,7 +5,6 @@ using MultitoolWinUI.Models;
 
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 
 using Windows.Devices.Enumeration;
 

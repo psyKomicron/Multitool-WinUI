@@ -1,12 +1,9 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Xml;
-
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-using Multitool.Net;
+using System;
+using System.IO;
+using System.Xml;
 
 using Windows.Storage;
 using Windows.Web.Http;

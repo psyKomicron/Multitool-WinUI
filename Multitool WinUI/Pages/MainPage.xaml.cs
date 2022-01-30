@@ -1,11 +1,9 @@
 ﻿using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.DAL.Settings;
 
 using MultitoolWinUI.Helpers;
 
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Xml;
@@ -64,7 +62,7 @@ namespace MultitoolWinUI.Pages
                 catch (IOException e)
                 {
                     App.TraceError(e.Message);
-                } 
+                }
             }
         }
 

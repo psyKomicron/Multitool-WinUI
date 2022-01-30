@@ -3,9 +3,7 @@
 using Multitool.NTInterop;
 using Multitool.NTInterop.Power;
 
-using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Timers;
 
@@ -128,7 +126,7 @@ namespace MultitoolWinUI.Pages.Power
             _ = DispatcherQueue.TryEnqueue(() =>
             {
                 if (SelectionComboBox.SelectedItem is ComboBoxItem item)
-                { 
+                {
                     switch (item.Tag)
                     {
                         case "lock":

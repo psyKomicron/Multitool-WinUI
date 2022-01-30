@@ -20,7 +20,7 @@ namespace MultitoolWinUI.Models
         {
             if (DispatcherQueue != null)
             {
-                _ = DispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName))); 
+                _ = DispatcherQueue.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)));
             }
         }
     }

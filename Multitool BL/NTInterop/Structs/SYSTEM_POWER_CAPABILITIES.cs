@@ -71,7 +71,9 @@ namespace Multitool.NTInterop.Structs
         public bool AoAcConnectivitySupported;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
+#pragma warning disable IDE0051 // Remove unused private members
         private readonly byte[] spare3;
+#pragma warning restore IDE0051 // Remove unused private members
 
         [MarshalAs(UnmanagedType.U1)]
         public bool SystemBatteriesPresent;

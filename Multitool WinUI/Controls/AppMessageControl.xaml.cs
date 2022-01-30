@@ -93,7 +93,7 @@ namespace MultitoolWinUI.Controls
                     {
                         displayQueue.Enqueue(() => DisplayMessage(title, message, background));
                     }
-                } 
+                }
             }
         }
 
