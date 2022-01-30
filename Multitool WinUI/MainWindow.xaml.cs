@@ -1,24 +1,20 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-using Multitool.DAL;
+using Multitool.DAL.Settings;
 
+using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Pages;
 using MultitoolWinUI.Pages.ControlPanels;
 using MultitoolWinUI.Pages.Explorer;
 using MultitoolWinUI.Pages.HashGenerator;
 using MultitoolWinUI.Pages.Power;
+using MultitoolWinUI.Pages.Settings;
+using MultitoolWinUI.Pages.Test;
 
 using System;
 using System.Diagnostics;
-using System.Timers;
-using System.Linq;
-using System.Collections.Generic;
-using MultitoolWinUI.Controls;
-using MultitoolWinUI.Pages.Test;
-using MultitoolWinUI.Pages.Settings;
-using Multitool.DAL.Settings;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -49,7 +45,8 @@ namespace MultitoolWinUI
 
         [Setting(true)]
         public bool IsPaneOpen { get; set; }
-        [Setting(HasDefaultValue = true, DefaultValue = typeof(MainPage))]
+
+        [Setting(typeof(TypeSettingConverter), HasDefaultValue = true, DefaultValue = typeof(MainPage))]
         public Type LastPage { get; set; }
 
         #region navigation events
@@ -129,9 +126,17 @@ namespace MultitoolWinUI
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
-            MessageDisplay.Silence();
             closed = true;
-            App.Settings.Save(this);
+            MessageDisplay.Silence();
+            try
+            {
+                App.Settings.Save(this);
+            }
+            catch (ArgumentException ex)
+            {
+                Trace.TraceError(ex.ToString());
+                throw;
+            }
         }
 
         private void MessageDisplay_VisibilityChanged(AppMessageControl sender, Visibility args)
@@ -144,7 +149,7 @@ namespace MultitoolWinUI
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-            
+
         }
         #endregion
     }

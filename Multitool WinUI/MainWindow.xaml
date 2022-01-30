@@ -32,6 +32,15 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
+                <NavigationViewItemHeader Content="Web"/>
+                <NavigationViewItem Tag="irc"
+                                     Content="Twitch">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8AA;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <!--#region utilities -->
                 <NavigationViewItemHeader Content="Utilities"/>
 
                 <NavigationViewItem Tag="devices" 
@@ -50,24 +59,19 @@
                 <NavigationViewItem Tag="controlpanels"
                                      Content="Control panels">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE770;"/>
+                        <FontIcon Glyph="&#xE770;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Tag="hashgenerator"
                                      Content="Hash generator">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEA18;"/>
+                        <FontIcon Glyph="&#xEA18;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <!--#endregion-->
 
-                <NavigationViewItem Tag="irc"
-                                     Content="Twitch">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE748;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                
+                <NavigationViewItemHeader Content="Debug"/>
                 <NavigationViewItem Tag="test"
                                      Content="Test page">
                     <NavigationViewItem.Icon>
