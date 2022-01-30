@@ -7,7 +7,7 @@
     xmlns:models="using:MultitoolWinUI.Models" 
     xmlns:controls="using:MultitoolWinUI.Controls" 
     xmlns:imaging="using:Multitool.Net.Imaging"
-    Background="{StaticResource DarkBlack}"
+    Background="#1A1C1C"
     mc:Ignorable="d">
     <Grid 
         x:Name="ContentGrid"
@@ -29,12 +29,19 @@
                 VisibilityChanged="MessageDisplay_VisibilityChanged"/>
         </Popup>
 
-        <TextBlock x:Name="NumberOfMessages_TextBlock" Grid.Column="1" HorizontalAlignment="Right" FontWeight="Bold" FontFamily="Roboto"/>
+        <TextBlock 
+            x:Name="NumberOfMessages_TextBlock" 
+            Grid.Column="1"
+            HorizontalAlignment="Right" 
+            FontWeight="Bold" 
+            FontFamily="Roboto"/>
 
         <ListView
             x:Name="Chat_ListView"
             ItemsSource="{x:Bind Chat}"
             SelectionMode="None"
+            Padding="0"
+            HorizontalAlignment="Stretch"
             Grid.ColumnSpan="2"
             Grid.Row="0">
             <ListView.ItemsPanel>
@@ -48,29 +55,35 @@
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:MessageModel">
                     <ContentPresenter
-                        Content="{x:Bind Message, Mode=OneTime}"
-                        HorizontalAlignment="Left"
-                        Margin="3"/>
+                        Content="{x:Bind Content, Mode=OneTime}"
+                        Background="{x:Bind Background}"
+                        HorizontalAlignment="Stretch"
+                        Padding="4,5"
+                        CornerRadius="5"/>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
 
         <TextBox
             x:Name="ChatInput"
-            PlaceholderText="Enter message"
+            PlaceholderText="Send message"
             TextWrapping="Wrap"
-            AcceptsReturn="True"
+            AcceptsReturn="False"
             VerticalAlignment="Bottom"
             MinHeight="40"
             ScrollViewer.VerticalScrollMode="Auto"
             ScrollViewer.VerticalScrollBarVisibility="Auto"
-            Grid.Row="1"/>
+            Grid.Row="1"
+            PreviewKeyDown="ChatInput_PreviewKeyDown"
+            KeyDown="ChatInput_KeyDown"
+            KeyUp="ChatInput_KeyUp"/>
 
         <Button
-            x:Name="ChatSettingsButton"
-            VerticalAlignment="Bottom"
+            x:Name="ChatEmotesButton"
+            VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch"
-            Margin="5"
+            Background="Transparent"
+            BorderThickness="0"
             Grid.Row="1"
             Grid.Column="1">
             <Button.Content>

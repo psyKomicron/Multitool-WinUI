@@ -6,10 +6,10 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
+using Multitool.DAL.Settings;
 using Multitool.Net.Imaging;
 using Multitool.Net.Twitch;
 using Multitool.Net.Twitch.Irc;
-using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Models;
@@ -19,9 +19,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using Windows.System;
 using Windows.UI;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -34,54 +35,57 @@ namespace MultitoolWinUI.Pages.Irc
     /// </summary>
     public sealed partial class ChatControl : UserControl, IAsyncDisposable
     {
-        private readonly User thisUser = User.CreateSystemUser();
         private readonly SolidColorBrush messageBackground = new(Colors.MediumPurple);
         private readonly SolidColorBrush timestampBrush = new(Colors.White) { Opacity = 0.5 };
+        private readonly SolidColorBrush mentionBrush = new(Colors.IndianRed) { Opacity = 0.5 };
         private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
+        private readonly ITwitchIrcClient client;
+
         private bool joined;
         private bool loaded;
+        private bool ctrlOn;
 
-        public ChatControl()
+        public ChatControl(ITwitchIrcClient client)
         {
             InitializeComponent();
+            this.client = client;
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
         }
 
         #region properties
-        public ObservableCollection<MessageModel> Chat { get; set; } = new();
-
-        public List<Emote> Emotes { get; set; } = new();
-
-        public List<Emote> ChannelEmotes { get; set; } = new();
-
         public string Channel { get; set; }
-
-        public int MaxMessages { get; set; } = 500;
-
+        public List<Emote> ChannelEmotes { get; set; } = new();
+        public ObservableCollection<MessageModel> Chat { get; set; } = new();
+        public List<Emote> Emotes { get; set; } = new();
         public TabViewItem Tab { get; set; }
 
-        public ITwitchIrcClient Client { get; set; }
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.TimestampFormat))]
+        public string TimestampFormat { get; set; } = "t";
 
-        public double EmoteSize { get; set; } = 20;
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMaxNumberOfMessages))]
+        public int MaxMessages { get; set; }
 
-        public string TimestampFormat { get; set; } = "T";
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatEmoteSize))]
+        public double EmoteSize { get; set; } = 30;
+
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMentionRegex))]
+        public Regex MentionRegex { get; set; }
         #endregion
 
         public async ValueTask DisposeAsync()
         {
-            await Client.DisposeAsync();
+            await client.DisposeAsync();
         }
 
         #region private methods
-
         private async Task Join()
         {
-            if (!joined && Client != null && !string.IsNullOrEmpty(Channel))
+            if (!joined && client != null && !string.IsNullOrEmpty(Channel))
             {
                 try
                 {
-                    await Client.Join(Channel);
+                    await client.Join(Channel);
                     joined = true;
                     RoomStateDisplay.QueueMessage("Channel", "Joined " + Channel, messageBackground);
 
@@ -90,22 +94,10 @@ namespace MultitoolWinUI.Pages.Irc
                 catch (ArgumentException ex)
                 {
                     App.TraceError(ex.ToString());
-
-                    Message message = new(ex.Message)
-                    {
-                        Author = thisUser
-                    };
-                    Chat.Add(new(message));
                 }
                 catch (InvalidOperationException ex)
                 {
                     App.TraceError(ex.ToString());
-
-                    Message message = new($"Cannot connect: {ex.Message}")
-                    {
-                        Author = thisUser
-                    };
-                    Chat.Add(new(message));
                 }
                 catch (Exception ex)
                 {
@@ -121,7 +113,6 @@ namespace MultitoolWinUI.Pages.Irc
                 TextWrapping = TextWrapping.WrapWholeWords,
                 IsTextSelectionEnabled = true
             };
-
             Paragraph paragraph = new()
             {
                 LineHeight = 24,
@@ -174,7 +165,7 @@ namespace MultitoolWinUI.Pages.Irc
                     };
                     if (words[i].Length > 0)
                     {
-                        run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : FontWeights.Normal;
+                        run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : FontWeights.SemiLight;
                     }
                     paragraph.Inlines.Add(run);
                 }
@@ -195,7 +186,8 @@ namespace MultitoolWinUI.Pages.Irc
                 };
                 container.Inlines.Add(new Run()
                 {
-                    Text = text
+                    Text = text,
+                    FontWeight = FontWeights.SemiLight
                 });
 
                 paragraph.Inlines.Add(container);
@@ -236,12 +228,11 @@ namespace MultitoolWinUI.Pages.Irc
         #region event handlers
 
         #region irc events
-
-        private void Client_RoomChanged(ITwitchIrcClient sender, RoomStates args)
+        private void Client_RoomChanged(ITwitchIrcClient sender, RoomStateEventArgs args)
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                switch (args)
+                switch (args.States)
                 {
                     case RoomStates.EmoteOnlyOn:
                         RoomStateDisplay.QueueMessage("Room change", "Emote only on", messageBackground);
@@ -251,7 +242,7 @@ namespace MultitoolWinUI.Pages.Irc
                         break;
 
                     case RoomStates.FollowersOnlyOn:
-                        RoomStateDisplay.QueueMessage("Room change", "Followers only on", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", $"Followers only on ({args.Data[RoomStates.FollowersOnlyOn]} min)", messageBackground);
                         break;
                     case RoomStates.FollowersOnlyOff:
                         RoomStateDisplay.QueueMessage("Room change", "Followers only off", messageBackground);
@@ -265,13 +256,10 @@ namespace MultitoolWinUI.Pages.Irc
                         break;
 
                     case RoomStates.SlowModeOn:
-                        RoomStateDisplay.QueueMessage("Room change", "Slow mode on", messageBackground);
+                        RoomStateDisplay.QueueMessage("Room change", $"Slow mode on ({args.Data[RoomStates.FollowersOnlyOn]} s)", messageBackground);
                         break;
                     case RoomStates.SlowModeOff:
                         RoomStateDisplay.QueueMessage("Room change", "Slow mode off", messageBackground);
-                        break;
-
-                    default:
                         break;
                 }
             });
@@ -296,9 +284,12 @@ namespace MultitoolWinUI.Pages.Irc
             {
                 MessageModel model = new()
                 {
-                    Message = CreateMessage(args),
+                    Content = CreateMessage(args),
                 };
-
+                if (MentionRegex != null)
+                {
+                    model.Background = MentionRegex.IsMatch(args.ActualMessage) ? mentionBrush : null;
+                }
                 Chat.Add(model);
                 NumberOfMessages_TextBlock.Text = Chat.Count.ToString();
             });
@@ -322,11 +313,9 @@ namespace MultitoolWinUI.Pages.Irc
                 });
             }
         }
-
         #endregion
 
         #region ui events
-
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (loaded) return;
@@ -342,9 +331,9 @@ namespace MultitoolWinUI.Pages.Irc
             Tab.CloseRequested += Tab_CloseRequested;
             header.KeyDown += Header_KeyDown;
 
-            Client.MessageReceived += Client_MessageReceived;
-            Client.Disconnected += Client_Disconnected;
-            Client.RoomChanged += Client_RoomChanged;
+            client.MessageReceived += Client_MessageReceived;
+            client.Disconnected += Client_Disconnected;
+            client.RoomChanged += Client_RoomChanged;
 
             if (!string.IsNullOrEmpty(Channel))
             {
@@ -361,7 +350,7 @@ namespace MultitoolWinUI.Pages.Irc
             loaded = false;
             try
             {
-                await Client.Disconnect();
+                await client.Disconnect();
             }
             catch (Exception ex)
             {
@@ -369,7 +358,7 @@ namespace MultitoolWinUI.Pages.Irc
             }
             try
             {
-                await Client.DisposeAsync();
+                await client.DisposeAsync();
             }
             catch (Exception ex)
             {
@@ -378,6 +367,22 @@ namespace MultitoolWinUI.Pages.Irc
             Chat.Clear();
             Chat = null;
             UnloadObject(Chat_ListView);
+        }
+
+        private async void MainWindow_Closed(object sender, WindowEventArgs args)
+        {
+            loaded = false;
+            if (client != null && client.IsConnected)
+            {
+                client.MessageReceived -= Client_MessageReceived;
+                client.RoomChanged -= Client_RoomChanged;
+                try
+                {
+                    await client.Disconnect();
+                }
+                catch (InvalidOperationException) { }
+                await client.DisposeAsync();
+            }
         }
 
         private void Header_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -392,24 +397,11 @@ namespace MultitoolWinUI.Pages.Irc
 
                 Tab.Header = new TextBlock()
                 {
-                    Text = Channel
+                    Text = Channel,
+                    FontWeight = FontWeights.Normal,
+                    CharacterSpacing = 45,
                 };
-            }
-        }
-
-        private async void MainWindow_Closed(object sender, WindowEventArgs args)
-        {
-            loaded = false;
-            if (Client != null && Client.IsConnected)
-            {
-                Client.MessageReceived -= Client_MessageReceived;
-                Client.RoomChanged -= Client_RoomChanged;
-                try
-                {
-                    await Client.Disconnect();
-                }
-                catch (InvalidOperationException) { }
-                await Client.DisposeAsync();
+                Tab.Width = (Tab.Header as TextBlock).Width + 10;
             }
         }
 
@@ -425,6 +417,41 @@ namespace MultitoolWinUI.Pages.Irc
                 Debug.WriteLine($"Clicked {emote.Name}");
                 ChatInput.Text += $" {emote} ";
             }
+        }
+
+        private void ChatInput_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            ctrlOn = e.Key == VirtualKey.LeftControl;
+        }
+
+        private async void ChatInput_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Enter)
+            {
+                e.Handled = true;
+                try
+                {
+                    await client.SendMessage(ChatInput.Text);
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError(ex.ToString());
+                }
+                if (!ctrlOn)
+                {
+                    ChatInput.Text = string.Empty;
+                }
+            }
+        }
+
+        private void ChatInput_BeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args)
+        {
+
+        }
+
+        private void ChatInput_KeyUp(object sender, KeyRoutedEventArgs e)
+        {
+            ctrlOn = e.Key != VirtualKey.LeftControl;
         }
         #endregion
 
