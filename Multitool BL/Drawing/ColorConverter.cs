@@ -39,7 +39,7 @@ namespace Multitool.Drawing
             c.B = blue;
             return c;
         }
-        
+
         private static byte ConvertHexa(ReadOnlySpan<char> span)
         {
             char highByte = span[0];
