@@ -1,12 +1,6 @@
-﻿using Multitool.UI;
-
+﻿
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-
-using Windows.UI;
 
 namespace Multitool.Net.Twitch.Factories
 {
@@ -19,7 +13,7 @@ namespace Multitool.Net.Twitch.Factories
         public Message CreateMessage(ReadOnlyMemory<char> memory)
         {
             int index = 0;
-            var tags = ParseTags(memory, ref index);
+            Dictionary<string, string> tags = ParseTags(memory, ref index);
 
             ReadOnlySpan<char> data = memory.Span[(index + 1)..];
             index = 0; // reset index since we are going to work with a slice of the original payload
@@ -30,7 +24,6 @@ namespace Multitool.Net.Twitch.Factories
             ReadOnlySpan<char> userName = data[..index];
             tags.Add("user-name", userName.ToString());
 
-            int lastSlice = index;
             while (index < data.Length && data[index] != ':')
             {
                 index++;
