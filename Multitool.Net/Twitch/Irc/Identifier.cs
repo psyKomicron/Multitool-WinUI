@@ -1,22 +1,22 @@
 ﻿namespace Multitool.Net.Twitch
 {
-    public struct Id
+    public struct Identifier
     {
         private readonly string stringId;
         private readonly int id;
 
-        public Id(string id)
+        public Identifier(string id)
         {
             stringId = id;
             this.id = default;
         }
 
-        public Id(int id)
+        public Identifier(int id)
         {
             stringId = null;
             this.id = id;
         }
 
-        public string StringId => stringId;
+        public string Id => string.IsNullOrEmpty(stringId) ? id.ToString() : stringId;
     }
 }

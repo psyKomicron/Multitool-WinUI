@@ -1,15 +1,11 @@
-﻿using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
+﻿using Microsoft.UI.Xaml.Media.Imaging;
 
 using Multitool.Net.Twitch;
 
 using System;
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 
 namespace Multitool.Net.Imaging
@@ -20,7 +16,7 @@ namespace Multitool.Net.Imaging
 
         public Emote() { }
 
-        public Emote(Id id, string name)
+        public Emote(Identifier id, string name)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -33,7 +29,7 @@ namespace Multitool.Net.Imaging
 
         public string ChannelOwner { get; internal set; }
 
-        public Id Id { get; internal set; }
+        public Identifier Id { get; internal set; }
 
         public string Name { get; internal set; }
 
