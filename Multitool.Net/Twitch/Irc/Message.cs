@@ -19,11 +19,11 @@ namespace Multitool.Net.Twitch
 
         public User Author { get; set; }
 
-        public Id Id { get; set; }
+        public Identifier Id { get; set; }
 
         public Reply? Reply { get; set; }
 
-        public Id ChannelId { get; set; }
+        public Identifier ChannelId { get; set; }
 
         public DateTime ServerTimestamp { get; set; }
 
