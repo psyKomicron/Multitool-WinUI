@@ -14,7 +14,7 @@ using Windows.Foundation;
 
 namespace Multitool.Net.Twitch.Irc
 {
-    public class TwitchIrcClient : ITwitchIrcClient
+    public class TwitchIrcClient : IIrcClient
     {
         #region fields
         #region constants fields
@@ -70,15 +70,15 @@ namespace Multitool.Net.Twitch.Irc
 
         #region events
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, Message> MessageReceived;
+        public event TypedEventHandler<IIrcClient, Message> MessageReceived;
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, EventArgs> Disconnected;
+        public event TypedEventHandler<IIrcClient, EventArgs> Disconnected;
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, RoomStateEventArgs> RoomChanged;
+        public event TypedEventHandler<IIrcClient, RoomStateEventArgs> RoomChanged;
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, UserTimeoutEventArgs> UserTimedOut;
+        public event TypedEventHandler<IIrcClient, UserTimeoutEventArgs> UserTimedOut;
         /// <inheritdoc/>
-        public event TypedEventHandler<ITwitchIrcClient, UserNoticeEventArgs> UserNotice;
+        public event TypedEventHandler<IIrcClient, UserNoticeEventArgs> UserNotice;
         #endregion
 
         #region properties
@@ -89,7 +89,7 @@ namespace Multitool.Net.Twitch.Irc
         public WebSocketState ClientState => socket.State;
 
         /// <inheritdoc/>
-        public TwitchConnectionToken ConnectionToken { get; set; }
+        public ConnectionToken ConnectionToken { get; set; }
 
         /// <inheritdoc/>
         public Encoding Encoding { get; set; }
@@ -207,7 +207,7 @@ namespace Multitool.Net.Twitch.Irc
         {
             if (!disposed)
             {
-                rootCancelToken.Cancel();
+                //rootCancelToken.Cancel();
 
                 if (Interlocked.Read(ref disconnected) == 0)
                 {
@@ -231,7 +231,7 @@ namespace Multitool.Net.Twitch.Irc
                 }
 
                 disposed = true;
-                //GC.SuppressFinalize(this);
+                GC.SuppressFinalize(this);
             }
         }
 

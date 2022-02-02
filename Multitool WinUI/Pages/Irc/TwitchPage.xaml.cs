@@ -71,7 +71,7 @@ namespace MultitoolWinUI.Pages
         {
             if (!saved)
             {
-                if (Channels == null)
+                /*if (Channels == null)
                 {
                     Channels = new();
                 }
@@ -81,7 +81,7 @@ namespace MultitoolWinUI.Pages
                     {
                         Channels.Add(control.Channel);
                     }
-                }
+                }*/
                 App.Settings.Save(this);
                 saved = true;
             }
@@ -98,11 +98,7 @@ namespace MultitoolWinUI.Pages
 #if DEBUG
                 if (_contentLoaded)
                 {
-                    App.TraceError(ex.ToString());
-                }
-                else
-                {
-                    Debug.WriteLine(uri + "\n" + ex.ToString());
+                    App.TraceError(ex);
                 }
 #endif
             }
@@ -200,7 +196,7 @@ namespace MultitoolWinUI.Pages
                 {
                     Encoding encoding = Encoding.Default;
                     //encoding.DecoderFallback = new DecoderReplacementFallback("");
-                    ITwitchIrcClient client = new TwitchIrcClient(token, true)
+                    IIrcClient client = new TwitchIrcClient(token, true)
                     {
                         NickName = "psykomicron",
                         Encoding = encoding
@@ -224,12 +220,18 @@ namespace MultitoolWinUI.Pages
                 }
                 catch (ArgumentNullException)
                 {
-                    App.TraceError("Login is empty");
+                    App.TraceWarning("Login is empty");
                 }
             }
         }
 
-        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => Tabs.Remove(args.Tab);
+        private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
+        {
+            if (Tabs.Contains(args.Tab))
+            {
+                Tabs.Remove(args.Tab);
+            }
+        }
 
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {

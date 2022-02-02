@@ -42,6 +42,7 @@
             <TabView
                 x:Name="Chats"
                 TabItemsSource="{x:Bind Tabs}"
+                Background="Transparent"
                 VerticalAlignment="Stretch"
                 Margin="0,0,0,5"
                 CornerRadius="3"
