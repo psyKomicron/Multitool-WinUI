@@ -2,7 +2,6 @@
 
 namespace Multitool.Net.Twitch
 {
-#nullable enable
     public class Message
     {
         private readonly string message;
@@ -21,15 +20,15 @@ namespace Multitool.Net.Twitch
 
         public Identifier Id { get; set; }
 
+#nullable enable
         public Reply? Reply { get; set; }
+#nullable disable
 
         public Identifier ChannelId { get; set; }
 
         public DateTime ServerTimestamp { get; set; }
 
-#if DEBUG
         public string ActualMessage => message;
-#endif
 
         public override string ToString()
         {
