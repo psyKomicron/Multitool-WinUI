@@ -17,7 +17,7 @@ namespace Multitool.Net.Twitch.Irc
 
         public static Regex MessageRegex { get; } = new($@"{tagRegex} :([A-z0-9]+)!\1@\1\.tmi\.twitch\.tv PRIVMSG \#[A-z0-9]+ :.*", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        public static Regex JoinRegex { get; } = new(@"^(:[a-z]+![a-z]+@([a-z]+\.tmi.twitch.tv JOIN .))", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        public static Regex JoinRegex { get; } = new(@"^:(.+)!\1+@\1+\.tmi\.twitch\.tv JOIN #.+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         public static Regex NamesRegex { get; } = new(@"^:(.+)\.tmi\.twitch\.tv 353 \1 = #[a-z0-9]+ :");
 
