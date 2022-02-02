@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Multitool.Net.Twitch.Irc
 {
-    public class RoomStateEventArgs
+    public class RoomStateEventArgs : EventArgs
     {
         private Dictionary<RoomStates, int> _data;
-
-        public RoomStateEventArgs() { }
 
         public RoomStates States { get; internal set; }
         public Dictionary<RoomStates, int> Data
