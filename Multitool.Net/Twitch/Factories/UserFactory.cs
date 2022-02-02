@@ -17,7 +17,7 @@ namespace Multitool.Net.Twitch.Factories
         private readonly SemaphoreSlim semaphore = new(1);
         private readonly ColorConverter colorConverter = new();
 
-        public User CreateUser(Dictionary<string, string> tags)
+        public User GetOrCreateUser(Dictionary<string, string> tags)
         {
             string userId = tags[userKey];
             if (cache.ContainsKey(userId))
@@ -41,6 +41,17 @@ namespace Multitool.Net.Twitch.Factories
                 return user;
             }
         }
+
+#nullable enable
+        public User? GetUser(string userId)
+        {
+            if (cache.ContainsKey(userId))
+            {
+                return cache[userId];
+            }
+            return null;
+        }
+#nullable disable
 
         private User BuildUser(Dictionary<string, string> tags)
         {
