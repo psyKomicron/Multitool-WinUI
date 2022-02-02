@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 
 using Windows.System;
 using Windows.UI;
+using Windows.UI.Text;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -36,6 +37,10 @@ namespace MultitoolWinUI.Pages.Irc
     public sealed partial class ChatControl : UserControl, IAsyncDisposable
     {
         private readonly SolidColorBrush messageBackground = new(Colors.MediumPurple);
+        private readonly SolidColorBrush userSubBackground = new(Colors.MediumPurple)
+        {
+            Opacity = 0.5
+        };
         private readonly SolidColorBrush timestampBrush = new(Colors.White) { Opacity = 0.5 };
         private readonly SolidColorBrush mentionBrush = new(Colors.IndianRed) { Opacity = 0.5 };
         private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
@@ -51,14 +56,22 @@ namespace MultitoolWinUI.Pages.Irc
             this.client = client;
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
+
+            client.MessageReceived += Client_MessageReceived;
+            client.Disconnected += Client_Disconnected;
+            client.RoomChanged += Client_RoomChanged;
+            client.UserTimedOut += Client_UserTimedOut;
+            client.UserNotice += Client_UserNotice;
         }
 
         #region properties
         public string Channel { get; set; }
-        public List<Emote> ChannelEmotes { get; set; } = new();
-        public ObservableCollection<MessageModel> Chat { get; set; } = new();
-        public List<Emote> Emotes { get; set; } = new();
+        public List<Emote> ChannelEmotes { get; } = new();
+        public ObservableCollection<MessageModel> Chat { get; } = new();
+        public List<Emote> Emotes { get; } = new();
         public TabViewItem Tab { get; set; }
+        public FontWeight UserMessagesFontWeight { get; set; } = FontWeights.SemiLight;
+        public FontWeight SystemMessagesFontWeight { get; set; } = FontWeights.SemiLight;
 
         [Setting(typeof(TwitchPage), nameof(TwitchPage.TimestampFormat))]
         public string TimestampFormat { get; set; } = "t";
@@ -108,31 +121,17 @@ namespace MultitoolWinUI.Pages.Irc
 
         private RichTextBlock CreateMessage(Message message)
         {
-            RichTextBlock presenter = new()
-            {
-                TextWrapping = TextWrapping.WrapWholeWords,
-                IsTextSelectionEnabled = true
-            };
-            Paragraph paragraph = new()
-            {
-                LineHeight = 24,
-                CharacterSpacing = 15,
-                LineStackingStrategy = LineStackingStrategy.MaxHeight
-            };
+            RichTextBlock presenter = CreatePresenter();
+            Paragraph paragraph = CreateParagraph();
 
             // timestamp
-            paragraph.Inlines.Add(new Run()
-            {
-                Text = message.ServerTimestamp.ToString(TimestampFormat) + " ",
-                Foreground = timestampBrush,
-                FontWeight = FontWeights.Light
-            });
+            paragraph.Inlines.Add(CreateTimestamp());
             // name
             paragraph.Inlines.Add(new Run()
             {
                 Text = (string.IsNullOrEmpty(message.Author.DisplayName) ? message.Author.Name : message.Author.DisplayName) + ": ",
                 Foreground = messageColors.GetOrAdd(message.Author.NameColor, GetOrCreate),
-                FontWeight = FontWeights.Bold
+                FontWeight = FontWeights.SemiBold
             });
 
             string[] words = message.ToString().Split(' ');
@@ -165,7 +164,7 @@ namespace MultitoolWinUI.Pages.Irc
                     };
                     if (words[i].Length > 0)
                     {
-                        run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : FontWeights.SemiLight;
+                        run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : UserMessagesFontWeight;
                     }
                     paragraph.Inlines.Add(run);
                 }
@@ -174,6 +173,35 @@ namespace MultitoolWinUI.Pages.Irc
 
             presenter.Blocks.Add(paragraph);
             return presenter;
+        }
+
+        private Run CreateTimestamp()
+        {
+            return new()
+            {
+                Text = DateTime.Now.ToString(TimestampFormat) + " ",
+                Foreground = timestampBrush,
+                FontWeight = SystemMessagesFontWeight
+            };
+        }
+
+        private Paragraph CreateParagraph()
+        {
+            return new()
+            {
+                LineHeight = 24,
+                CharacterSpacing = 15,
+                LineStackingStrategy = LineStackingStrategy.MaxHeight
+            };
+        }
+
+        private RichTextBlock CreatePresenter()
+        {
+            return new()
+            {
+                TextWrapping = TextWrapping.WrapWholeWords,
+                IsTextSelectionEnabled = true,
+            };
         }
 
         private static bool PutHyperlink(Paragraph paragraph, string text)
@@ -222,12 +250,49 @@ namespace MultitoolWinUI.Pages.Irc
         {
             return new(p);
         }
-
         #endregion
 
         #region event handlers
 
         #region irc events
+        private void Client_MessageReceived(ITwitchIrcClient sender, Message args)
+        {
+            if (DispatcherQueue == null) return;
+
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                MessageModel model = new()
+                {
+                    Content = CreateMessage(args),
+                };
+                if (MentionRegex != null)
+                {
+                    model.Background = MentionRegex.IsMatch(args.ActualMessage) ? mentionBrush : null;
+                }
+                Chat.Add(model);
+                NumberOfMessages_TextBlock.Text = Chat.Count.ToString();
+            });
+
+            if (Chat.Count > MaxMessages)
+            {
+                DispatcherQueue?.TryEnqueue(() =>
+                {
+                    for (int i = 0; i < 50; i++)
+                    {
+                        if (DispatcherQueue == null)
+                        {
+                            return;
+                        }
+                        try
+                        {
+                            Chat.RemoveAt(i);
+                        }
+                        catch { return; }
+                    }
+                });
+            }
+        }
+
         private void Client_RoomChanged(ITwitchIrcClient sender, RoomStateEventArgs args)
         {
             DispatcherQueue.TryEnqueue(() =>
@@ -276,42 +341,81 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
-        private void Client_MessageReceived(ITwitchIrcClient sender, Message args)
+        private void Client_UserTimedOut(ITwitchIrcClient sender, UserTimeoutEventArgs args)
         {
-            if (DispatcherQueue == null) return;
-
-            DispatcherQueue?.TryEnqueue(() =>
+            _ = DispatcherQueue.TryEnqueue(() =>
             {
-                MessageModel model = new()
+                RichTextBlock presenter = CreatePresenter();
+                Paragraph paragraph = CreateParagraph();
+                
+                // timestamp
+                paragraph.Inlines.Add(CreateTimestamp());
+                if (args.Timeout.Ticks == 0)
                 {
-                    Content = CreateMessage(args),
-                };
-                if (MentionRegex != null)
-                {
-                    model.Background = MentionRegex.IsMatch(args.ActualMessage) ? mentionBrush : null;
-                }
-                Chat.Add(model);
-                NumberOfMessages_TextBlock.Text = Chat.Count.ToString();
-            });
-
-            if (Chat.Count > MaxMessages)
-            {
-                DispatcherQueue?.TryEnqueue(() =>
-                {
-                    for (int i = 0; i < 50; i++)
+                    paragraph.Inlines.Add(new Run()
                     {
-                        if (DispatcherQueue == null)
+                        Text = $"{args.UserName} has been banned",
+                        Foreground = new SolidColorBrush(Colors.White)
                         {
-                            return;
-                        }
-                        try
+                            Opacity = 0.7
+                        },
+                        FontWeight = SystemMessagesFontWeight
+                    });
+                }
+                else
+                {
+                    paragraph.Inlines.Add(new Run()
+                    {
+                        Text = $"{args.UserName} has been timed out for {args.Timeout.TotalSeconds} seconds",
+                        Foreground = new SolidColorBrush(Colors.White)
                         {
-                            Chat.RemoveAt(i);
-                        }
-                        catch { return; }
-                    }
+                            Opacity = 0.7
+                        },
+                        FontWeight = SystemMessagesFontWeight
+                    });
+                }
+
+                presenter.Blocks.Add(paragraph);
+                Chat.Add(new()
+                {
+                    Content = presenter
                 });
-            }
+            });
+        }
+
+        private void Client_UserNotice(ITwitchIrcClient sender, UserNoticeEventArgs args)
+        {
+            _ = DispatcherQueue.TryEnqueue(() =>
+            {
+                RichTextBlock presenter = CreatePresenter();
+                Paragraph userMessageParagraph = CreateParagraph();
+                Paragraph systemMessageParagraph = CreateParagraph();
+
+                // timestamp
+                systemMessageParagraph.Inlines.Add(CreateTimestamp());
+
+                systemMessageParagraph.Inlines.Add(new Run()
+                {
+                    Text = args.SystemMessage,
+                    FontSize = 16,
+                    FontWeight = FontWeights.SemiBold
+                });
+
+                userMessageParagraph.Inlines.Add(new Run()
+                {
+                    Text = args.Message,
+                    FontWeight = UserMessagesFontWeight
+                });
+
+                presenter.Blocks.Add(systemMessageParagraph);
+                presenter.Blocks.Add(userMessageParagraph);
+
+                Chat.Add(new()
+                {
+                    Content = presenter,
+                    Background = userSubBackground
+                });
+            });
         }
         #endregion
 
@@ -330,10 +434,6 @@ namespace MultitoolWinUI.Pages.Irc
 
             Tab.CloseRequested += Tab_CloseRequested;
             header.KeyDown += Header_KeyDown;
-
-            client.MessageReceived += Client_MessageReceived;
-            client.Disconnected += Client_Disconnected;
-            client.RoomChanged += Client_RoomChanged;
 
             if (!string.IsNullOrEmpty(Channel))
             {
@@ -365,8 +465,7 @@ namespace MultitoolWinUI.Pages.Irc
                 Trace.TraceError(ex.ToString());
             }
             Chat.Clear();
-            Chat = null;
-            UnloadObject(Chat_ListView);
+            //UnloadObject(Chat_ListView);
         }
 
         private async void MainWindow_Closed(object sender, WindowEventArgs args)
