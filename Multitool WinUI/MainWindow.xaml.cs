@@ -120,7 +120,10 @@ namespace MultitoolWinUI
         #region window events
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
-            _ = DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
+            if (!closed)
+            {
+                //_ = DispatcherQueue?.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
+            }
         }
 
         private void Window_Closed(object sender, WindowEventArgs args)
@@ -135,8 +138,8 @@ namespace MultitoolWinUI
             catch (ArgumentException ex)
             {
                 Trace.TraceError(ex.ToString());
-                throw;
             }
+            catch { }
         }
 
         private void MessageDisplay_VisibilityChanged(AppMessageControl sender, Visibility args)
