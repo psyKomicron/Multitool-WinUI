@@ -72,7 +72,7 @@ namespace MultitoolWinUI.Pages.Explorer
             }
             catch (SettingNotFoundException ex)
             {
-                App.TraceError(ex.ToString());
+                App.TraceError(ex);
             }
         }
 
@@ -195,7 +195,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
                     fsCancellationTokenSource.InvokeCancel();
                     fsCancellationTokenSource = null;
-                    App.TraceError("Operation cancelled, loading path : " + path);
+                    App.TraceWarning("Operation cancelled, loading path : " + path);
                     Progress_TextBox.Text = "Operation cancelled";
                     DispatcherQueue.TryEnqueue(() => SortList());
                 }
@@ -205,7 +205,7 @@ namespace MultitoolWinUI.Pages.Explorer
                     CancelAction_Button.IsEnabled = false;
                     Files_ProgressBar.IsIndeterminate = false;
 
-                    App.TraceError(ex.ToString());
+                    App.TraceError(ex);
                     Progress_TextBox.Text = ex.ToString();
                 }
             }
@@ -216,7 +216,7 @@ namespace MultitoolWinUI.Pages.Explorer
                 CancelAction_Button.IsEnabled = false;
                 Files_ProgressBar.IsIndeterminate = false;
 
-                App.TraceError(ex.ToString());
+                App.TraceError(ex);
                 CurrentPath = string.Empty;
                 Progress_TextBox.Text = "Directory not found : '" + path + "'";
             }

@@ -55,7 +55,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             }
             catch (XmlException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e);
                 //App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to load custom settings pathes. " + e.Message);
                 return;
             }
@@ -172,7 +172,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                         }
                         catch (UriFormatException ex)
                         {
-                            App.TraceError(ex.ToString());
+                            App.TraceError(ex);
                         }
                     }
                 }
@@ -252,12 +252,12 @@ namespace MultitoolWinUI.Pages.ControlPanels
 
             catch (XmlException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e);
                 App.TraceInformation("Importing settings failed");
             }
             catch (NullReferenceException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e);
                 App.TraceWarning("NullReferenceException in " + nameof(CopySettingFile));
             }
         }
@@ -426,15 +426,19 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 }
                 catch (XmlException ex)
                 {
-                    App.TraceError("XmlException: Unable to parse changes from the .XML settings file.\n" + ex);
+                    App.TraceWarning("XmlException: Unable to parse changes from the .XML settings file.");
+                    App.TraceError(ex);
                 }
                 catch (IOException ex)
                 {
-                    App.TraceError("IOException: Unable to parse changes from the .XML settings file.\n" + ex);
-
                     if (ex.HResult != -0x7FF8FFE0)
                     {
-                        App.TraceError("Unable to parse changes from the .XML settings file.");
+                        App.TraceWarning("Unable to parse changes from the .XML settings file.");
+                    }
+                    else
+                    {
+                        App.TraceWarning("IOException: Unable to parse changes from the .XML settings file.");
+                        App.TraceError(ex);
                     }
                 }
             }
