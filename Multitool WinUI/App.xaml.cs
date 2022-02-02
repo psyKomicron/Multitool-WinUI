@@ -49,9 +49,13 @@ namespace MultitoolWinUI
             TraceMessage("Warning", warning, warningBrush);
         }
 
-        public static void TraceError(string error)
+        public static void TraceError(Exception error)
         {
-            TraceMessage("Error", error, errorBrush);
+#if DEBUG
+            TraceMessage("Error", error.ToString(), errorBrush);
+#else
+            TraceMessage("Error", error.Message, errorBrush);
+#endif
         }
 
         /// <summary>
@@ -62,7 +66,6 @@ namespace MultitoolWinUI
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
-
             Settings =
 #if DEBUG
                 await XmlSettingManager.Get();
@@ -72,9 +75,6 @@ namespace MultitoolWinUI
             SettingFormat = "{0}/{1}"
         }; 
 #endif
-
-            Debug.WriteLine(ApplicationData.Current.LocalFolder.Path);
-
             try
             {
                 errorBrush = new(Tool.GetAppRessource<Color>("SystemAccentColor"));
@@ -93,13 +93,13 @@ namespace MultitoolWinUI
 
 
             MainWindow = new MainWindow();
-            Trace.Listeners.Add(new WindowTrace(MainWindow));
+            //Trace.Listeners.Add(new WindowTrace(MainWindow));
             MainWindow.Activate();
         }
 
         private static void TraceMessage(string title, string message, Brush background)
         {
-            if (MainWindow != null)
+            if (MainWindow != null && MainWindow.MessageDisplay != null)
             {
                 MainWindow.MessageDisplay.QueueMessage(title, message, background);
             }
