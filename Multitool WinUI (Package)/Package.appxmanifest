@@ -54,6 +54,10 @@
     <uap3:Capability Name="remoteSystem"/>
     <uap:Capability Name="removableStorage"/>
     <Capability Name="internetClientServer"/>
+    <uap3:Capability Name="backgroundMediaPlayback"/>
+    <Capability Name="internetClient"/>
+    <uap:Capability Name="musicLibrary"/>
+    <uap:Capability Name="videosLibrary"/>
     <DeviceCapability Name="lowLevel"/>
   </Capabilities>
 </Package>

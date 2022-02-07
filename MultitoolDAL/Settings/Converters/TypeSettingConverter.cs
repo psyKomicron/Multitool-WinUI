@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Xml;
 
-namespace Multitool.DAL.Settings
+namespace Multitool.DAL.Settings.Converters
 {
     public class TypeSettingConverter : ISettingConverter
     {
@@ -37,17 +37,21 @@ namespace Multitool.DAL.Settings
                     {
                         return loadedType;
                     }
-                    /*var assemblyTypes = Assembly.GetCallingAssembly().GetTypes();
-                    for (int i = 0; i < assemblyTypes.Length; i++)
-                    {
-                        if (assemblyTypes[i].AssemblyQualifiedName == typeAssemblyQualifiedName)
-                        {
-                            return assemblyTypes[i];
-                        }
-                    }*/
                 }
             }
+            return null;
+        }
 
+        public object Restore(object defaultValue)
+        {
+            if (defaultValue is string typeAssemblyQualifiedName && !string.IsNullOrWhiteSpace(typeAssemblyQualifiedName))
+            {
+                var loadedType = Type.GetType(typeAssemblyQualifiedName);
+                if (loadedType != null)
+                {
+                    return loadedType;
+                }
+            }
             return null;
         }
     }

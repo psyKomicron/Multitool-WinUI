@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
-using Windows.Win32.Storage.FileSystem;
 using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace Multitool.NTInterop
@@ -75,38 +74,20 @@ namespace Multitool.NTInterop
             }
         }
 
-        /// <summary>
-        /// Gets the size of a file.
-        /// </summary>
-        /// <param name="fileName">Path to the file</param>
-        /// <returns>The size of the file</returns>
-        /// <exception cref="OperationFailedException">Thrown if one the <see cref="PInvoke"/> functions fails.</exception>
-        public static long GetFileSize(string fileName)
+        public static void SetWindowSize(object window, Windows.Foundation.Size size, Windows.Graphics.PointInt32 position = default)
         {
-            SafeFileHandle handle = PInvoke.CreateFile(
-                fileName,
-                FILE_ACCESS_FLAGS.FILE_READ_DATA,
-                FILE_SHARE_MODE.FILE_SHARE_READ,
-                null,
-                FILE_CREATION_DISPOSITION.OPEN_EXISTING,
-                FILE_FLAGS_AND_ATTRIBUTES.FILE_ATTRIBUTE_READONLY,
-                null
-                );
-            if (handle != null)
+            HWND hwnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(window);
+            // Win32 uses pixels and WinUI 3 uses effective pixels, so you should apply the DPI scale factor
+            uint dpi = PInvoke.GetDpiForWindow(hwnd);
+            float scalingFactor = (float)dpi / 96;
+            int width = (int)size.Width;
+            int height = (int)size.Height;
+            width = (int)(width * scalingFactor);
+            height = (int)(height * scalingFactor);
+
+            if (!PInvoke.SetWindowPos(hwnd, default, position.X, position.Y, width, height, SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOZORDER))
             {
-                if (PInvoke.GetFileSizeEx(handle, out long size))
-                {
-                    return size;
-                }
-                else
-                {
-                    throw new OperationFailedException($"Unable to get \"{fileName}\" size. GetFileSizeEx returned false.", null);
-                }
-            }
-            else
-            {
-                //Trace.TraceError($"{nameof(InteropWrapper)} : Cannot open \"{fileName}\", handle was null.");
-                throw new OperationFailedException($"Cannot open \"{fileName}\", handle was null.", null);
+                throw InteropHelper.GetLastError("Failed to set window position");
             }
         }
     }

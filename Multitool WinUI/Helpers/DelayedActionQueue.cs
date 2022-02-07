@@ -4,6 +4,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Timers;
 
+using Windows.Foundation;
+
 namespace MultitoolWinUI.Helpers
 {
     internal class DelayedActionQueue
@@ -25,6 +27,8 @@ namespace MultitoolWinUI.Helpers
 
         public DispatcherQueue DispatcherQueue { get; set; }
 
+        public event TypedEventHandler<DelayedActionQueue, ElapsedEventArgs> QueueEmpty;
+
         public double Delay
         {
             get => messageTimer.Interval;
@@ -35,15 +39,16 @@ namespace MultitoolWinUI.Helpers
         {
             if (!busy)
             {
+                busy = true;
                 if (DispatcherQueue != null)
                 {
-                    busy = true;
                     _ = DispatcherQueue.TryEnqueue(handler);
                 }
                 else
                 {
                     handler();
                 }
+                messageTimer.Start();
             }
             else
             {
@@ -81,12 +86,24 @@ namespace MultitoolWinUI.Helpers
 
         private void MessageTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (silenced) { return; }
+            if (silenced) 
+            { 
+                return; 
+            }
+            
             if (!CheckForCallbacks())
             {
                 // no messages, close + stop timer
                 busy = false;
                 messageTimer.Stop();
+                if (DispatcherQueue != null)
+                {
+                    DispatcherQueue.TryEnqueue(() => QueueEmpty?.Invoke(this, e));
+                }
+                else
+                {
+                    QueueEmpty?.Invoke(this, e);
+                }
             }
         }
     }

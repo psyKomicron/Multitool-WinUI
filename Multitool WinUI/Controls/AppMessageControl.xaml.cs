@@ -162,6 +162,7 @@ namespace MultitoolWinUI.Controls
 
         private void MessageTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
+#if true
             if (!hasFocus && !CheckForCallbacks())
             {
                 // no messages, close + stop timer
@@ -175,7 +176,8 @@ namespace MultitoolWinUI.Controls
                 {
                     VisibilityChanged?.Invoke(this, Visibility.Collapsed);
                 }
-            }
+            } 
+#endif
         }
 
         private void HyperlinkButton_Click(object sender, RoutedEventArgs e)

@@ -3,6 +3,7 @@
 using Multitool.NTInterop;
 using Multitool.NTInterop.Power;
 
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Timers;

@@ -1,7 +1,12 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 using Multitool.DAL.Settings;
+using Multitool.DAL.Settings.Converters;
+using Multitool.NTInterop;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
@@ -9,12 +14,21 @@ using MultitoolWinUI.Pages;
 using MultitoolWinUI.Pages.ControlPanels;
 using MultitoolWinUI.Pages.Explorer;
 using MultitoolWinUI.Pages.HashGenerator;
+using MultitoolWinUI.Pages.MusicPlayer;
 using MultitoolWinUI.Pages.Power;
 using MultitoolWinUI.Pages.Settings;
 using MultitoolWinUI.Pages.Test;
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+
+using Windows.Foundation;
+using Windows.Graphics;
+using Windows.UI;
+
+using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,16 +40,18 @@ namespace MultitoolWinUI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private static AppWindow thisWindow;
         private bool closed;
 
         public MainWindow()
         {
             InitializeComponent();
-            Title = "Multitool v." + Tool.GetPackageVersion();
+            SetTitleBar();
             SizeChanged += MainWindow_SizeChanged;
             try
             {
                 App.Settings.Load(this);
+                InteropWrapper.SetWindowSize(this, WindowSize, new(PositionY, PositionX));
             }
             catch
             {
@@ -49,10 +65,28 @@ namespace MultitoolWinUI
         [Setting(typeof(TypeSettingConverter), HasDefaultValue = true, DefaultValue = typeof(MainPage))]
         public Type LastPage { get; set; }
 
+        [Setting(typeof(SizeSettingConverter), 1000, 600)]
+        public Size WindowSize { get; set; }
+
+        [Setting(0)]
+        public int PositionX { get; set; }
+
+        [Setting(0)]
+        public int PositionY { get; set; }
+
+        public int TitleBarHeight { get; private set; }
+
         #region navigation events
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
-            _ = ContentFrame.Navigate(LastPage);
+            try
+            {
+                _ = ContentFrame.Navigate(LastPage);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+            }
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -101,6 +135,10 @@ namespace MultitoolWinUI
                     case "Settings":
                         _ = ContentFrame.Navigate(typeof(SettingsPage), LastPage);
                         break;
+                    case "music":
+                        LastPage = typeof(MusicPlayerPage);
+                        _ = ContentFrame.Navigate(typeof(MusicPlayerPage));
+                        break;
                     default:
                         App.TraceWarning("Trying to navigate to : " + tag);
                         break;
@@ -117,12 +155,70 @@ namespace MultitoolWinUI
         }
         #endregion
 
+        private void SetTitleBar()
+        {
+            IntPtr windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WindowId windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
+            thisWindow = AppWindow.GetFromWindowId(windowId);
+            thisWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+
+            thisWindow.TitleBar.ButtonBackgroundColor = Tool.GetAppRessource<Color>("DarkBlack");
+            thisWindow.TitleBar.ButtonForegroundColor = Colors.White;
+            thisWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+            thisWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Gray;
+            thisWindow.TitleBar.ButtonHoverBackgroundColor = Colors.Transparent;
+            thisWindow.TitleBar.ButtonHoverForegroundColor = Colors.White;
+            thisWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
+            thisWindow.TitleBar.ButtonPressedForegroundColor = Colors.White;
+
+            string fileName = "peepoPoopoo.gif";
+            //Directory.GetFiles("/Resources/Images");
+            Uri imageSource = new(@$"ms-appx:///Resources/Images/{fileName}");
+            WindowIcon.Source = new BitmapImage(imageSource);
+        }
+
+        /*private void SetDragRegionForCustomTitleBar()
+        {
+            //Infer titlebar height
+            int titleBarHeight = 32;
+
+            // Get caption button occlusion information
+            // Use LeftInset if you've explicitly set your window layout to RTL or if app language is a RTL language
+            int CaptionButtonOcclusionWidth = thisWindow.TitleBar.RightInset;
+
+            // Define your drag Regions
+            int windowIconWidthAndPadding = (int)(PresenterModeButton.Width + WindowIcon.Width + WindowTitleTextBlock.Width + 10);
+            int dragRegionWidth = thisWindow.Size.Width - (CaptionButtonOcclusionWidth + windowIconWidthAndPadding);
+
+            RectInt32[] dragRects = new RectInt32[] { };
+            RectInt32 dragRect;
+
+            dragRect.X = windowIconWidthAndPadding;
+            dragRect.Y = 0;
+            dragRect.Height = titleBarHeight;
+            dragRect.Width = dragRegionWidth;
+
+            thisWindow.TitleBar.SetDragRectangles(dragRects.Append(dragRect).ToArray());
+        }*/
+
         #region window events
+        private void PresenterModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (thisWindow.Presenter.Kind != AppWindowPresenterKind.CompactOverlay)
+            {
+                thisWindow.SetPresenter(AppWindowPresenterKind.CompactOverlay);
+            }
+            else
+            {
+                thisWindow.SetPresenter(AppWindowPresenterKind.Default);
+            }
+        }
+
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             if (!closed)
             {
-                //_ = DispatcherQueue?.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
+                WindowSize = args.Size;
             }
         }
 
@@ -133,6 +229,8 @@ namespace MultitoolWinUI
             MessageDisplay.Silence();
             try
             {
+                PositionX = thisWindow.Position.X;
+                PositionY = thisWindow.Position.Y;
                 App.Settings.Save(this);
             }
             catch (ArgumentException ex)
@@ -152,7 +250,7 @@ namespace MultitoolWinUI
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-
+            
         }
         #endregion
     }

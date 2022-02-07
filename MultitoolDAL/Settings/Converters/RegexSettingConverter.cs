@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Xml;
 
-namespace Multitool.DAL.Settings
+namespace Multitool.DAL.Settings.Converters
 {
     public class RegexSettingConverter : ISettingConverter
     {
@@ -27,7 +27,7 @@ namespace Multitool.DAL.Settings
                 if (!options.HasFlag(RegexOptions.None))
                 {
                     attribute = doc.CreateAttribute("options");
-                    attribute.Value = GetRegexOptions(options);
+                    attribute.Value = ((float)options).ToString();
                     node.Attributes.Append(attribute);
                 }
                 return node;
@@ -58,51 +58,13 @@ namespace Multitool.DAL.Settings
             return null;
         }
 
-        private string GetRegexOptions(RegexOptions options)
+        public object Restore(object defaultValue)
         {
-            return ((float)options).ToString();
-            /*StringBuilder sb = new();
-
-            if (options.HasFlag(RegexOptions.IgnoreCase))
+            if (defaultValue is string s && !string.IsNullOrEmpty(s))
             {
-                //sb.Append()
+                return new Regex(s);
             }
-            if (options.HasFlag(RegexOptions.Multiline))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.ExplicitCapture))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.Compiled))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.Singleline))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.IgnorePatternWhitespace))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.RightToLeft))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.ECMAScript))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.ECMAScript))
-            {
-
-            }
-            if (options.HasFlag(RegexOptions.CultureInvariant))
-            {
-
-            }*/
+            return null;
         }
     }
 }

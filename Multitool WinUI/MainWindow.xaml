@@ -7,13 +7,38 @@
     Closed="Window_Closed"
     Activated="Window_Activated">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" MinHeight="32"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid x:Name="MyTitleBar" Grid.Row="0" Background="{StaticResource DarkBlack}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Image 
+                x:Name="WindowIcon"
+                HorizontalAlignment="Left"
+                Margin="7,0"
+                Width="20" 
+                Height="20"
+                Grid.Column="0"/>
+            <TextBlock 
+                x:Name="WindowTitleTextBlock"
+                Text="Multitool"
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Width="60"
+                VerticalAlignment="Center"
+                Grid.Column="1"/>
+        </Grid>
         <NavigationView
             Loaded="NavigationView_Loaded"
             IsPaneOpen="{Binding ElementName=Window, Path=IsPaneOpen, Mode=TwoWay}"
-            ItemInvoked="NavigationView_ItemInvoked" 
-            BackRequested="NavigationView_BackRequested"
             IsBackEnabled="{Binding ElementName=ContentFrame, Path=CanGoBack}"
-            Background="{StaticResource NavigationViewDefaultPaneBackground}">
+            Background="{StaticResource NavigationViewDefaultPaneBackground}"
+            Grid.Row="1"
+            BackRequested="NavigationView_BackRequested"
+            ItemInvoked="NavigationView_ItemInvoked">
             <NavigationView.MenuItems>
                 <NavigationViewItem Tag="home" 
                                     Icon="Home" 
@@ -69,6 +94,13 @@
                         <FontIcon Glyph="&#xEA18;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
+                <NavigationViewItem Tag="music"
+                                     Content="Music library">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEC4F;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <!--#endregion-->
 
                 <NavigationViewItemHeader Content="Debug"/>
@@ -79,7 +111,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
-            <Frame x:Name="ContentFrame"></Frame>
+            <Frame x:Name="ContentFrame" x:FieldModifier="public"></Frame>
         </NavigationView>
 
         <Popup

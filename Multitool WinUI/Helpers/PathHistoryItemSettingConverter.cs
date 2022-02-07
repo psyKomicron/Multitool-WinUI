@@ -1,4 +1,5 @@
 ﻿using Multitool.DAL.Settings;
+using Multitool.DAL.Settings.Converters;
 
 using MultitoolWinUI.Models;
 
@@ -44,6 +45,11 @@ namespace MultitoolWinUI.Helpers
                 };
             }
             return null;
+        }
+
+        public object Restore(object defaultValue)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
