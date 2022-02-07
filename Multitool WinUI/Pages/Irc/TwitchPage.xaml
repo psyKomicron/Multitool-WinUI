@@ -7,14 +7,20 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     NavigationCacheMode="Required">
-    <Grid Background="{x:Bind Background}">
+    <Grid x:Name="MainGrid" Background="{x:Bind Background}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="1*" MaxWidth="450" MinWidth="350"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50px"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
 
         <Grid
-            Grid.Column="0">
+            x:Name="WebViewGrid"
+            Grid.Column="0"
+            Grid.RowSpan="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="40px"/>
                 <RowDefinition/>
@@ -34,23 +40,19 @@
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 Grid.Row="1"/>
-
         </Grid>
 
-        <Grid Grid.Column="1">
-
-            <TabView
-                x:Name="Chats"
-                TabItemsSource="{x:Bind Tabs}"
-                Background="Transparent"
-                VerticalAlignment="Stretch"
-                Margin="0,0,0,5"
-                CornerRadius="3"
-                Grid.Row="0"
-                AddTabButtonClick="Chats_AddTabButtonClick"
-                TabCloseRequested="Chats_TabCloseRequested">
-            </TabView>
-
-        </Grid>
+        <Button Content="Connect" Click="Button_Click" Grid.Row="0" Grid.Column="1"/>
+        <!--<TabView
+            x:Name="Chats"
+            TabItemsSource="{x:Bind Tabs}"
+            Background="Transparent"
+            VerticalAlignment="Stretch"
+            Margin="0,0,0,5"
+            CornerRadius="3"
+            Grid.Row="0"
+            Grid.Column="1"
+            AddTabButtonClick="Chats_AddTabButtonClick"
+            TabCloseRequested="Chats_TabCloseRequested"/>-->
     </Grid>
 </Page>

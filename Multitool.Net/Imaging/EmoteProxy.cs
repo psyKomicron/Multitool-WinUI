@@ -1,8 +1,11 @@
 ﻿
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -50,32 +53,91 @@ namespace Multitool.Net.Imaging
             }
             else if (globalEmotesDownloadSemaphore.CurrentCount == 1)
             {
-                try
+                await globalEmotesDownloadSemaphore.WaitAsync();
+                Trace.TraceInformation("Downloading global emotes...");
+
+                List<Task<List<Emote>>> tasks = new(EmoteFetchers.Count);
+                foreach (var fetcher in EmoteFetchers)
                 {
-                    await globalEmotesDownloadSemaphore.WaitAsync();
-                    Trace.TraceInformation("Downloading global emotes...");
-
-                    List<Task<List<Emote>>> tasks = new(EmoteFetchers.Count);
-                    foreach (var fetcher in EmoteFetchers)
-                    {
-                        tasks.Add(fetcher.FetchGlobalEmotes());
-                    }
-
-                    await Task.WhenAll(tasks);
-
-                    foreach (var task in tasks)
-                    {
-                        globalEmotesCache.AddRange(task.Result);
-                    }
-                    globalEmotesDownloadSemaphore.Release();
-
-                    return globalEmotesCache;
+                    tasks.Add(fetcher.FetchGlobalEmotes());
                 }
-                catch
+
+                while (tasks.Count > 0)
                 {
-                    globalEmotesDownloadSemaphore.Release();
-                    throw;
+                    Task<List<Emote>> completed = await Task.WhenAny(tasks);
+                    tasks.Remove(completed);
+                    try
+                    {
+                        var result = completed.Result;
+                        if (completed.IsCompletedSuccessfully && result.Count > 0)
+                        {
+                            globalEmotesCache.AddRange(result);
+                        }
+                    }
+                    #region Exceptions
+                    catch (AggregateException ex)
+                    {
+                        foreach (Exception exInner in ex.InnerExceptions)
+                        {
+                            if (exInner.Data != null && exInner.Data.Count > 0)
+                            {
+                                StringBuilder builder = new();
+                                if (exInner.Message.EndsWith('\n'))
+                                {
+                                    builder.Append(exInner.Message);
+                                }
+                                else
+                                {
+                                    builder.AppendLine(exInner.Message);
+                                }
+                                builder.AppendLine("Exception data:");
+                                foreach (var d in exInner.Data)
+                                {
+                                    if (d is DictionaryEntry entry)
+                                    {
+                                        builder.Append('\t').Append(entry.Key).Append(':').Append(' ');
+                                        string value = entry.Value.ToString();
+                                        if (value.EndsWith('\n'))
+                                        {
+                                            builder.Append(value);
+                                        }
+                                        else
+                                        {
+                                            builder.AppendLine(value);
+                                        }
+                                    }
+                                }
+                                builder.Append(exInner.StackTrace);
+                                Trace.TraceError(builder.ToString());
+                            }
+                            else
+                            {
+                                Trace.TraceError(ex.ToString());
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.Data != null && ex.Data.Count > 0)
+                        {
+                            StringBuilder builder = new();
+                            builder.Append(ex.ToString());
+                            builder.AppendLine("Exception data:");
+                            foreach (var d in ex.Data)
+                            {
+                                builder.Append('t').AppendLine(d.ToString());
+                            }
+                        }
+                        else
+                        {
+                            Trace.TraceError(ex.ToString());
+                        }
+                    } 
+                    #endregion
                 }
+                Trace.TraceInformation($"Downloaded {globalEmotesCache.Count} emotes.");
+                globalEmotesDownloadSemaphore.Release();
+                return globalEmotesCache;
             }
             else
             {

@@ -11,5 +11,6 @@ namespace MultitoolWinUI.Models
         public FrameworkElement Content { get; set; }
         public Brush Background { get; set; }
         public Image UserBadge { get; set; }
+        public HorizontalAlignment HorizontalAlignment { get; set; }
     }
 }

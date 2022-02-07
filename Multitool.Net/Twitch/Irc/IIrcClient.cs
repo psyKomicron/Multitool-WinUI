@@ -37,7 +37,7 @@ namespace Multitool.Net.Twitch.Irc
         /// </summary>
         event TypedEventHandler<IIrcClient, RoomStateEventArgs> RoomChanged;
         event TypedEventHandler<IIrcClient, UserTimeoutEventArgs> UserTimedOut;
-         event TypedEventHandler<IIrcClient, UserNoticeEventArgs> UserNotice;
+        event TypedEventHandler<IIrcClient, UserNoticeEventArgs> UserNotice;
 
         /// <summary>
         /// Disconnects the client from the server.
@@ -66,5 +66,6 @@ namespace Multitool.Net.Twitch.Irc
         /// <param name="message">Message to send</param>
         /// <returns>The task object representing the asynchronous operation</returns>
         Task SendMessage(string message);
+        void Subscribe(IIrcSubscriber subscriber);
     }
 }

@@ -25,16 +25,18 @@ namespace Multitool.Net.Twitch.Irc
         #endregion
 
         private readonly Dictionary<CommandType, Regex> commands = new();
+        private readonly TwitchConnectionToken _connectionToken;
         private readonly MessageFactory factory = new() { UseLocalTimestamp = false };
         private readonly Thread receiveThread;
         private readonly CancellationTokenSource rootCancelToken = new();
-        private readonly ClientWebSocket socket = new();
         private readonly bool silentExit;
         private readonly SemaphoreSlim webSocketSendSemaphore = new(1);
+        private readonly SemaphoreSlim webSocketReceiveSemaphore = new(1);
 
         private string channel;
         private bool disposed;
         private bool hasJoined;
+        private ClientWebSocket socket;
 
         // thread safe attributes -- using 64 bits adresses because programm is compiled for x64
         private long disconnected = 1;
@@ -50,13 +52,16 @@ namespace Multitool.Net.Twitch.Irc
                 throw new ArgumentNullException(nameof(login));
             }
 
-            ConnectionToken = login;
+            _connectionToken = login;
             this.silentExit = silentExit;
+#if true
             receiveThread = new(ReceiveData)
             {
-                IsBackground = false
+                IsBackground = true
             };
-            ConnectionToken = login;
+#else
+            receiveThread = new Thread(() => { }); 
+#endif
 
             commands.Add(CommandType.JOIN, IrcRegexes.JoinRegex);
             commands.Add(CommandType.NAMES, IrcRegexes.NamesRegex);
@@ -86,10 +91,10 @@ namespace Multitool.Net.Twitch.Irc
         public bool AutoLogIn { get; init; }
 
         /// <inheritdoc/>
-        public WebSocketState ClientState => socket.State;
+        public WebSocketState ClientState => socket == null ? WebSocketState.None : socket.State;
 
         /// <inheritdoc/>
-        public ConnectionToken ConnectionToken { get; set; }
+        public ConnectionToken ConnectionToken => _connectionToken;
 
         /// <inheritdoc/>
         public Encoding Encoding { get; set; }
@@ -104,97 +109,20 @@ namespace Multitool.Net.Twitch.Irc
         public CancellationTokenSource RootCancellationToken => rootCancelToken;
         #endregion
 
-        #region public methods
-        /// <inheritdoc/>
-        public async Task SendMessage(string message)
-        {
-            AssertConnectionValid();
-            await SendStringAsync($"PRIVMSG #{channel} :{message}");
-        }
-
-        /// <inheritdoc/>
-        public async Task Join(string channel)
-        {
-            if (!ConnectionToken.Validated)
-            {
-                throw new ArgumentException("Connection token has not been validated");
-            }
-            AssertChannelNameValid(channel);
-
-            if (Interlocked.Read(ref disconnected) == 1)
-            {
-                await Connect();
-            }
-            else
-            {
-                AssertConnectionValid();
-            }
-
-            if (Interlocked.Read(ref loggedIn) == 0)
-            {
-                Regex nak = new(@"NAK");
-                await SendStringAsync(@"CAP REQ :twitch.tv/membership");
-                string rep = await ReceiveStringAsync();
-                if (nak.IsMatch(rep))
-                {
-                    await Disconnect();
-                    throw new InvalidOperationException("Failed to request membership capability from tmi.twitch.tv");
-                }
-
-                await SendStringAsync(@"CAP REQ :twitch.tv/commands");
-                rep = await ReceiveStringAsync();
-                if (nak.IsMatch(rep))
-                {
-                    await Disconnect();
-                    throw new InvalidOperationException("Failed to request commands capability from tmi.twitch.tv");
-                }
-
-                await SendStringAsync(@"CAP REQ :twitch.tv/tags");
-                rep = await ReceiveStringAsync();
-                if (nak.IsMatch(rep))
-                {
-                    await Disconnect();
-                    throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
-                }
-
-                await LogIn();
-            }
-
-            await SendStringAsync($"JOIN #{channel}");
-            string response = await ReceiveStringAsync();
-            if (!IrcRegexes.JoinRegex.IsMatch(response))
-            {
-                throw new InvalidOperationException($"Failed to join {channel}");
-            }
-            else
-            {
-                Debug.WriteLine(response);
-            }
-
-            hasJoined = true;
-            receiveThread.Start();
-            this.channel = channel;
-        }
-
-        /// <inheritdoc/>
-        public async Task Part(string channel)
-        {
-            AssertConnectionValid();
-            AssertChannelNameValid(channel);
-            await SendStringAsync($"PART #{channel}");
-            hasJoined = false;
-        }
-
+        #region IIrcClient
         /// <inheritdoc/>
         public async Task Disconnect()
         {
             if (Interlocked.Read(ref disconnected) == 0)
             {
                 Interlocked.Exchange(ref disconnected, 1);
-
                 RootCancellationToken.Cancel();
-                await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
-                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
+                await webSocketReceiveSemaphore.WaitAsync();
+                if (socket != null)
+                {
+                    await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None);
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "User initiated", CancellationToken.None); 
+                }
             }
             else
             {
@@ -207,8 +135,6 @@ namespace Multitool.Net.Twitch.Irc
         {
             if (!disposed)
             {
-                //rootCancelToken.Cancel();
-
                 if (Interlocked.Read(ref disconnected) == 0)
                 {
                     try
@@ -219,25 +145,143 @@ namespace Multitool.Net.Twitch.Irc
                     {
                         Trace.TraceError(ex.ToString());
                     }
+                    catch (Exception ex)
+                    {
+                        Trace.TraceError(ex.ToString());
+
+                    }
                 }
 
                 try
                 {
-                    socket.Dispose();
+                    if (socket != null)
+                    {
+                        socket.Dispose();
+                    }
                 }
                 catch (Exception ex)
                 {
                     Trace.TraceError(ex.ToString());
                 }
 
+                webSocketReceiveSemaphore.Dispose();
+                webSocketSendSemaphore.Dispose();
+
                 disposed = true;
                 GC.SuppressFinalize(this);
             }
         }
 
+        /// <inheritdoc/>
+        public async Task Join(string channel)
+        {
+            if (Encoding == null)
+            {
+                throw new NullReferenceException("Encoding cannot be null to decode data from the socket connection");
+            }
+            if (!ConnectionToken.Validated)
+            {
+                throw new ArgumentException("Connection token has not been validated");
+            }
+            AssertChannelNameValid(channel);
+
+            if (string.IsNullOrWhiteSpace(NickName))
+            {
+                NickName = _connectionToken.Login;
+            }
+            try
+            {
+                if (Interlocked.Read(ref disconnected) == 1)
+                {
+                    await Connect();
+                }
+                else
+                {
+                    AssertConnectionValid();
+                }
+
+                if (Interlocked.Read(ref loggedIn) == 0)
+                {
+                    Regex nak = new(@"NAK");
+                    await SendStringAsync(@"CAP REQ :twitch.tv/membership");
+                    string rep = await ReceiveStringAsync();
+                    if (nak.IsMatch(rep))
+                    {
+                        await Disconnect();
+                        throw new InvalidOperationException("Failed to request membership capability from tmi.twitch.tv");
+                    }
+
+                    await SendStringAsync(@"CAP REQ :twitch.tv/commands");
+                    rep = await ReceiveStringAsync();
+                    if (nak.IsMatch(rep))
+                    {
+                        await Disconnect();
+                        throw new InvalidOperationException("Failed to request commands capability from tmi.twitch.tv");
+                    }
+
+                    await SendStringAsync(@"CAP REQ :twitch.tv/tags");
+                    rep = await ReceiveStringAsync();
+                    if (nak.IsMatch(rep))
+                    {
+                        await Disconnect();
+                        throw new InvalidOperationException("Failed to request tags capability from tmi.twitch.tv");
+                    }
+
+                    await LogIn();
+                }
+
+                await SendStringAsync($"JOIN #{channel}");
+                string response = await ReceiveStringAsync();
+                if (!IrcRegexes.JoinRegex.IsMatch(response))
+                {
+                    throw new InvalidOperationException($"Failed to join {channel}");
+                }
+                else
+                {
+                    Debug.WriteLine(response);
+                }
+
+                hasJoined = true;
+                receiveThread.Start();
+                this.channel = channel;
+            }
+            catch (WebSocketException)
+            {
+                Trace.TraceError($"{nameof(TwitchIrcClient)} failed to join {channel}. Disposing websocket.");
+                socket.Dispose();
+                socket = null;
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task Part(string channel)
+        {
+            AssertConnectionValid();
+            AssertChannelNameValid(channel);
+            await SendStringAsync($"PART #{channel}");
+            hasJoined = false;
+        }
+
+        /// <inheritdoc/>
+        public async Task SendMessage(string message)
+        {
+            AssertConnectionValid();
+            await SendStringAsync($"PRIVMSG #{channel} :{message}");
+        }
+
         public CancellationTokenSource GetCancellationToken()
         {
             return CancellationTokenSource.CreateLinkedTokenSource(rootCancelToken.Token);
+        }
+
+        public void Subscribe(IIrcSubscriber subscriber)
+        {
+            Disconnected += subscriber.OnDisconnected;
+            MessageReceived += subscriber.OnMessageReceived;
+            RoomChanged += subscriber.OnRoomChanged;
+            UserTimedOut += subscriber.OnUserTimedOut;
+            UserNotice += subscriber.OnUserNotice;
         }
         #endregion
 
@@ -247,7 +291,11 @@ namespace Multitool.Net.Twitch.Irc
         {
             if (Interlocked.Read(ref disconnected) == 1)
             {
-                await socket.ConnectAsync(new(wssUri), RootCancellationToken.Token);
+                if (socket == null)
+                {
+                    socket = new();
+                }
+                await socket.ConnectAsync(new(wssUri), RootCancellationToken.Token); 
                 Interlocked.Exchange(ref disconnected, 0);
                 AssertConnectionValid();
             }
@@ -466,7 +514,10 @@ namespace Multitool.Net.Twitch.Irc
             {
                 try
                 {
-                    await socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token);
+                    if (socket != null)
+                    {
+                        await socket.SendAsync(GetBytes(message), WebSocketMessageType.Text, end, RootCancellationToken.Token); 
+                    }
                 }
                 catch (WebSocketException)
                 {
@@ -489,27 +540,40 @@ namespace Multitool.Net.Twitch.Irc
             ArraySegment<byte> buffer = new(new byte[bufferSize]);
             try
             {
-#if DEBUG
-                WebSocketReceiveResult res = await socket.ReceiveAsync(buffer, RootCancellationToken.Token);
-#else
-                WebSocketReceiveResult res = await socket.ReceiveAsync(buffer, CancellationToken.None); 
-#endif
-                if (res.MessageType == WebSocketMessageType.Text)
+                if (socket != null)
                 {
-                    int max = 0;
-                    for (; max < buffer.Count; max++)
+                    CancellationTokenSource token = new(5_000);
+                    try
                     {
-                        if (buffer[max] == 0x0)
+                        await webSocketReceiveSemaphore.WaitAsync();
+                        WebSocketReceiveResult res = await socket.ReceiveAsync(buffer, token.Token);
+                        token.Cancel();
+                        if (res.MessageType == WebSocketMessageType.Text)
                         {
-                            break;
+                            int max = 0;
+                            for (; max < buffer.Count; max++)
+                            {
+                                if (buffer[max] == 0x0)
+                                {
+                                    break;
+                                }
+                            }
+                            buffer = buffer.Slice(0, max);
+                            return Encoding.GetString(buffer);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Message type wasn't text, decoding not possible.");
                         }
                     }
-                    buffer = buffer.Slice(0, max);
-                    return Encoding.GetString(buffer);
+                    finally
+                    {
+                        webSocketReceiveSemaphore.Release();
+                    }
                 }
                 else
                 {
-                    throw new InvalidOperationException("Message type wasn't text, decoding not possible.");
+                    return string.Empty;
                 }
             }
             catch (WebSocketException)
@@ -524,13 +588,23 @@ namespace Multitool.Net.Twitch.Irc
         {
             ArraySegment<byte> data = new(new byte[bufferSize]);
             List<ReadOnlyMemory<char>> commandMessages = new(5);
+            int errorCount = 0;
             while (Interlocked.Read(ref disconnected) == 0)
             {
                 try
                 {
                     AssertConnectionValid();
                     // for some reason we cannot cancel outbounds packets
-                    await socket.ReceiveAsync(data, CancellationToken.None);
+                    try
+                    {
+                        await webSocketReceiveSemaphore.WaitAsync();
+                        await socket.ReceiveAsync(data, RootCancellationToken.Token);
+                    }
+                    finally
+                    {
+                        webSocketReceiveSemaphore.Release();
+                    }
+
                     if (data.Count != 0)
                     {
                         int upperBound = 0;
@@ -601,7 +675,7 @@ namespace Multitool.Net.Twitch.Irc
                         commandMessages.Clear();
                     }
                 }
-                catch (WebSocketException ex) // thread will exit (and break the application ? maybe not in the last versions) when a websocket exception occurs.
+                catch (WebSocketException ex)
                 {
                     Interlocked.Exchange(ref disconnected, 1);
                     if (silentExit)
@@ -617,7 +691,16 @@ namespace Multitool.Net.Twitch.Irc
                 }
                 catch (Exception ex)
                 {
-                    Trace.TraceError($"Caught exception in receive thread : \n{ex}");
+                    errorCount++;
+                    if (errorCount > 10)
+                    {
+                        Interlocked.Exchange(ref disconnected, 1);
+                        Trace.TraceError($"Caught exception (count: {errorCount}) in receive thread. Exiting thread.\n{ex}");
+                    }
+                    else
+                    {
+                        Trace.TraceError($"Caught exception (count: {errorCount}) in receive thread : \n{ex}");
+                    }
                 }
             }
             Disconnected?.Invoke(this, EventArgs.Empty);
@@ -644,16 +727,17 @@ namespace Multitool.Net.Twitch.Irc
 
             if (ClientState != WebSocketState.Open)
             {
+#pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
                 throw ClientState switch
                 {
-                    WebSocketState.None => new InvalidOperationException("Client has never connected"),
-                    WebSocketState.Connecting => new InvalidOperationException("Client is connecting"),
-                    WebSocketState.CloseSent => new InvalidOperationException("Client is closing it's connection"),
-                    WebSocketState.CloseReceived => new InvalidOperationException("Client has received close request from the connection endpoint"),
-                    WebSocketState.Closed => new InvalidOperationException("Client connection is closed"),
-                    WebSocketState.Aborted => new InvalidOperationException($"{nameof(ClientState)} == WebSocketState.Aborted"),
-                    _ => new ArgumentException($"Unkown WebSocketState state, argument name : {nameof(ClientState)}"),
+                    WebSocketState.None => new WebSocketException(WebSocketError.InvalidState, "Client has never connected"),
+                    WebSocketState.Connecting => new WebSocketException(WebSocketError.InvalidState, "Client is connecting"),
+                    WebSocketState.CloseSent => new WebSocketException(WebSocketError.InvalidState, "Client is closing it's connection"),
+                    WebSocketState.CloseReceived => new WebSocketException(WebSocketError.InvalidState, "Client has received close request from the connection endpoint"),
+                    WebSocketState.Closed => new WebSocketException(WebSocketError.InvalidState, "Client connection is closed"),
+                    WebSocketState.Aborted => new WebSocketException(WebSocketError.InvalidState, $"{nameof(ClientState)} == WebSocketState.Aborted")
                 };
+#pragma warning restore CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
             }
         }
 

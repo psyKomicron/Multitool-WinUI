@@ -33,7 +33,6 @@
 
         <ListView
             x:Name="Chat_ListView"
-            ItemsSource="{x:Bind Chat}"
             ScrollViewer.IsScrollInertiaEnabled="False"
             SelectionMode="None"
             Padding="0"
@@ -53,7 +52,7 @@
                     <ContentPresenter
                         Content="{x:Bind Content, Mode=OneTime}"
                         Background="{x:Bind Background}"
-                        HorizontalAlignment="Stretch"
+                        HorizontalAlignment="{x:Bind HorizontalAlignment}"
                         Padding="4,5"
                         CornerRadius="5"/>
                 </DataTemplate>

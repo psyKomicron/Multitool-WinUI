@@ -43,7 +43,15 @@ namespace Multitool.Net.Imaging
             CheckToken();
 
             using HttpResponseMessage emotesResponse = await Client.GetAsync(new(Resources.TwitchApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
-            emotesResponse.EnsureSuccessStatusCode();
+            try
+            {
+                emotesResponse.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                ex.Data.Add("Server reponse", await emotesResponse.Content.ReadAsStringAsync());
+                throw;
+            }
 
 #if true
             string s = await emotesResponse.Content.ReadAsStringAsync();

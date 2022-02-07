@@ -1,8 +1,10 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.DAL.Settings;
+using Multitool.DAL.Settings.Converters;
 using Multitool.Net.Imaging;
 using Multitool.Net.Twitch.Irc;
 using Multitool.Net.Twitch.Security;
@@ -16,6 +18,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,6 +31,7 @@ namespace MultitoolWinUI.Pages
     public sealed partial class TwitchPage : Page, INotifyPropertyChanged
     {
         private bool saved;
+        private bool webviewLoaded;
         private TwitchConnectionToken token;
 
         public TwitchPage()
@@ -71,17 +75,6 @@ namespace MultitoolWinUI.Pages
         {
             if (!saved)
             {
-                /*if (Channels == null)
-                {
-                    Channels = new();
-                }
-                foreach (var tab in Tabs)
-                {
-                    if (tab.Content is ChatControl control && !Channels.Contains(control.Channel))
-                    {
-                        Channels.Add(control.Channel);
-                    }
-                }*/
                 App.Settings.Save(this);
                 saved = true;
             }
@@ -103,10 +96,43 @@ namespace MultitoolWinUI.Pages
 #endif
             }
         }
+
+        /*private async Task CreateWebView()
+        {
+            if (PageWebView == null)
+            {
+                PageWebView = new()
+                {
+                    DefaultBackgroundColor = Colors.Black
+                };
+                await PageWebView.EnsureCoreWebView2Async();
+                PageWebView.CoreWebView2.DocumentTitleChanged += CoreWebView2_DocumentTitleChanged;
+                Grid.SetColumn(PageWebView, 0);
+                Grid.SetRow(PageWebView, 1);
+                WebViewGrid.Children.Add(PageWebView);
+            }
+        }*/
+
+        /*private void DestroyWebView()
+        {
+            return;
+            if (PageWebView != null)
+            {
+                PageWebView.Source = null;
+                PageWebView.CoreWebView2.Stop();
+                PageWebView.Close();
+                WebViewGrid.Children.Remove(PageWebView);
+                PageWebView = null;
+            }
+        }*/
+
+        private void CoreWebView2_DocumentTitleChanged(Microsoft.Web.WebView2.Core.CoreWebView2 sender, object args)
+        {
+            Debug.WriteLine(args);
+        }
         #endregion
 
         #region event handlers
-
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             try
@@ -133,7 +159,8 @@ namespace MultitoolWinUI.Pages
                         proxy.EmoteFetchers.Add(new FfzEmoteFetcher());
                         proxy.EmoteFetchers.Add(new SevenTVEmoteFetcher());
 
-                        var emotes = await proxy.FetchGlobalEmotes();
+                        _ = proxy.FetchGlobalEmotes();
+                        //_ = proxy.FetchChannelEmotes("xqcow");
                     }
                 }
                 else
@@ -143,47 +170,18 @@ namespace MultitoolWinUI.Pages
             }
             catch (Exception ex)
             {
-#if DEBUG
-                Trace.TraceError(ex.ToString());
-#else
-                App.TraceError(ex.ToString());
-#endif
+                App.TraceError(ex);
             }
         }
 
-        private void OnPageUnloaded(object sender, RoutedEventArgs e) => SavePage();
+        private void OnPageUnloaded(object sender, RoutedEventArgs e) { }
 
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        private void OnMainWindowClose(object sender, WindowEventArgs args)
         {
-            //PageWebView.Close();
-            base.OnNavigatedFrom(e);
-            /*PageWebView.ExecuteScriptAsync("window.close()").AsTask()
-                .ContinueWith((Task<string> task) =>
-                {
-                    if (task.IsFaulted)
-                    {
-                        Trace.TraceError(task.Exception.ToString());
-                    }
-                    else
-                    {
-                        Trace.TraceInformation("Successfully closed window");
-                    }
-                });*/
+            SavePage();
         }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            //base.OnNavigatedTo(e);
-            /*if (PageWebView.CoreWebView2 != null)
-            {
-                PageWebView.CoreWebView2.Resume();
-            }*/
-        }
-
-        private void OnMainWindowClose(object sender, WindowEventArgs args) => SavePage();
 
         #region ui events
-
         private void Chats_AddTabButtonClick(TabView sender, object args)
         {
             if (token == null || !token.Validated)
@@ -195,27 +193,26 @@ namespace MultitoolWinUI.Pages
                 try
                 {
                     Encoding encoding = Encoding.Default;
-                    //encoding.DecoderFallback = new DecoderReplacementFallback("");
                     IIrcClient client = new TwitchIrcClient(token, true)
                     {
                         NickName = "psykomicron",
                         Encoding = encoding
                     };
 
-                    TabViewItem tab = new()
+                    /*TabViewItem tab = new()
                     {
                         MaxWidth = 200
-                    };
+                    };*/
                     ChatControl chat = new(client)
                     {
-                        Tab = tab,
+                        //Tab = tab,
                         MentionRegex = ChatMentionRegex,
                         MaxMessages = ChatMaxNumberOfMessages
                     };
-                    tab.Content = chat;
 
-                    Tabs.Add(tab);
+                    //tab.Content = chat;
 
+                    //Tabs.Add(tab);
                     //sender.SelectedIndex = Tabs.Count - 1;
                 }
                 catch (ArgumentNullException)
@@ -236,6 +233,38 @@ namespace MultitoolWinUI.Pages
         private void UriTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             NavigateTo("https://www." + args.QueryText);
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (token == null || !token.Validated)
+            {
+                App.TraceWarning("Cannot connect to any chat without login");
+            }
+            else
+            {
+                try
+                {
+                    IIrcClient client = new TwitchIrcClient(token, true)
+                    {
+                        NickName = "psykomicron",
+                        Encoding = Encoding.UTF8
+                    };
+                    ChatControl chat = new(client)
+                    {
+                        //Tab = tab,
+                        MentionRegex = new(client.NickName),
+                        MaxMessages = ChatMaxNumberOfMessages
+                    };
+                    Grid.SetColumn(chat, 1);
+                    Grid.SetRow(chat, 1);
+                    MainGrid.Children.Add(chat);
+                }
+                catch (ArgumentNullException)
+                {
+                    App.TraceWarning("Login is empty");
+                }
+            }
         }
         #endregion
 

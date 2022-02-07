@@ -68,7 +68,6 @@ namespace MultitoolWinUI.Pages.Irc
         #region properties
         public string Channel { get; set; }
         public List<Emote> ChannelEmotes { get; } = new();
-        public ObservableCollection<MessageModel> Chat { get; } = new();
         public List<Emote> Emotes { get; } = new();
         public TabViewItem Tab { get; set; }
         public FontWeight UserMessagesFontWeight { get; set; } = FontWeights.SemiLight;
@@ -269,23 +268,26 @@ namespace MultitoolWinUI.Pages.Irc
         {
             if (DispatcherQueue == null) return;
 
-            DispatcherQueue?.TryEnqueue(() =>
+            Chat_ListView.DispatcherQueue.TryEnqueue(() =>
             {
                 MessageModel model = new()
                 {
                     Content = CreateMessage(args),
+                    HorizontalAlignment = args.Author.Name == client.NickName ? HorizontalAlignment.Right : HorizontalAlignment.Left
                 };
                 if (MentionRegex != null)
                 {
                     model.Background = MentionRegex.IsMatch(args.ActualMessage) ? mentionBrush : null;
                 }
-                Chat.Add(model);
-                NumberOfMessages_TextBlock.Text = Chat.Count.ToString();
+
+                Chat_ListView.Items.Add(model);
+
+                NumberOfMessages_TextBlock.Text = Chat_ListView.Items.Count.ToString();
             });
 
-            if (Chat.Count > MaxMessages)
+            Chat_ListView.DispatcherQueue.TryEnqueue(() =>
             {
-                DispatcherQueue?.TryEnqueue(() =>
+                if (Chat_ListView.Items.Count > MaxMessages)
                 {
                     for (int i = 0; i < 50; i++)
                     {
@@ -295,12 +297,16 @@ namespace MultitoolWinUI.Pages.Irc
                         }
                         try
                         {
-                            Chat.RemoveAt(i);
+                            Chat_ListView.Items.RemoveAt(i);
                         }
-                        catch { return; }
+                        catch
+                        {
+                            return;
+                        }
                     }
-                });
-            }
+                }
+            });
+            
         }
 
         private void Client_RoomChanged(IIrcClient sender, RoomStateEventArgs args)
@@ -383,7 +389,7 @@ namespace MultitoolWinUI.Pages.Irc
                 }
 
                 presenter.Blocks.Add(paragraph);
-                Chat.Add(new()
+                Chat_ListView.Items.Add(new MessageModel()
                 {
                     Content = presenter
                 });
@@ -420,7 +426,7 @@ namespace MultitoolWinUI.Pages.Irc
                     presenter.Blocks.Add(userMessageParagraph);
                 }
 
-                Chat.Add(new()
+                Chat_ListView.Items.Add(new MessageModel()
                 {
                     Content = presenter,
                     Background = userSubBackground
@@ -432,47 +438,50 @@ namespace MultitoolWinUI.Pages.Irc
         #region ui events
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
-            if (loaded) return;
-            loaded = true;
-
-            delayedActionQueue.DispatcherQueue = DispatcherQueue;
-
-            TextBox header = new()
+            if (!loaded)
             {
-                PlaceholderText = Channel ?? "Select channel...",
-                BorderThickness = new(0),
-                Background = new SolidColorBrush(Colors.Transparent)
-            };
-            Tab.Header = header;
-            Tab.CloseRequested += Tab_CloseRequested;
-            header.KeyDown += Header_KeyDown;
+                loaded = true;
+                delayedActionQueue.DispatcherQueue = DispatcherQueue;
 
-            if (!string.IsNullOrEmpty(Channel))
-            {
-                await Join();
-            }
+                TextBox header = new()
+                {
+                    PlaceholderText = Channel ?? "Select channel...",
+                    BorderThickness = new(0),
+                    Background = new SolidColorBrush(Colors.Transparent)
+                };
+                if (Tab != null)
+                {
+                    Tab.Header = header;
+                    Tab.CloseRequested += Tab_CloseRequested;
+                }
+                else
+                {
+                    Grid.SetColumnSpan(header, 2);
+                    Grid.SetRow(header, 0);
+                    ContentGrid.Children.Add(header);
+                }
+                header.KeyDown += Header_KeyDown;
 
-            try
-            {
-                Emotes.AddRange(await EmoteProxy.Get().FetchGlobalEmotes());
-            }
-            catch (Exception ex)
-            {
-                App.TraceError(ex);
+                if (!string.IsNullOrEmpty(Channel))
+                {
+                    await Join();
+                }
+
+                try
+                {
+                    var l = await EmoteProxy.Get().FetchGlobalEmotes();
+                    Emotes.AddRange(l);
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex);
+                }
             }
         }
 
         private async void Tab_CloseRequested(TabViewItem sender, TabViewTabCloseRequestedEventArgs args)
         {
             loaded = false;
-            /*try
-            {
-                await client.Disconnect();
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.ToString());
-            }*/
             try
             {
                 await client.DisposeAsync();
@@ -481,7 +490,7 @@ namespace MultitoolWinUI.Pages.Irc
             {
                 Trace.TraceError(ex.ToString());
             }
-            Chat.Clear();
+            Chat_ListView.Items.Clear();
         }
 
         private async void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -510,13 +519,19 @@ namespace MultitoolWinUI.Pages.Irc
                     _ = Join();
                 }
 
-                Tab.Header = new TextBlock()
+                if (Tab != null)
                 {
-                    Text = Channel,
-                    FontWeight = FontWeights.Normal,
-                    CharacterSpacing = 45,
-                };
-                Tab.Width = (Tab.Header as TextBlock).Width + 10;
+                    Tab.Header = new TextBlock()
+                    {
+                        Text = Channel,
+                        FontWeight = FontWeights.Normal,
+                        CharacterSpacing = 45,
+                    };
+                }
+                else
+                {
+                    ContentGrid.Children.Remove(box);
+                }
             }
         }
 

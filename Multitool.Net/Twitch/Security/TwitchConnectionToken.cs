@@ -9,15 +9,13 @@ namespace Multitool.Net.Twitch.Security
 {
     public class TwitchConnectionToken : ConnectionToken
     {
-        private readonly string token;
-
         /// <summary>
         /// Default constructor.
         /// </summary>
         /// <param name="token">The <see cref="string"/> representing the connection's token (OAuth2, .</param>
         public TwitchConnectionToken(string token)
         {
-            this.token = token;
+            Token = token;
         }
 
         /// <summary>
@@ -32,7 +30,7 @@ namespace Multitool.Net.Twitch.Security
         /// <inheritdoc/>
         public override string ToString()
         {
-            return $"oauth:{token}";
+            return $"oauth:{Token}";
         }
 
         /// <summary>
@@ -46,13 +44,13 @@ namespace Multitool.Net.Twitch.Security
         public override async Task<bool> ValidateToken()
         {
             Regex validationRegex = new(@"^([0-9A-Z-._~+/]+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (!validationRegex.IsMatch(token))
+            if (!validationRegex.IsMatch(Token))
             {
-                throw new FormatException($"Token does not follow the expected format (actual token: {token}, expected format: {validationRegex})");
+                throw new FormatException($"Token does not follow the expected format (actual token: {Token}, expected format: {validationRegex})");
             }
 
             using HttpClient client = new();
-            client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+            client.DefaultRequestHeaders.Authorization = new("Bearer", Token);
 
             HttpResponseMessage res = await client.GetAsync(new(Properties.Resources.TwitchOAuthValidationUrl));
             JsonDocument json = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
@@ -66,7 +64,7 @@ namespace Multitool.Net.Twitch.Security
                 else
                 {
                     InvalidOperationException ex = new("Failed to validate token. Server responded with 401/Unauthorized.");
-                    ex.Data.Add("Token", token);
+                    ex.Data.Add("Token", Token);
                     ex.Data.Add("Full response", json);
                     throw ex;
                 }
