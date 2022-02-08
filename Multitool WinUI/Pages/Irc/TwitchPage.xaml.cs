@@ -67,7 +67,6 @@ namespace MultitoolWinUI.Pages
         public string TimestampFormat { get; set; }
 
         public List<string> Channels { get; set; }
-        public ObservableCollection<TabViewItem> Tabs { get; } = new();
         #endregion
 
         #region private
@@ -199,21 +198,21 @@ namespace MultitoolWinUI.Pages
                         Encoding = encoding
                     };
 
-                    /*TabViewItem tab = new()
+                    TabViewItem tab = new()
                     {
                         MaxWidth = 200
-                    };*/
+                    };
                     ChatControl chat = new(client)
                     {
-                        //Tab = tab,
+                        Tab = tab,
                         MentionRegex = ChatMentionRegex,
                         MaxMessages = ChatMaxNumberOfMessages
                     };
 
-                    //tab.Content = chat;
+                    tab.Content = chat;
 
-                    //Tabs.Add(tab);
-                    //sender.SelectedIndex = Tabs.Count - 1;
+                    sender.TabItems.Add(tab);
+                    sender.SelectedIndex = 0;
                 }
                 catch (ArgumentNullException)
                 {
@@ -224,9 +223,9 @@ namespace MultitoolWinUI.Pages
 
         private void Chats_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
         {
-            if (Tabs.Contains(args.Tab))
+            if (sender.TabItems.Contains(args.Tab))
             {
-                Tabs.Remove(args.Tab);
+                sender.TabItems.Remove(args.Tab);
             }
         }
 
@@ -269,5 +268,10 @@ namespace MultitoolWinUI.Pages
         #endregion
 
         #endregion
+
+        private void UriTextBox_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+        {
+
+        }
     }
 }
