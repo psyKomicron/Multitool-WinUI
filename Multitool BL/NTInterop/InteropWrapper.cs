@@ -53,27 +53,6 @@ namespace Multitool.NTInterop
         /// </summary>
         /// <param name="windowHandle">HWND for the window</param>
         /// <param name="newPosition">the new position of the window</param>
-        public static void SetWindowsPosition(IntPtr windowHandle, Point newPosition)
-        {
-            HWND hwnd = Marshal.PtrToStructure<HWND>(windowHandle);
-
-            if (!PInvoke.GetWindowRect(hwnd, out RECT rect))
-            {
-                throw InteropHelper.GetLastError("'GetWindowRect' failed");
-            }
-
-            Size s = new()
-            {
-                Height = rect.bottom - rect.top,
-                Width = rect.right - rect.left
-            };
-
-            if (!PInvoke.SetWindowPos(hwnd, new(-1), newPosition.X, newPosition.Y, s.Width, s.Height, SET_WINDOW_POS_FLAGS.SWP_NOMOVE))
-            {
-                throw InteropHelper.GetLastError("'SetWindowPos' failed");
-            }
-        }
-
         public static void SetWindowSize(object window, Windows.Foundation.Size size, Windows.Graphics.PointInt32 position = default)
         {
             HWND hwnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(window);
@@ -85,9 +64,19 @@ namespace Multitool.NTInterop
             width = (int)(width * scalingFactor);
             height = (int)(height * scalingFactor);
 
-            if (!PInvoke.SetWindowPos(hwnd, default, position.X, position.Y, width, height, SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOZORDER))
+            SET_WINDOW_POS_FLAGS flags = SET_WINDOW_POS_FLAGS.SWP_NOZORDER;
+            if (position == default)
             {
-                throw InteropHelper.GetLastError("Failed to set window position");
+                flags |= SET_WINDOW_POS_FLAGS.SWP_NOMOVE;
+            }
+            else
+            {
+                flags |= SET_WINDOW_POS_FLAGS.SWP_ASYNCWINDOWPOS;
+            }
+
+            if (!PInvoke.SetWindowPos(hwnd, default, position.X, position.Y, width, height, flags))
+            {
+                throw InteropHelper.GetLastError("Failed to set window position/size.");
             }
         }
     }

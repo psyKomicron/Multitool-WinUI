@@ -9,6 +9,7 @@
     <Color x:Key="DevOrange">#CA5100</Color>
     <Color x:Key="WarmWhite">#CFCFCF</Color>
     <Color x:Key="NewDarkGray">#2D2D2E</Color>
+    <Color x:Key="AppTitleBarHoverColor">#8A8780</Color>
 
     <SolidColorBrush x:Key="LightBlackBrush" Color="{StaticResource LightBlackColor}"/>
     <SolidColorBrush x:Key="DarkBlackBrush" Color="{StaticResource DarkBlackColor}"/>

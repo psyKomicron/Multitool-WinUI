@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 
 using Multitool.DAL.Settings;
 using Multitool.DAL.Settings.Converters;
+using Multitool.Drawing;
 using Multitool.NTInterop;
 
 using MultitoolWinUI.Controls;
@@ -40,6 +41,7 @@ namespace MultitoolWinUI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private const string fileName = "peepoPoopoo.gif";
         private static AppWindow thisWindow;
         private bool closed;
 
@@ -51,7 +53,7 @@ namespace MultitoolWinUI
             try
             {
                 App.Settings.Load(this);
-                InteropWrapper.SetWindowSize(this, WindowSize, new(PositionY, PositionX));
+                InteropWrapper.SetWindowSize(this, WindowSize, new(PositionX, PositionY));
             }
             catch
             {
@@ -76,16 +78,83 @@ namespace MultitoolWinUI
 
         public int TitleBarHeight { get; private set; }
 
-        #region navigation events
-        private void NavigationView_Loaded(object sender, RoutedEventArgs e)
+        public bool NavigateTo(Type pageType, params object[] navigationParameters)
         {
             try
             {
-                _ = ContentFrame.Navigate(LastPage);
+                return ContentFrame.Navigate(pageType);
             }
             catch (Exception ex)
             {
                 App.TraceError(ex);
+                return false;
+            }
+        }
+
+        private void NavigateTo(Type pageType, bool save)
+        {
+            try
+            {
+                if (save)
+                {
+                    LastPage = pageType;
+                }
+                _ = ContentFrame.Navigate(pageType);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+            }
+        }
+
+        #region navigation events
+        private void NavigationView_Loaded(object sender, RoutedEventArgs e)
+        {
+            NavigateTo(LastPage, true);
+            string tag;
+            switch (LastPage.Name)
+            {
+                case nameof(MainPage):
+                    tag = "home";
+                    break;
+                case nameof(ComputerDevicesPage):
+                    tag = "devices";
+                    break;
+                case nameof(ExplorerPage):
+                    tag = "explorer";
+                    break;
+                case nameof(ExplorerHomePage):
+                    tag = "explorerhome";
+                    break;
+                case nameof(PowerPage):
+                    tag = "power";
+                    break;
+                case nameof(ControlPanelsPage):
+                    tag = "controlpanels";
+                    break;
+                case nameof(HashGeneratorPage):
+                    tag = "hashgenerator";
+                    break;
+                case nameof(TwitchPage):
+                    tag = "irc";
+                    break;
+                case nameof(SettingsPage):
+                    tag = "Settings";
+                    break;
+                case nameof(MusicPlayerPage):
+                    tag = "music";
+                    break;
+                default:
+                    tag = string.Empty;
+                    break;
+            }
+            var items = WindowNavigationView.MenuItems;
+            foreach (var item in items)
+            {
+                if (item is NavigationViewItem itemBase && itemBase.Tag.ToString() == tag)
+                {
+                    WindowNavigationView.SelectedItem = itemBase;
+                }
             }
         }
 
@@ -97,50 +166,40 @@ namespace MultitoolWinUI
                 switch (tag)
                 {
                     case "home":
-                        LastPage = typeof(MainPage);
-                        _ = ContentFrame.Navigate(typeof(MainPage));
+                        NavigateTo(typeof(MainPage), true);
                         break;
                     case "devices":
-                        LastPage = typeof(ComputerDevicesPage);
-                        _ = ContentFrame.Navigate(typeof(ComputerDevicesPage));
+                        NavigateTo(typeof(ComputerDevicesPage), true);
                         break;
                     case "explorer":
-                        LastPage = typeof(ExplorerPage);
-                        _ = ContentFrame.Navigate(typeof(ExplorerPage));
+                        NavigateTo(typeof(ExplorerPage), true);
                         break;
                     case "explorerhome":
-                        LastPage = typeof(ExplorerHomePage);
-                        _ = ContentFrame.Navigate(typeof(ExplorerHomePage));
+                        NavigateTo(typeof(ExplorerHomePage), true);
                         break;
                     case "power":
-                        LastPage = typeof(PowerPage);
-                        _ = ContentFrame.Navigate(typeof(PowerPage));
+                        NavigateTo(typeof(PowerPage), true);
                         break;
                     case "controlpanels":
-                        LastPage = typeof(ControlPanelsPage);
-                        _ = ContentFrame.Navigate(typeof(ControlPanelsPage));
+                        NavigateTo(typeof(ControlPanelsPage), true);
                         break;
                     case "hashgenerator":
-                        LastPage = typeof(HashGeneratorPage);
-                        _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
+                        NavigateTo(typeof(HashGeneratorPage), true);
                         break;
                     case "irc":
-                        LastPage = typeof(TwitchPage);
-                        _ = ContentFrame.Navigate(typeof(TwitchPage));
+                        NavigateTo(typeof(TwitchPage), true);
                         break;
                     case "test":
-                        LastPage = typeof(TestPage);
-                        _ = ContentFrame.Navigate(typeof(TestPage));
+                        NavigateTo(typeof(TestPage), false);
                         break;
                     case "Settings":
-                        _ = ContentFrame.Navigate(typeof(SettingsPage), LastPage);
+                        NavigateTo(typeof(SettingsPage), true);
                         break;
                     case "music":
-                        LastPage = typeof(MusicPlayerPage);
-                        _ = ContentFrame.Navigate(typeof(MusicPlayerPage));
+                        NavigateTo(typeof(MusicPlayerPage), true);
                         break;
                     default:
-                        App.TraceWarning("Trying to navigate to : " + tag);
+                        App.TraceWarning("Page not found : " + tag);
                         break;
                 }
             }
@@ -166,13 +225,12 @@ namespace MultitoolWinUI
             thisWindow.TitleBar.ButtonForegroundColor = Colors.White;
             thisWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
             thisWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Gray;
-            thisWindow.TitleBar.ButtonHoverBackgroundColor = Colors.Transparent;
+            //ColorConverter.ConvertFromString("#968677", 122)
+            thisWindow.TitleBar.ButtonHoverBackgroundColor = Tool.GetAppRessource<Color>("AppTitleBarHoverColor");
             thisWindow.TitleBar.ButtonHoverForegroundColor = Colors.White;
             thisWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
             thisWindow.TitleBar.ButtonPressedForegroundColor = Colors.White;
 
-            string fileName = "peepoPoopoo.gif";
-            //Directory.GetFiles("/Resources/Images");
             Uri imageSource = new(@$"ms-appx:///Resources/Images/{fileName}");
             WindowIcon.Source = new BitmapImage(imageSource);
         }

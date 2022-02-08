@@ -7,6 +7,9 @@
     Closed="Window_Closed"
     Activated="Window_Activated">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="32" MinHeight="32"/>
             <RowDefinition/>
@@ -32,11 +35,12 @@
                 Grid.Column="1"/>
         </Grid>
         <NavigationView
-            Loaded="NavigationView_Loaded"
+            x:Name="WindowNavigationView"
             IsPaneOpen="{Binding ElementName=Window, Path=IsPaneOpen, Mode=TwoWay}"
             IsBackEnabled="{Binding ElementName=ContentFrame, Path=CanGoBack}"
             Background="{StaticResource NavigationViewDefaultPaneBackground}"
             Grid.Row="1"
+            Loaded="NavigationView_Loaded"
             BackRequested="NavigationView_BackRequested"
             ItemInvoked="NavigationView_ItemInvoked">
             <NavigationView.MenuItems>
@@ -111,7 +115,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
-            <Frame x:Name="ContentFrame" x:FieldModifier="public"></Frame>
+            <Frame x:Name="ContentFrame"></Frame>
         </NavigationView>
 
         <Popup
