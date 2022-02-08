@@ -121,6 +121,7 @@ namespace MultitoolWinUI.Pages.Explorer
             try
             {
                 string realPath = fileSystemManager.GetRealPath(UriCleaner.RemoveChariotReturns(path));
+                #region history
                 bool contains = false;
                 foreach (var item in History)
                 {
@@ -141,11 +142,13 @@ namespace MultitoolWinUI.Pages.Explorer
                         FullPath = realPath,
                         ShortPath = shortPath
                     });
-                }
+                } 
+                #endregion
                 CurrentPath = realPath;
                 CurrentFiles.Clear();
                 Progress_TextBox.Text = string.Empty;
 
+                ListViewHeaderPanel.Visibility = Visibility.Visible;
                 Files_ProgressBar.IsIndeterminate = true;
                 CancelAction_Button.IsEnabled = true;
 
@@ -189,36 +192,29 @@ namespace MultitoolWinUI.Pages.Explorer
                 }
                 catch (OperationCanceledException)
                 {
-                    managerEventStopwatch.Reset();
-                    CancelAction_Button.IsEnabled = false;
-                    Files_ProgressBar.IsIndeterminate = false;
-
                     fsCancellationTokenSource.InvokeCancel();
                     fsCancellationTokenSource = null;
                     App.TraceWarning("Operation cancelled, loading path : " + path);
-                    Progress_TextBox.Text = "Operation cancelled";
                     DispatcherQueue.TryEnqueue(() => SortList());
                 }
                 catch (Exception ex) // we catch everything, and display it to the trace and UI
                 {
-                    managerEventStopwatch.Reset();
-                    CancelAction_Button.IsEnabled = false;
-                    Files_ProgressBar.IsIndeterminate = false;
-
                     App.TraceError(ex);
-                    Progress_TextBox.Text = ex.ToString();
                 }
             }
             catch (DirectoryNotFoundException ex)
             {
                 fsCancellationTokenSource = null;
-                managerEventStopwatch.Reset();
-                CancelAction_Button.IsEnabled = false;
-                Files_ProgressBar.IsIndeterminate = false;
-
                 App.TraceError(ex);
                 CurrentPath = string.Empty;
                 Progress_TextBox.Text = "Directory not found : '" + path + "'";
+            }
+            finally
+            {
+                managerEventStopwatch.Reset();
+                CancelAction_Button.IsEnabled = false;
+                Files_ProgressBar.IsIndeterminate = false;
+                ListViewHeaderPanel.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -316,11 +312,22 @@ namespace MultitoolWinUI.Pages.Explorer
             }
             else
             {
-                DirectoryInfo info = Directory.GetParent(CurrentPath);
-                if (info != null)
+                if (string.IsNullOrEmpty(CurrentPath))
                 {
-                    nextPathStack.Push(CurrentPath);
-                    DisplayFiles(info.FullName);
+                    PathInput.Text = string.Empty;
+                    PathInput.Focus(FocusState.Pointer);
+                }
+                else
+                {
+                    if (Directory.Exists(CurrentPath))
+                    {
+                        DirectoryInfo info = Directory.GetParent(CurrentPath);
+                        if (info != null)
+                        {
+                            nextPathStack.Push(CurrentPath);
+                            DisplayFiles(info.FullName);
+                        }
+                    }
                 }
             }
         }
