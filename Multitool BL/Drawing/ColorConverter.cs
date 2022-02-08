@@ -10,6 +10,38 @@ namespace Multitool.Drawing
 
         public byte DefaultAlpha { get; set; } = 0xFF;
 
+        public static Color ConvertFromString(string color, byte alpha)
+        {
+            if (color.Length < 6 || color.Length > 7)
+            {
+                throw new FormatException("Color does not have the right amount of characters. Actual string: " + color);
+            }
+
+            ReadOnlySpan<char> text = new(color.ToCharArray());
+            int index = 0;
+
+            if (text[0] == '#')
+            {
+                index = 1;
+            }
+
+            byte red, green, blue;
+            red = ConvertHexa(text.Slice(index, 2));
+            index += 2;
+            green = ConvertHexa(text.Slice(index, 2));
+            index += 2;
+            blue = ConvertHexa(text.Slice(index, 2));
+
+            Color c = new()
+            {
+                A = alpha,
+                R = red,
+                G = green,
+                B = blue
+            };
+            return c;
+        }
+
         public Color ConvertFromHexaString(string color)
         {
             if (color.Length < 6 || color.Length > 7)
