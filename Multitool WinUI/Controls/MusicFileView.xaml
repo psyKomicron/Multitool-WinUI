@@ -24,6 +24,7 @@
 
         <Image
             Source="{x:Bind Thumbnail, Mode=OneWay}"
+            Height="45"
             VerticalAlignment="Center"
             Grid.RowSpan="3"
             Grid.Column="0"/>

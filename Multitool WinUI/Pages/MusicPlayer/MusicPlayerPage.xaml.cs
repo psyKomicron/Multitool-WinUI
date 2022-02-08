@@ -14,6 +14,7 @@ using MultitoolWinUI.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -43,16 +44,54 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         };
         private DispatcherQueueTimer progressTimer;
         private readonly DelayedActionQueue delayedActionQueue = new();
+        private bool loaded;
         private bool playing;
-        private TimeSpan progress;
 
         public MusicPlayerPage()
         {
             InitializeComponent();
-            delayedActionQueue.QueueEmpty += DelayedActionQueue_QueueEmpty;
             App.MainWindow.Closed += MainWindow_Closed;
+
+            player.PlaybackSession.PlaybackStateChanged += PlaybackSession_PlaybackStateChanged;
+            player.PlaybackSession.BufferingEnded += PlaybackSession_BufferingEnded;
+            player.PlaybackSession.PositionChanged += PlaybackSession_PositionChanged; ;
+
+            delayedActionQueue.DispatcherQueue = DispatcherQueue;
+            delayedActionQueue.QueueEmpty += DelayedActionQueue_QueueEmpty;
+
+            progressTimer = DispatcherQueue.CreateTimer();
+            progressTimer.Tick += ProgressTimer_Tick;
+            progressTimer.Interval = TimeSpan.FromMilliseconds(500);
         }
 
+        private void PlaybackSession_PositionChanged(MediaPlaybackSession sender, object args)
+        {
+            //Debug.WriteLine($"Position changed {player.PlaybackSession.Position:T}");
+            if (player.PlaybackSession.Position == CurrentPlaying.AudioLength)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    for (int i = 0; i < MusicListView.Items.Count; i++)
+                    {
+                        object item = MusicListView.Items[i];
+                        if (item is MusicFileView view && view.Model == CurrentPlaying)
+                        {
+                            if (i + 1 < MusicListView.Items.Count)
+                            {
+                                _ = Play((MusicListView.Items[i + 1] as MusicFileView).Model);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        private void PlaybackSession_BufferingEnded(MediaPlaybackSession sender, object args)
+        {
+            Debug.WriteLine("Buffering ended");
+        }
+
+        #region Properties
         [Setting(null)]
         public string LastUsedPath { get; set; }
 
@@ -67,7 +106,8 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         public double Progress { get; set; } = 100;
 
-        public MusicFileModel CurrentPlaying { get; set; }
+        public MusicFileModel CurrentPlaying { get; set; } 
+        #endregion
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -76,20 +116,24 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             player.Dispose();
         }
 
-        #region navigation
+        #region Navigation
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
             #region settings
             App.Settings.Load(this);
-            player.Volume = Volume / 100d;
-            if (!string.IsNullOrEmpty(LastPlayed))
+            if (!loaded)
             {
-                _ = LoadLastPlayed(LastPlayed);
-            }
+                player.Volume = Volume / 100d;
+                if (!string.IsNullOrEmpty(LastPlayed))
+                {
+                    _ = LoadLastPlayed(LastPlayed);
+                }
 
-            PropertyChanged?.Invoke(this, new(string.Empty));
+                PropertyChanged?.Invoke(this, new(string.Empty));
+                
+            }
             #endregion
 
             #region navigation
@@ -103,6 +147,8 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             {
                 MusicListView.Items.Clear();
                 MusicListViewHeader.Text = "From search";
+                FileLoadingProgress.IsIndeterminate = true;
+                FileLoadingProgress.Visibility = Visibility.Visible;
                 foreach (MusicFileModel view in views)
                 {
                     _ = CreateAddFile(view.MusicFile);
@@ -125,7 +171,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         }
         #endregion
 
-        #region private methods
+        #region Private methods
         private void DisplayMessage(string message)
         {
             //ErrorInfoBar.Title = message;
@@ -133,19 +179,14 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             ErrorInfoBar.IsOpen = true;
         }
 
-        private void PauseOrResume()
+        private void SetPaused()
         {
-            if (playing)
-            {
-                player.Pause();
-                progressTimer.Stop();
-            }
-            else
-            {
-                player.Play();
-                progressTimer.Start();
-            }
-            playing = !playing;
+            progressTimer.Stop();
+        }
+
+        private void SetPlaying()
+        {
+            progressTimer.Start();
         }
 
         private async Task LoadLastPlayed(string path)
@@ -163,7 +204,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
                 try
                 {
-                    StorageItemThumbnail thumbnail = await storageFile.GetThumbnailAsync(ThumbnailMode.MusicView, 30);
+                    StorageItemThumbnail thumbnail = await storageFile.GetThumbnailAsync(ThumbnailMode.MusicView, 90);
                     BitmapImage image = new();
                     await image.SetSourceAsync(thumbnail);
                     model.Thumbnail = image;
@@ -183,25 +224,21 @@ namespace MultitoolWinUI.Pages.MusicPlayer
                 StorageFile file = model.MusicFile ?? await StorageFile.GetFileFromPathAsync(model.Path);
                 using IRandomAccessStreamWithContentType stream = await file.OpenReadAsync();
                 player.SetStreamSource(stream);
+
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicProgressBar.Value = 0;
+                    MusicProgressBar.Maximum = model.AudioLength.TotalSeconds;
+                });
+
                 if (play)
                 {
                     player.Play();
-                    playing = true;
-                    delayedActionQueue.QueueAction(() => DisplayMessage($"Playing {model.Title}"));
-
-                    progress = TimeSpan.Zero;
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        MusicProgressBar.Value = 0;
-                        MusicProgressBar.Maximum = model.AudioLength.TotalSeconds;
-                    });
-                    progressTimer.Start(); 
+                    model.PlayCount++;
                 }
 
                 LastPlayed = model.Path;
                 CurrentPlaying = model;
-                model.PlayCount++;
-
                 CurrentThumbnail.Source = model.Thumbnail;
                 CurrentPlayingTitle.Text = model.Title;
                 CurrentPlayingAlbum.Text = model.Album;
@@ -226,7 +263,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
                 try
                 {
-                    StorageItemThumbnail thumbnail = await storageFile.GetThumbnailAsync(ThumbnailMode.MusicView, 30);
+                    StorageItemThumbnail thumbnail = await storageFile.GetThumbnailAsync(ThumbnailMode.MusicView, 90);
                     BitmapImage image = new();
                     await image.SetSourceAsync(thumbnail);
                     model.Thumbnail = image;
@@ -302,7 +339,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         }
         #endregion
 
-        #region events
+        #region Events
         private void DelayedActionQueue_QueueEmpty(DelayedActionQueue sender, System.Timers.ElapsedEventArgs args)
         {
             ErrorInfoBar.IsOpen = false;
@@ -310,17 +347,26 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         private void ProgressTimer_Tick(DispatcherQueueTimer sender, object args)
         {
-            progress = progress.Add(TimeSpan.FromSeconds(1));
-            MusicProgressBar.Value = progress.TotalSeconds;
+            MusicProgressBar.Value = player.PlaybackSession.Position.TotalSeconds;
         }
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            delayedActionQueue.DispatcherQueue = DispatcherQueue;
+            loaded = true;
+        }
 
-            progressTimer = DispatcherQueue.CreateTimer();
-            progressTimer.Tick += ProgressTimer_Tick;
-            progressTimer.Interval = TimeSpan.FromSeconds(1);
+        private void PlaybackSession_PlaybackStateChanged(MediaPlaybackSession sender, object args)
+        {
+            if (player.PlaybackSession.PlaybackState == MediaPlaybackState.Paused)
+            {
+                playing = false;
+                SetPaused();
+            }
+            else if (!playing && player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+            {
+                playing = true;
+                SetPlaying();
+            }
         }
 
         #region ui events
@@ -353,7 +399,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         private void SearchMusicButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!App.MainWindow.ContentFrame.Navigate(typeof(MusicSearchPage)))
+            if (!App.MainWindow.NavigateTo(typeof(MusicSearchPage)))
             {
                 App.TraceWarning("Ooops. Failed to navigate to the search page, try again.");
             }
@@ -361,7 +407,10 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         private void CreatePlaylistButton_Click(object sender, RoutedEventArgs e)
         {
-            
+            if (!App.MainWindow.NavigateTo(typeof(PlaylistCreationPage)))
+            {
+                App.TraceWarning("Ooops. Failed to go to the playlist creation page, try again.");
+            }
         }
 
         private async void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -376,7 +425,14 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            PauseOrResume();
+            if (player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+            {
+                player.Pause();
+            }
+            else if (player.PlaybackSession.PlaybackState == MediaPlaybackState.Paused)
+            {
+                player.Play();
+            }
         }
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
@@ -388,7 +444,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         {
             if (e.Key == VirtualKey.Space)
             {
-                PauseOrResume();
+                player.Pause();
                 e.Handled = true;
             }
         }

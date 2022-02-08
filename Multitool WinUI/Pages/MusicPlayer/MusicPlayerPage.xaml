@@ -67,8 +67,9 @@
             x:Name="MusicListView"
             IsItemClickEnabled="True"
             DoubleTapped="MusicListView_DoubleTapped"
-            BorderThickness="2,0,0,0"
-            BorderBrush="{ThemeResource ListViewItemFocusBorderThemeBrush}"
+            BorderThickness="4,0,0,0"
+            BorderBrush="{StaticResource LightBlack}"
+            ScrollViewer.IsScrollInertiaEnabled="True"
             Grid.Column="1"
             Grid.Row="3">
             <ListView.Header>
@@ -107,6 +108,11 @@
                     </StackPanel>
                 </Grid>
             </ListView.Header>
+            <ListView.Transitions>
+                <TransitionCollection>
+                    <AddDeleteThemeTransition/>
+                </TransitionCollection>
+            </ListView.Transitions>
         </ListView>
 
         <Grid
@@ -132,12 +138,13 @@
             <Image
                 x:Name="CurrentThumbnail"
                 Height="60"
+                VerticalAlignment="Center"
                 Grid.Column="0"
                 Grid.RowSpan="2"/>
             <StackPanel 
                 Spacing="{StaticResource StackPanelButtonSpacing}"
                 Orientation="Vertical"
-                VerticalAlignment="Top"
+                VerticalAlignment="Center"
                 MaxWidth="150"
                 Grid.RowSpan="2" 
                 Grid.Column="1">

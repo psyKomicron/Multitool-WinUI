@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
 using MultitoolWinUI.Models;
@@ -20,6 +21,7 @@ using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
+using Windows.Storage.FileProperties;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -50,19 +52,17 @@ namespace MultitoolWinUI.Pages.MusicPlayer
                 }
                 _ = LoadFolder(path);
             }
-        }
-
-        private void SwitchToEdit()
-        {
-            PathInputBox.Text = Path.GetFullPath(Path.Combine(CrumbPath.ToArray()));
-            PathBar.Visibility = Visibility.Collapsed;
-            PathInputBox.Visibility = Visibility.Visible;
-        }
-
-        private void SwitchToBreadcrumb()
-        {
-            PathBar.Visibility = Visibility.Visible;
-            PathInputBox.Visibility = Visibility.Collapsed;
+            else if (e.Parameter is List<MusicFileModel> views)
+            {
+                FileLoadingProgress.Visibility = Visibility.Visible;
+                FilesListView.Items.Clear();
+                foreach (MusicFileModel view in views)
+                {
+                    _ = CreateAddFile(view);
+                }
+                FileLoadingProgress.IsIndeterminate = false;
+                FileLoadingProgress.Visibility = Visibility.Collapsed;
+            }
         }
 
         private async Task LoadFolder(string path)
@@ -102,17 +102,29 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             }
         }
 
-        #region ui events
-        private void PathBar_ItemClicked(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs args)
+        private async Task CreateAddFile(MusicFileModel model)
         {
-            int index = CrumbPath.IndexOf(args.Item.ToString());
-            for (int i = CrumbPath.Count - 1; i > index; i--)
+            if (model.MusicFile != null && model.MusicFile.IsAvailable)
             {
-                CrumbPath.RemoveAt(i);
+                try
+                {
+                    if (model.Thumbnail == null)
+                    {
+                        StorageItemThumbnail thumbnail = await model.MusicFile.GetThumbnailAsync(ThumbnailMode.MusicView, 90);
+                        BitmapImage image = new();
+                        await image.SetSourceAsync(thumbnail);
+                        model.Thumbnail = image;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex);
+                }
+                FilesListView.DispatcherQueue.TryEnqueue(() => FilesListView.Items.Add(new MusicFileView(model)));
             }
-            _ = LoadFolder(Path.GetFullPath(Path.Combine(CrumbPath.ToArray())));
         }
 
+        #region ui events
         private void FilesListView_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is MusicFileModel model)
@@ -145,20 +157,6 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             }
         }
 
-        private void AutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
-        {
-            _ = LoadFolder(args.QueryText);
-
-            CrumbPath.Clear();
-            string path = Path.GetFullPath(args.QueryText);
-            string[] folders = path.Split(Path.DirectorySeparatorChar);
-            foreach (string folder in folders)
-            {
-                CrumbPath.Add(folder);
-            }
-            SwitchToBreadcrumb();
-        }
-
         private void ValidateButton_Click(object sender, RoutedEventArgs e)
         {
             List<string> items = new();
@@ -166,12 +164,12 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             {
                 items.Add(((MusicFileModel)item).Path);
             }
-            App.MainWindow.ContentFrame.Navigate(typeof(MusicPlayerPage), items);
+            App.MainWindow.NavigateTo(typeof(MusicPlayerPage), items);
         }
 
-        private void EditButton_Click(object sender, RoutedEventArgs e)
+        private void PictureSelection_Click(object sender, RoutedEventArgs e)
         {
-            SwitchToEdit();
+
         }
         #endregion
     }

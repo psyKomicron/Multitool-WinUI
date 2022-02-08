@@ -50,7 +50,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         [Setting(true)]
         public bool ShowThumbnails { get; set; }
-        [Setting(30u)]
+        [Setting(90u)]
         public uint ThumbnailSize { get; set; }
         [Setting(true)]
         public bool SkipSmallFiles { get; set; }
@@ -243,7 +243,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
                     files.Add(view.Model);
                 }
             }
-            App.MainWindow.ContentFrame.Navigate(typeof(MusicPlayerPage), files);
+            App.MainWindow.NavigateTo(typeof(MusicPlayerPage), files);
         }
         #endregion
     }
