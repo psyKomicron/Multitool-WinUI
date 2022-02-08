@@ -7,13 +7,22 @@
     mc:Ignorable="d">
     <Grid
         x:Name="MainGrid"
-        VerticalAlignment="Top"
-        Background="Brown" 
-        GotFocus="BreadcrumbBar_GotFocus"
-        LostFocus="BreadcrumbBar_LostFocus">
-        <BreadcrumbBar
-            ItemsSource="{x:Bind Items}"
-            GotFocus="BreadcrumbBar_GotFocus" 
-            LostFocus="BreadcrumbBar_LostFocus"/>
+        RowSpacing="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Spacing="{StaticResource StackPanelDefaultSpacing}" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="Colors" HorizontalAlignment="Center" VerticalAlignment="Center" Click="ColorsButton_Click"/>
+            <Button Content="Color spectrum" HorizontalAlignment="Center" VerticalAlignment="Center" Click="ColorSpectrumButton_Click"/>
+        </StackPanel>
+
+        <Grid
+            x:Name="ControlsGrid" 
+            Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="30,10"
+            CornerRadius="{ThemeResource AppDefaultCornerRadius}"
+            ScrollViewer.VerticalScrollMode="Enabled"
+            Padding="20"
+            Grid.Row="1"/>
     </Grid>
 </Page>

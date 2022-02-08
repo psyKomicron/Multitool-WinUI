@@ -37,6 +37,17 @@ namespace MultitoolWinUI.Pages.Test
 
         public List<string> Items { get; } = new() { "https", "www", "twitch", "tv", "buddha" };
 
+        private void SetControl(Control control)
+        {
+            if (ControlsGrid.Children.Count > 0)
+            {
+                ControlsGrid.Children.Clear();
+            }
+            Grid.SetColumn(control, 0);
+            Grid.SetRow(control, 0);
+            ControlsGrid.Children.Add(control);
+        }
+
         private void BreadcrumbBar_GotFocus(object sender, RoutedEventArgs e)
         {
 
@@ -45,6 +56,27 @@ namespace MultitoolWinUI.Pages.Test
         private void BreadcrumbBar_LostFocus(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void ColorsButton_Click(object sender, RoutedEventArgs e)
+        {
+            ColorBrowserControl control = new()
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            SetControl(control);
+        }
+
+        private void ColorSpectrumButton_Click(object sender, RoutedEventArgs e)
+        {
+            ColorPicker picker = new()
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Height = 400
+            };
+            SetControl(picker);
         }
     }
 }
