@@ -15,23 +15,19 @@ namespace Multitool.DAL
         public static string[] GetExtensionsForMime(Regex mimeType)
         {
             List<string> exts = new();
-            RegistryKey softwareKey = Registry.LocalMachine.OpenSubKey("SOFTWARE");
-            if (softwareKey != null)
+            RegistryKey classesKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Classes\");
+            if (classesKey != null)
             {
-                RegistryKey classesKey = softwareKey.OpenSubKey("Classes");
-                if (classesKey != null)
+                string[] names = classesKey.GetSubKeyNames();
+                for (int i = 0; i < names.Length; i++)
                 {
-                    string[] names = classesKey.GetSubKeyNames();
-                    for (int i = 0; i < names.Length; i++)
+                    RegistryKey key = classesKey.OpenSubKey(names[i]);
+                    if (key.GetValueNames().Contains("Content Type"))
                     {
-                        RegistryKey key = classesKey.OpenSubKey(names[i]);
-                        if (key.GetValueNames().Contains("Content Type"))
+                        object contentType = key.GetValue("Content Type");
+                        if (mimeType.IsMatch(contentType.ToString()))
                         {
-                            var contentType = key.GetValue("Content Type");
-                            if (mimeType.IsMatch(contentType.ToString()))
-                            {
-                                exts.Add(names[i]);
-                            }
+                            exts.Add(names[i]);
                         }
                     }
                 }
