@@ -19,7 +19,7 @@ namespace MultitoolWinUI.Controls
     public sealed partial class AppMessageControl : UserControl
     {
         private readonly ConcurrentQueue<DispatcherQueueHandler> displayQueue = new();
-        private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false, Interval = 2500 };
+        private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false, Interval = 3500 };
         private readonly object _lock = new();
         private volatile bool busy;
         private bool closed;
