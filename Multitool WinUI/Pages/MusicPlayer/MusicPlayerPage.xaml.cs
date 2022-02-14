@@ -13,6 +13,7 @@ using MultitoolWinUI.Models;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -42,14 +43,24 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         {
             AudioCategory = MediaPlayerAudioCategory.Media
         };
-        private DispatcherQueueTimer progressTimer;
         private readonly DelayedActionQueue delayedActionQueue = new();
+        private readonly DispatcherQueueTimer progressTimer;
         private bool loaded;
         private bool playing;
 
         public MusicPlayerPage()
         {
             InitializeComponent();
+            try
+            {
+                App.Settings.Load(this);
+                player.Volume = Volume / 100d;
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+            }
+
             App.MainWindow.Closed += MainWindow_Closed;
 
             player.PlaybackSession.PlaybackStateChanged += PlaybackSession_PlaybackStateChanged;
@@ -62,33 +73,6 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             progressTimer = DispatcherQueue.CreateTimer();
             progressTimer.Tick += ProgressTimer_Tick;
             progressTimer.Interval = TimeSpan.FromMilliseconds(500);
-        }
-
-        private void PlaybackSession_PositionChanged(MediaPlaybackSession sender, object args)
-        {
-            //Debug.WriteLine($"Position changed {player.PlaybackSession.Position:T}");
-            if (player.PlaybackSession.Position == CurrentPlaying.AudioLength)
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    for (int i = 0; i < MusicListView.Items.Count; i++)
-                    {
-                        object item = MusicListView.Items[i];
-                        if (item is MusicFileView view && view.Model == CurrentPlaying)
-                        {
-                            if (i + 1 < MusicListView.Items.Count)
-                            {
-                                _ = Play((MusicListView.Items[i + 1] as MusicFileView).Model);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        private void PlaybackSession_BufferingEnded(MediaPlaybackSession sender, object args)
-        {
-            Debug.WriteLine("Buffering ended");
         }
 
         #region Properties
@@ -104,6 +88,12 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         [Setting(true)]
         public bool ShowFolders { get; set; }
 
+        [Setting(typeof(PlaylistModelSettingConverter), DefaultInstanciate = true)]
+        public ObservableCollection<PlaylistModel> Playlists { get; set; }
+
+        [Setting]
+        public List<string> Files { get; set; }
+
         public double Progress { get; set; } = 100;
 
         public MusicFileModel CurrentPlaying { get; set; } 
@@ -116,25 +106,17 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             player.Dispose();
         }
 
-        #region Navigation
+        #region navigation
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-
-            #region settings
-            App.Settings.Load(this);
             if (!loaded)
             {
-                player.Volume = Volume / 100d;
                 if (!string.IsNullOrEmpty(LastPlayed))
                 {
                     _ = LoadLastPlayed(LastPlayed);
                 }
-
-                PropertyChanged?.Invoke(this, new(string.Empty));
-                
             }
-            #endregion
 
             #region navigation
             if (e.Parameter is List<string> pathes)
@@ -158,6 +140,11 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             }
             else
             {
+                if (e.Parameter != null)
+                {
+                    DisplayMessage("Something went wrong...");
+                    App.TraceWarning($"Navigation info not recognized {e.Parameter.GetType().Name}");
+                }
                 _ = ListFolder(LastUsedPath);
             } 
             #endregion
@@ -171,12 +158,14 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         }
         #endregion
 
-        #region Private methods
+        #region private methods
         private void DisplayMessage(string message)
         {
-            //ErrorInfoBar.Title = message;
-            InfoTextBlock.Text = message;
-            ErrorInfoBar.IsOpen = true;
+            delayedActionQueue.QueueAction(() =>
+            {
+                InfoTextBlock.Text = message;
+                ErrorInfoBar.IsOpen = true;
+            });
         }
 
         private void SetPaused()
@@ -187,6 +176,27 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         private void SetPlaying()
         {
             progressTimer.Start();
+        }
+
+        private void AutoComplete()
+        {
+            if (!string.IsNullOrWhiteSpace(SearchBox.Text))
+            {
+                List<string> names = new();
+                Regex search = new(Regex.Escape(SearchBox.Text), RegexOptions.IgnoreCase);
+                foreach (var item in MusicListView.Items)
+                {
+                    if (item is MusicFileView view && search.IsMatch(view.Title))
+                    {
+                        names.Add(view.Title);
+                    }
+                }
+                SearchBox.ItemsSource = names;
+            }
+            else
+            {
+                SearchBox.ItemsSource = null;
+            }
         }
 
         private async Task LoadLastPlayed(string path)
@@ -333,13 +343,14 @@ namespace MultitoolWinUI.Pages.MusicPlayer
                 }
                 else
                 {
-                    delayedActionQueue.QueueAction(() => DisplayMessage($"{Path.GetFileName(pathes[i])} no found"));
+                    DisplayMessage($"{Path.GetFileName(pathes[i])} no found");
                 }
             }
         }
         #endregion
 
-        #region Events
+        #region events
+        #region page events
         private void DelayedActionQueue_QueueEmpty(DelayedActionQueue sender, System.Timers.ElapsedEventArgs args)
         {
             ErrorInfoBar.IsOpen = false;
@@ -353,8 +364,10 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             loaded = true;
-        }
+        } 
+        #endregion
 
+        #region player events
         private void PlaybackSession_PlaybackStateChanged(MediaPlaybackSession sender, object args)
         {
             if (player.PlaybackSession.PlaybackState == MediaPlaybackState.Paused)
@@ -369,6 +382,34 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             }
         }
 
+        private void PlaybackSession_PositionChanged(MediaPlaybackSession sender, object args)
+        {
+            //Debug.WriteLine($"Position changed {player.PlaybackSession.Position:T}");
+            if (player.PlaybackSession.Position == CurrentPlaying.AudioLength)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    for (int i = 0; i < MusicListView.Items.Count; i++)
+                    {
+                        object item = MusicListView.Items[i];
+                        if (item is MusicFileView view && view.Model == CurrentPlaying)
+                        {
+                            if (i + 1 < MusicListView.Items.Count)
+                            {
+                                _ = Play((MusicListView.Items[i + 1] as MusicFileView).Model);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        private void PlaybackSession_BufferingEnded(MediaPlaybackSession sender, object args)
+        {
+            Debug.WriteLine("Buffering ended");
+        } 
+        #endregion
+
         #region ui events
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
@@ -377,7 +418,32 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         private async void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            await ListFolder(args.QueryText);
+            if (args.ChosenSuggestion != null)
+            {
+                for (int i = 0; i < MusicListView.Items.Count; i++)
+                {
+                    if (MusicListView.Items[i] is MusicFileView view)
+                    {
+                        await Play(view.Model);
+                        return;
+                    }
+                }
+                DisplayMessage($"Cannot play {args.ChosenSuggestion}");
+            }
+            else
+            {
+                await ListFolder(args.QueryText);
+            }
+        }
+
+        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            AutoComplete();
+        }
+
+        private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            AutoComplete();
         }
 
         private async void MusicListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)

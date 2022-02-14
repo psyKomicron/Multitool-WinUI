@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.DAL;
+using Multitool.DAL.FileSystem;
 using Multitool.DAL.Settings;
 
 using MultitoolWinUI.Models;
@@ -15,11 +16,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using Windows.Security.Cryptography;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
+using Windows.Storage.Streams;
+
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -34,6 +39,10 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         private static readonly Regex audioMimeRegex = new(@"^audio/.+");
         private readonly string[] audioExtensions;
         private static readonly Regex ignoreList = new(@"(\$Recycle\.Bin)|(\$WinREAgent)|(Config\.Msi)|(ESD)|(Microsoft)|(PerfLogs)|(platform-tools)|(ProgramData)|(Recovery)|(System Volume Information)|(Temp)|(Windows)");
+        private readonly FileSearcher searcher = new(ignoreList)
+        {
+            ThreadCount = 4
+        };
 
         public MusicSearchPage()
         {
@@ -54,6 +63,8 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         public uint ThumbnailSize { get; set; }
         [Setting(true)]
         public bool SkipSmallFiles { get; set; }
+        [Setting(true)]
+        public bool CacheFiles { get; set; }
         public int MinimumFileDuration { get; set; } = 10;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -74,104 +85,78 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         #region private methods
         private async Task LoadFiles()
         {
-            DriveInfo[] drives = DriveInfo.GetDrives();
-            List<Task> tasks = new();
-#if true
-            for (int i = 0; i < drives.Length; i++)
+            FileLoadingProgress.IsIndeterminate = true;
+            FileLoadingProgress.Visibility = Visibility.Visible;
+
+            if (!File.Exists(Path.Combine(ApplicationData.Current.TemporaryFolder.Path, "music files.tmp")))
             {
-                DriveInfo drive = drives[i];
-                DirectoryInfo[] folders = drive.RootDirectory.GetDirectories();
-                foreach (var folder in folders)
+                var files = await searcher.SearchForType(FileType.Audio);
+
+                _ = DispatcherQueue.TryEnqueue(async () =>
                 {
-                    if (!ignoreList.IsMatch(folder.Name))
+                    foreach (var file in files)
                     {
-                        await LoadFolder(folder);
+                        MusicFileView view = await CreateView(file);
+                        if (view != null)
+                        {
+                            musicListView.Items.Add(view);
+                        }
+                    }
+                });
+
+                if (CacheFiles)
+                {
+                    StorageFile file = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("music files.tmp");
+                    using var stream = await file.OpenAsync(FileAccessMode.ReadWrite);
+                    using var outputStream = stream.GetOutputStreamAt(0);
+                    using DataWriter writer = new(stream);
+                    foreach (var fileName in files)
+                    {
+                        writer.WriteBuffer(CryptographicBuffer.ConvertStringToBinary(fileName + "\n", BinaryStringEncoding.Utf8));
+                    }
+                    await writer.StoreAsync();
+                    await outputStream.FlushAsync();
+                }
+            }
+            else
+            {
+                StorageFile cache = await ApplicationData.Current.TemporaryFolder.GetFileAsync("music files.tmp");
+                using var stream = await cache.OpenAsync(FileAccessMode.Read);
+                using var outputStream = stream.GetInputStreamAt(0);
+                using DataReader reader = new(stream);
+                Memory<char> data = new (reader.ReadString(await reader.LoadAsync((uint)stream.Size)).ToCharArray());
+                List<string> filePathes = new();
+                int previousIndex = 0;
+                for (int i = 0; i < data.Length; i++)
+                {
+                    if (data.Span[i] == '\n')
+                    {
+                        filePathes.Add(data[previousIndex..i].ToString());
+                        i++;
+                        previousIndex = i;
                     }
                 }
-            }
-#else
-            DriveInfo drive = drives[2];
-            DirectoryInfo[] folders = drive.RootDirectory.GetDirectories();
-            foreach (var folder in folders)
-            {
-                if (!ignoreList.IsMatch(folder.Name))
+                DispatcherQueue.TryEnqueue(async () =>
                 {
-                    tasks.Add(LoadFolder(folder));
-                }
+                    foreach (string filePath in filePathes)
+                    {
+                        MusicFileView view = await CreateView(filePath);
+                        if (view != null)
+                        {
+                            musicListView.Items.Add(view);
+                        }
+                    }
+                });
             }
-#endif
-            await Task.WhenAll(tasks);
 
-            DispatcherQueue.TryEnqueue(() =>
+            DispatcherQueue?.TryEnqueue(() =>
             {
                 FileLoadingProgress.IsIndeterminate = false;
                 FileLoadingProgress.Visibility = Visibility.Collapsed;
             });
         }
 
-        private async Task LoadFolder(DirectoryInfo root)
-        {
-            try
-            {
-                List<Task<MusicFileView>> fileTasks = new();
-                List<Task> tasks = new();
-
-                List<MusicFileView> views = new();
-                List<string> validFiles = new();
-
-                var files = root.GetFiles();
-                if (files.Length > 0)
-                {
-                    for (int i = 0; i < files.Length; i++)
-                    {
-                        try
-                        {
-                            for (int j = 0; j < audioExtensions.Length; j++)
-                            {
-                                if (audioExtensions[j] == files[i].Extension)
-                                {
-                                    validFiles.Add(files[i].FullName);
-                                }
-                            }
-                        }
-                        catch
-                        {
-                        }
-                    }
-                    // multi-threading for thumbnails
-                    if (validFiles.Count > 0)
-                    {
-                        for (int i = 0; i < validFiles.Count; i++)
-                        {
-                            fileTasks.Add(CreateAddView(validFiles[i]));
-                        }
-                        MusicFileView[] fileList = await Task.WhenAll(fileTasks);
-                        _ = DispatcherQueue.TryEnqueue(() =>
-                        {
-                            for (int i = 0; i < fileList.Length; i++)
-                            {
-                                if (fileList[i] != null)
-                                {
-                                    musicListView.Items.Add(fileList[i]);
-                                }
-                            }
-                        });
-                    }
-                }
-
-                DirectoryInfo[] folders = root.GetDirectories();
-                for (int i = 0; i < folders.Length; i++)
-                {
-                    tasks.Add(LoadFolder(folders[i]));
-                }
-                await Task.WhenAll(tasks);
-            }
-            catch
-            {
-            }
-        }
-
-        private async Task<MusicFileView> CreateAddView(string fullPath)
+        private async Task<MusicFileView> CreateView(string fullPath)
         {
             StorageFile file = await StorageFile.GetFileFromPathAsync(fullPath);
             var props = await file.Properties.GetMusicPropertiesAsync();
@@ -225,11 +210,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             FileLoadingProgress.Visibility = Visibility.Visible;
             FileLoadingProgress.IsIndeterminate = true;
 
-            var timer = DispatcherQueue.CreateTimer();
-            timer.Interval = TimeSpan.FromSeconds(2);
-            timer.IsRepeating = false;
-            timer.Tick += (s, e) => _ = LoadFiles();
-            timer.Start();
+            _ = LoadFiles();
         }
 
         private void NavigateButton_Click(object sender, RoutedEventArgs e)
