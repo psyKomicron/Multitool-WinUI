@@ -1,4 +1,4 @@
-﻿using Multitool.DAL.FileSystem.Events;
+﻿using Multitool.Data.FileSystem.Events;
 
 using System.Collections.Generic;
 using System.Threading;
@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.DAL.FileSystem
+namespace Multitool.Data.FileSystem
 {
     /// <summary>
     /// Represents a object that can list the content of directories and cache them

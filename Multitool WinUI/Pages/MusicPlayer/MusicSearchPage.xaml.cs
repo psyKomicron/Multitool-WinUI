@@ -5,9 +5,9 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL;
-using Multitool.DAL.FileSystem;
-using Multitool.DAL.Settings;
+using Multitool.Data;
+using Multitool.Data.FileSystem;
+using Multitool.Data.Settings;
 
 using MultitoolWinUI.Models;
 
@@ -36,8 +36,6 @@ namespace MultitoolWinUI.Pages.MusicPlayer
     /// </summary>
     public sealed partial class MusicSearchPage : Page, INotifyPropertyChanged
     {
-        private static readonly Regex audioMimeRegex = new(@"^audio/.+");
-        private readonly string[] audioExtensions;
         private static readonly Regex ignoreList = new(@"(\$Recycle\.Bin)|(\$WinREAgent)|(Config\.Msi)|(ESD)|(Microsoft)|(PerfLogs)|(platform-tools)|(ProgramData)|(Recovery)|(System Volume Information)|(Temp)|(Windows)");
         private readonly FileSearcher searcher = new(ignoreList)
         {
@@ -47,14 +45,6 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         public MusicSearchPage()
         {
             InitializeComponent();
-            try
-            {
-                audioExtensions = RegistryHelper.GetExtensionsForMime(audioMimeRegex);
-            }
-            catch (Exception e)
-            {
-                Trace.TraceError(e.ToString());
-            }
         }
 
         [Setting(true)]
@@ -65,7 +55,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         public bool SkipSmallFiles { get; set; }
         [Setting(true)]
         public bool CacheFiles { get; set; }
-        public int MinimumFileDuration { get; set; } = 10;
+        public int MinimumFileDuration { get; set; } = 20;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -164,9 +154,9 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             {
                 MusicFileModel model = new(props)
                 {
-                    FileName = file.Name,
+                    Name = file.Name,
                     Path = file.Path,
-                    MusicFile = file
+                    File = file
                 };
                 if (ShowThumbnails)
                 {

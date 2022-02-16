@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Multitool.Data.Win32;
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,7 +13,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.DAL.FileSystem
+namespace Multitool.Data.FileSystem
 {
     public class FileSearcher : IDisposable
     {
@@ -32,6 +34,7 @@ namespace Multitool.DAL.FileSystem
             IgnoreList = ignoreList;
         }
 
+        #region properties
         public Regex IgnoreList { get; set; }
 
         public int ThreadCount
@@ -58,7 +61,8 @@ namespace Multitool.DAL.FileSystem
                 }
                 rootPath = value;
             }
-        }
+        } 
+        #endregion
 
 #if true
         public event TypedEventHandler<FileSearcher, Tuple<int, string>> ThreadProgress;
@@ -67,7 +71,7 @@ namespace Multitool.DAL.FileSystem
         public async Task<List<string>> SearchForType(FileType type)
         {
             string[] extensions = GetExtensions(type);
-            Predicate<FileInfo> filter = (FileInfo file) =>
+            bool filter(FileInfo file)
             {
                 for (int i = 0; i < extensions.Length; i++)
                 {
@@ -77,7 +81,7 @@ namespace Multitool.DAL.FileSystem
                     }
                 }
                 return false;
-            };
+            }
             return await Search(filter);
         }
 
@@ -162,14 +166,14 @@ namespace Multitool.DAL.FileSystem
                     DirectoryInfo[] rootDirs = drives[i].RootDirectory.GetDirectories();
                     for (int j = 0; j < rootDirs.Length; j++)
                     {
-                        if (IgnoreList == null || !IgnoreList.IsMatch(rootDirs[j].Name))
+                        if (IgnoreList == null || !IgnoreList.IsMatch(rootDirs[j].FullName))
                         {
                             try
                             {
                                 DirectoryInfo[] dirs = rootDirs[j].GetDirectories();
                                 for (int k = 0; k < dirs.Length; k++)
                                 {
-                                    if (IgnoreList == null || !IgnoreList.IsMatch(dirs[k].Name))
+                                    if (IgnoreList == null || !IgnoreList.IsMatch(dirs[k].FullName))
                                     {
                                         pathes.Enqueue(dirs[k].FullName); 
                                     }

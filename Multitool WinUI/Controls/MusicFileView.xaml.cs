@@ -46,7 +46,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         public Visibility CommentVisibility => !string.IsNullOrEmpty(Comment) ? Visibility.Visible : Visibility.Collapsed;
 
-        public string FileName => model.FileName;
+        public string FileName => model.Name;
 
         public TimeSpan FileLength => model.AudioLength;
 
@@ -60,7 +60,25 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         public int PlayCount => model.PlayCount;
 
-        public string Title => !string.IsNullOrEmpty(model.Title) ? model.Title : FileName;
+        //!string.IsNullOrEmpty(model.Title) ? model.Title : model.Name
+        public string Title
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(model.Title))
+                {
+                    return model.Title;
+                }
+                else if (!string.IsNullOrEmpty(model.Name))
+                {
+                    return model.Name;
+                }
+                else
+                {
+                    return model.Path;
+                }
+            }
+        }
 
         public BitmapImage Thumbnail => model.Thumbnail; 
         #endregion

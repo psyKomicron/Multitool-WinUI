@@ -2,8 +2,8 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.DAL;
-using Multitool.DAL.FileSystem.Events;
+using Multitool.Data;
+using Multitool.Data.FileSystem.Events;
 
 using MultitoolWinUI.Helpers;
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Multitool.DAL.Completion
+namespace Multitool.Data.Completion
 {
     /// <summary>
     /// Completes filesystem pathes

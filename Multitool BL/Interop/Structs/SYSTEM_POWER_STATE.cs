@@ -1,4 +1,4 @@
-﻿namespace Multitool.NTInterop.Structs
+﻿namespace Multitool.Interop.Structs
 {
     enum SYSTEM_POWER_STATE
     {

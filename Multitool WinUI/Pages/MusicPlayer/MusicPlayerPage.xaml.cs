@@ -6,7 +6,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL.Settings;
+using Multitool.Data.Settings;
 
 using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Models;
@@ -75,7 +75,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             progressTimer.Interval = TimeSpan.FromMilliseconds(500);
         }
 
-        #region Properties
+        #region properties
         [Setting(null)]
         public string LastUsedPath { get; set; }
 
@@ -133,7 +133,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
                 FileLoadingProgress.Visibility = Visibility.Visible;
                 foreach (MusicFileModel view in views)
                 {
-                    _ = CreateAddFile(view.MusicFile);
+                    _ = CreateAddFile(view.File);
                 }
                 FileLoadingProgress.IsIndeterminate = false;
                 FileLoadingProgress.Visibility = Visibility.Collapsed;
@@ -207,7 +207,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
                 MusicProperties properties = await storageFile.Properties.GetMusicPropertiesAsync();
                 MusicFileModel model = new(properties)
                 {
-                    FileName = storageFile.Name,
+                    Name = storageFile.Name,
                     Path = storageFile.Path,
                     PlayCount = 0
                 };
@@ -231,7 +231,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         {
             try
             {
-                StorageFile file = model.MusicFile ?? await StorageFile.GetFileFromPathAsync(model.Path);
+                StorageFile file = model.File ?? await StorageFile.GetFileFromPathAsync(model.Path);
                 using IRandomAccessStreamWithContentType stream = await file.OpenReadAsync();
                 player.SetStreamSource(stream);
 
@@ -266,7 +266,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
                 MusicProperties properties = await storageFile.Properties.GetMusicPropertiesAsync();
                 MusicFileModel model = new(properties)
                 {
-                    FileName = storageFile.Name,
+                    Name = storageFile.Name,
                     Path = storageFile.Path,
                     PlayCount = 0
                 };

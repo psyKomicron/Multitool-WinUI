@@ -1,4 +1,4 @@
-﻿using Multitool.DAL.FileSystem.Events;
+﻿using Multitool.Data.FileSystem.Events;
 
 using System;
 using System.IO;
@@ -6,7 +6,7 @@ using System.Security.AccessControl;
 
 using Windows.Foundation;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     /// <summary>
     /// Defines a <see cref="FileSystemInfo"/> decorator.

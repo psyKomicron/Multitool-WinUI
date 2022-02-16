@@ -1,7 +1,7 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
-using Multitool.NTInterop;
-using Multitool.NTInterop.Power;
+using Multitool.Interop;
+using Multitool.Interop.Power;
 
 using System;
 using System.ComponentModel;

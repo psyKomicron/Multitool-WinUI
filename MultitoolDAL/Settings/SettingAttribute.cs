@@ -1,10 +1,10 @@
-﻿using Multitool.DAL.Settings.Converters;
+﻿using Multitool.Data.Settings.Converters;
 
 using System;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Multitool.DAL.Settings
+namespace Multitool.Data.Settings
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
     public class SettingAttribute : Attribute

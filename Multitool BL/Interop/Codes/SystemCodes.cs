@@ -1,4 +1,4 @@
-﻿namespace Multitool.NTInterop.Codes
+﻿namespace Multitool.Interop.Codes
 {
     internal enum SystemCodes : uint
     {

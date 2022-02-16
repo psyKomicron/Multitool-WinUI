@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Multitool.NTInterop.Power
+namespace Multitool.Interop.Power
 {
     /// <summary>
     /// CPU power states (as defined in ACPI)

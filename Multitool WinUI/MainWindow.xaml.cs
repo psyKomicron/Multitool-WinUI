@@ -4,10 +4,11 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 
-using Multitool.DAL.Settings;
-using Multitool.DAL.Settings.Converters;
+using Multitool.BL.Interop;
+using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
 using Multitool.Drawing;
-using Multitool.NTInterop;
+using Multitool.Interop;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
@@ -53,7 +54,7 @@ namespace MultitoolWinUI
             try
             {
                 App.Settings.Load(this);
-                InteropWrapper.SetWindowSize(this, WindowSize, new(PositionX, PositionY));
+                WindowInteropHelper.SetWindow(this, WindowSize, new(PositionX, PositionY));
             }
             catch
             {

@@ -1,8 +1,8 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.DAL;
-using Multitool.DAL.Settings;
+using Multitool.Data;
+using Multitool.Data.Settings;
 
 using MultitoolWinUI.Helpers;
 

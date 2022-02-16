@@ -1,6 +1,6 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 
-using Multitool.DAL.Settings;
+using Multitool.Data.Settings;
 
 using MultitoolWinUI.Helpers;
 

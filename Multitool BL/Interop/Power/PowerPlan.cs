@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace Multitool.NTInterop.Power
+namespace Multitool.Interop.Power
 {
     public class PowerPlan
     {

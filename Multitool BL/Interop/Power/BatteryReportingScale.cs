@@ -1,4 +1,4 @@
-﻿namespace Multitool.NTInterop
+﻿namespace Multitool.Interop
 {
     /// <summary>
     /// 

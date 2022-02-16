@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace Multitool.NTInterop
+namespace Multitool.Interop
 {
     /// <summary>
     /// Indicates that a given operation has failed.

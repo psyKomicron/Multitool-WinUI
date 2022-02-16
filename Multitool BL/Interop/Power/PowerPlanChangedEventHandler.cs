@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Multitool.NTInterop.Power
+namespace Multitool.Interop.Power
 {
     public delegate void PowerPlanChangedEventHandler(Guid newPowerPlan);
 }

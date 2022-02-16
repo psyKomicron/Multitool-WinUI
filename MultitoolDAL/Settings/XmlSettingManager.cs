@@ -1,4 +1,4 @@
-﻿using Multitool.DAL.Settings.Converters;
+﻿using Multitool.Data.Settings.Converters;
 
 using System;
 using System.Collections;
@@ -12,7 +12,7 @@ using System.Xml;
 using Windows.Foundation;
 using Windows.Storage;
 
-namespace Multitool.DAL.Settings
+namespace Multitool.Data.Settings
 {
     public class XmlSettingManager : ISettingsManager
     {

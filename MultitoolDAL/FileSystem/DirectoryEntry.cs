@@ -4,7 +4,7 @@ using System.IO;
 using System.Security.AccessControl;
 using System.Threading;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     internal class DirectoryEntry : FileSystemEntry
     {

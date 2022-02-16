@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Xml;
 
-namespace Multitool.DAL.Settings.Converters
+namespace Multitool.Data.Settings.Converters
 {
     public class RegexSettingConverter : ISettingConverter
     {

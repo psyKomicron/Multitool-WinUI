@@ -1,5 +1,5 @@
-﻿using Multitool.DAL.Settings;
-using Multitool.DAL.Settings.Converters;
+﻿using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
 
 using MultitoolWinUI.Models;
 

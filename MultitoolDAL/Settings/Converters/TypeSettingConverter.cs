@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Xml;
 
-namespace Multitool.DAL.Settings.Converters
+namespace Multitool.Data.Settings.Converters
 {
     public class TypeSettingConverter : ISettingConverter
     {

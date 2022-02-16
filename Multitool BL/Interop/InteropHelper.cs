@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace Multitool.NTInterop
+namespace Multitool.Interop
 {
     internal static class InteropHelper
     {

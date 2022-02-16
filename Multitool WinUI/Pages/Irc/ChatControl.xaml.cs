@@ -6,7 +6,7 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.DAL.Settings;
+using Multitool.Data.Settings;
 using Multitool.Net.Imaging;
 using Multitool.Net.Twitch;
 using Multitool.Net.Twitch.Irc;

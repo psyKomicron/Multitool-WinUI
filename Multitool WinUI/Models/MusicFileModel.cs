@@ -3,6 +3,7 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
+using System.Threading.Tasks;
 
 using Windows.Storage;
 using Windows.Storage.FileProperties;
@@ -27,14 +28,10 @@ namespace MultitoolWinUI.Models
 
         public MusicFileModel(MusicProperties properties)
         {
-            Album = properties.Album;
-            Artist = properties.Artist;
-            //$"{properties.Duration.Minutes}:{properties.Duration.Seconds}"
-            Length = properties.Duration.ToString("mm\\:ss", CultureInfo.CurrentCulture);
-            AudioLength = properties.Duration;
-            Title = properties.Title;
+            SetProperties(properties);
         }
 
+        #region properties
         public string Album
         {
             get => album;
@@ -52,10 +49,10 @@ namespace MultitoolWinUI.Models
             }
         }
 
-        public string Artist 
-        { 
-            get => artist; 
-            set 
+        public string Artist
+        {
+            get => artist;
+            set
             {
                 if (artist != null)
                 {
@@ -69,29 +66,29 @@ namespace MultitoolWinUI.Models
             }
         }
 
-        public string FileName
+        public string Name
         {
-            get => fileName; 
-            set 
+            get => fileName;
+            set
             {
                 if (fileName != null)
                 {
                     fileName = value;
-                    Invoke(nameof(FileName));
+                    Invoke(nameof(Name));
                 }
                 else
                 {
                     fileName = value;
                 }
-            } 
+            }
         }
 
         public TimeSpan AudioLength { get; set; }
 
-        public string Length 
+        public string Length
         {
-            get => length; 
-            set 
+            get => length;
+            set
             {
                 if (length != null)
                 {
@@ -102,17 +99,17 @@ namespace MultitoolWinUI.Models
                 {
                     length = value;
                 }
-            } 
+            }
         }
 
         public string MimeType { get; set; }
 
-        public StorageFile MusicFile { get; set; }
+        public StorageFile File { get; set; }
 
         public string Title
-        { 
-            get => title; 
-            set 
+        {
+            get => title;
+            set
             {
                 if (title != null)
                 {
@@ -123,12 +120,12 @@ namespace MultitoolWinUI.Models
                 {
                     title = value;
                 }
-            } 
+            }
         }
 
-        public BitmapImage Thumbnail 
-        { 
-            get => thumbnail; 
+        public BitmapImage Thumbnail
+        {
+            get => thumbnail;
             set
             {
                 if (thumbnail != null)
@@ -140,7 +137,7 @@ namespace MultitoolWinUI.Models
                 {
                     thumbnail = value;
                 }
-            } 
+            }
         }
 
         public string Path
@@ -178,9 +175,25 @@ namespace MultitoolWinUI.Models
                 selected = value;
                 PropertyChanged?.Invoke(this, new(nameof(Selected)));
             }
-        }
+        } 
+        #endregion
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public async Task SetMusicPropertiesAsync()
+        {
+            SetProperties(await File.Properties.GetMusicPropertiesAsync());
+        }
+
+        private void SetProperties(MusicProperties properties)
+        {
+            Album = properties.Album;
+            Artist = properties.Artist;
+            //$"{properties.Duration.Minutes}:{properties.Duration.Seconds}"
+            Length = properties.Duration.ToString("mm\\:ss", CultureInfo.CurrentCulture);
+            AudioLength = properties.Duration;
+            Title = properties.Title;   
+        }
 
         private void Invoke(string propName)
         {

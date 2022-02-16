@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Multitool.Data.Media;
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,12 +10,13 @@ namespace MultitoolWinUI.Models
 {
     public class PlaylistModel
     {
-        public PlaylistModel()
+        public PlaylistModel(Playlist playlist)
         {
+            Playlist = playlist;
         }
 
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public List<string> Songs { get; set; }
+        public string Name => Playlist.Name;
+        public string Description => Playlist.Description;
+        public Playlist Playlist { get; private set; }
     }
 }

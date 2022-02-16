@@ -1,6 +1,6 @@
 ﻿using System.Xml;
 
-namespace Multitool.DAL.Settings.Converters
+namespace Multitool.Data.Settings.Converters
 {
     public interface ISettingConverter
     {

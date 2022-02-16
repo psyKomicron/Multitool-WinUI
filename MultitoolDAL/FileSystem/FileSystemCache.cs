@@ -1,4 +1,4 @@
-﻿using Multitool.DAL.FileSystem.Events;
+﻿using Multitool.Data.FileSystem.Events;
 using Multitool.Optimisation;
 
 using System;
@@ -12,7 +12,7 @@ using System.Timers;
 
 using Windows.Foundation;
 
-namespace Multitool.DAL.FileSystem
+namespace Multitool.Data.FileSystem
 {
     /// <summary>
     /// Provides logic to cache and watch a directory for changes, and to signal the changes.

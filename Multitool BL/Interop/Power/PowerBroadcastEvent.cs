@@ -1,4 +1,4 @@
-﻿namespace Multitool.NTInterop.Power
+﻿namespace Multitool.Interop.Power
 {
     internal enum PowerBroadcastEvent : int
     {

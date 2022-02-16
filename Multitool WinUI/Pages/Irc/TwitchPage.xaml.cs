@@ -3,8 +3,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL.Settings;
-using Multitool.DAL.Settings.Converters;
+using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
 using Multitool.Net.Imaging;
 using Multitool.Net.Twitch.Irc;
 using Multitool.Net.Twitch.Security;

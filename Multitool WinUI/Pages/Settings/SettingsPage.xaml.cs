@@ -7,8 +7,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL.Settings;
-using Multitool.DAL.Settings.Converters;
+using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
 using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Pages.Explorer;

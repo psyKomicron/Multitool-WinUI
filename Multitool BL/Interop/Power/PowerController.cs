@@ -1,10 +1,10 @@
-﻿using Multitool.NTInterop.Codes;
+﻿using Multitool.Interop.Codes;
 
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Multitool.NTInterop.Power
+namespace Multitool.Interop.Power
 {
     public class PowerController
     {

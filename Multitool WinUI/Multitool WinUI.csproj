@@ -63,9 +63,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
+    <ProjectReference Include="..\Multitool BL\Multitool.csproj" />
     <ProjectReference Include="..\Multitool.Net\Multitool.Net.csproj" />
-    <ProjectReference Include="..\MultitoolDAL\Multitool.DAL.csproj" />
+    <ProjectReference Include="..\MultitoolDAL\Multitool.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

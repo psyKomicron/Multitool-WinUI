@@ -1,4 +1,4 @@
-﻿namespace Multitool.NTInterop.Structs
+﻿namespace Multitool.Interop.Structs
 {
     struct BATTERY_REPORTING_SCALE
     {

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Security.AccessControl;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     internal class FileEntry : FileSystemEntry
     {

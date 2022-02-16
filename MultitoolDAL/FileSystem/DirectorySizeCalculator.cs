@@ -1,4 +1,4 @@
-﻿using Multitool.NTInterop;
+﻿using Multitool.Interop;
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation.Metadata;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     /// <summary>
     /// Calculates the size of a directory.

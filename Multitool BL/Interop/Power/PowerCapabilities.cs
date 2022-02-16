@@ -1,8 +1,8 @@
-﻿using Multitool.NTInterop.Structs;
+﻿using Multitool.Interop.Structs;
 
 using System.Runtime.InteropServices;
 
-namespace Multitool.NTInterop.Power
+namespace Multitool.Interop.Power
 {
     /// <summary>
     /// Represents the power capabilities of this system

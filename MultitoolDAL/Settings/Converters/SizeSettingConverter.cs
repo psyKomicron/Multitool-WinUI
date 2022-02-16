@@ -3,7 +3,7 @@ using System.Xml;
 
 using Windows.Foundation;
 
-namespace Multitool.DAL.Settings.Converters
+namespace Multitool.Data.Settings.Converters
 {
     public class SizeSettingConverter : ISettingConverter
     {
