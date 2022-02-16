@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Multitool.Data.Settings.Converters;
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +12,7 @@ using System.Xml;
 using Windows.Foundation;
 using Windows.Storage;
 
-namespace Multitool.DAL.Settings
+namespace Multitool.Data.Settings
 {
     public class XmlSettingManager : ISettingsManager
     {
@@ -122,6 +124,12 @@ namespace Multitool.DAL.Settings
                                         if (settingAttribute.Converter != null)
                                         {
                                             value = settingAttribute.Converter.Restore(node);
+                                            // if we cannot convert then we ask for the converter to restore the
+                                            // default value
+                                            if (value == null && settingAttribute.HasDefaultValue)
+                                            {
+                                                value = settingAttribute.Converter.Restore(settingAttribute.DefaultValue);
+                                            }
                                         }
                                         else
                                         {
@@ -256,7 +264,7 @@ namespace Multitool.DAL.Settings
 
                                 rootNode.AppendChild(settingNode);
                             }
-#if DEBUG
+#if false
                             else
                             {
                                 Trace.TraceWarning($"Not saving {props[i].Name}, property value is null");
@@ -265,11 +273,11 @@ namespace Multitool.DAL.Settings
                         }
                         catch (TargetException ex)
                         {
-                            Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
+                            //Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
                         }
                         catch (TargetInvocationException ex)
                         {
-                            Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
+                            //Trace.TraceError($"Failed to save {typeof(T).Name}.{props[i].Name} :\n{ex}");
                         }
                     }
                 }
@@ -497,7 +505,14 @@ namespace Multitool.DAL.Settings
                     {
                         if (settingAttribute.HasDefaultValue)
                         {
-                            prop.SetValue(toLoad, settingAttribute.DefaultValue);
+                            if (settingAttribute.Converter != null)
+                            {
+                                prop.SetValue(toLoad, settingAttribute.Converter.Restore(settingAttribute.DefaultValue));
+                            }
+                            else
+                            {
+                                prop.SetValue(toLoad, settingAttribute.DefaultValue);
+                            }
                         }
                         else if (settingAttribute.DefaultInstanciate)
                         {

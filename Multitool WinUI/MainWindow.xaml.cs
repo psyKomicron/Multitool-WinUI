@@ -1,7 +1,14 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 
-using Multitool.DAL.Settings;
+using Multitool.BL.Interop;
+using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
+using Multitool.Drawing;
+using Multitool.Interop;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
@@ -9,12 +16,21 @@ using MultitoolWinUI.Pages;
 using MultitoolWinUI.Pages.ControlPanels;
 using MultitoolWinUI.Pages.Explorer;
 using MultitoolWinUI.Pages.HashGenerator;
+using MultitoolWinUI.Pages.MusicPlayer;
 using MultitoolWinUI.Pages.Power;
 using MultitoolWinUI.Pages.Settings;
 using MultitoolWinUI.Pages.Test;
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+
+using Windows.Foundation;
+using Windows.Graphics;
+using Windows.UI;
+
+using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,16 +42,19 @@ namespace MultitoolWinUI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private const string fileName = "peepoPoopoo.gif";
+        private static AppWindow thisWindow;
         private bool closed;
 
         public MainWindow()
         {
             InitializeComponent();
-            Title = "Multitool v." + Tool.GetPackageVersion();
+            SetTitleBar();
             SizeChanged += MainWindow_SizeChanged;
             try
             {
                 App.Settings.Load(this);
+                WindowInteropHelper.SetWindow(this, WindowSize, new(PositionX, PositionY));
             }
             catch
             {
@@ -49,10 +68,95 @@ namespace MultitoolWinUI
         [Setting(typeof(TypeSettingConverter), HasDefaultValue = true, DefaultValue = typeof(MainPage))]
         public Type LastPage { get; set; }
 
+        [Setting(typeof(SizeSettingConverter), 1000, 600)]
+        public Size WindowSize { get; set; }
+
+        [Setting(0)]
+        public int PositionX { get; set; }
+
+        [Setting(0)]
+        public int PositionY { get; set; }
+
+        public int TitleBarHeight { get; private set; }
+
+        public bool NavigateTo(Type pageType, params object[] navigationParameters)
+        {
+            try
+            {
+                return ContentFrame.Navigate(pageType);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+                return false;
+            }
+        }
+
+        private void NavigateTo(Type pageType, bool save)
+        {
+            try
+            {
+                if (save)
+                {
+                    LastPage = pageType;
+                }
+                _ = ContentFrame.Navigate(pageType);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+            }
+        }
+
         #region navigation events
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
-            _ = ContentFrame.Navigate(LastPage);
+            NavigateTo(LastPage, true);
+            string tag;
+            switch (LastPage.Name)
+            {
+                case nameof(MainPage):
+                    tag = "home";
+                    break;
+                case nameof(ComputerDevicesPage):
+                    tag = "devices";
+                    break;
+                case nameof(ExplorerPage):
+                    tag = "explorer";
+                    break;
+                case nameof(ExplorerHomePage):
+                    tag = "explorerhome";
+                    break;
+                case nameof(PowerPage):
+                    tag = "power";
+                    break;
+                case nameof(ControlPanelsPage):
+                    tag = "controlpanels";
+                    break;
+                case nameof(HashGeneratorPage):
+                    tag = "hashgenerator";
+                    break;
+                case nameof(TwitchPage):
+                    tag = "irc";
+                    break;
+                case nameof(SettingsPage):
+                    tag = "Settings";
+                    break;
+                case nameof(MusicPlayerPage):
+                    tag = "music";
+                    break;
+                default:
+                    tag = string.Empty;
+                    break;
+            }
+            var items = WindowNavigationView.MenuItems;
+            foreach (var item in items)
+            {
+                if (item is NavigationViewItem itemBase && itemBase.Tag.ToString() == tag)
+                {
+                    WindowNavigationView.SelectedItem = itemBase;
+                }
+            }
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -63,46 +167,40 @@ namespace MultitoolWinUI
                 switch (tag)
                 {
                     case "home":
-                        LastPage = typeof(MainPage);
-                        _ = ContentFrame.Navigate(typeof(MainPage));
+                        NavigateTo(typeof(MainPage), true);
                         break;
                     case "devices":
-                        LastPage = typeof(ComputerDevicesPage);
-                        _ = ContentFrame.Navigate(typeof(ComputerDevicesPage));
+                        NavigateTo(typeof(ComputerDevicesPage), true);
                         break;
                     case "explorer":
-                        LastPage = typeof(ExplorerPage);
-                        _ = ContentFrame.Navigate(typeof(ExplorerPage));
+                        NavigateTo(typeof(ExplorerPage), true);
                         break;
                     case "explorerhome":
-                        LastPage = typeof(ExplorerHomePage);
-                        _ = ContentFrame.Navigate(typeof(ExplorerHomePage));
+                        NavigateTo(typeof(ExplorerHomePage), true);
                         break;
                     case "power":
-                        LastPage = typeof(PowerPage);
-                        _ = ContentFrame.Navigate(typeof(PowerPage));
+                        NavigateTo(typeof(PowerPage), true);
                         break;
                     case "controlpanels":
-                        LastPage = typeof(ControlPanelsPage);
-                        _ = ContentFrame.Navigate(typeof(ControlPanelsPage));
+                        NavigateTo(typeof(ControlPanelsPage), true);
                         break;
                     case "hashgenerator":
-                        LastPage = typeof(HashGeneratorPage);
-                        _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
+                        NavigateTo(typeof(HashGeneratorPage), true);
                         break;
                     case "irc":
-                        LastPage = typeof(TwitchPage);
-                        _ = ContentFrame.Navigate(typeof(TwitchPage));
+                        NavigateTo(typeof(TwitchPage), true);
                         break;
                     case "test":
-                        LastPage = typeof(TestPage);
-                        _ = ContentFrame.Navigate(typeof(TestPage));
+                        NavigateTo(typeof(TestPage), false);
                         break;
                     case "Settings":
-                        _ = ContentFrame.Navigate(typeof(SettingsPage), LastPage);
+                        NavigateTo(typeof(SettingsPage), true);
+                        break;
+                    case "music":
+                        NavigateTo(typeof(MusicPlayerPage), true);
                         break;
                     default:
-                        App.TraceWarning("Trying to navigate to : " + tag);
+                        App.TraceWarning("Page not found : " + tag);
                         break;
                 }
             }
@@ -117,12 +215,69 @@ namespace MultitoolWinUI
         }
         #endregion
 
+        private void SetTitleBar()
+        {
+            IntPtr windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WindowId windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
+            thisWindow = AppWindow.GetFromWindowId(windowId);
+            thisWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+
+            thisWindow.TitleBar.ButtonBackgroundColor = Tool.GetAppRessource<Color>("DarkBlack");
+            thisWindow.TitleBar.ButtonForegroundColor = Colors.White;
+            thisWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+            thisWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Gray;
+            //ColorConverter.ConvertFromString("#968677", 122)
+            thisWindow.TitleBar.ButtonHoverBackgroundColor = Tool.GetAppRessource<Color>("AppTitleBarHoverColor");
+            thisWindow.TitleBar.ButtonHoverForegroundColor = Colors.White;
+            thisWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
+            thisWindow.TitleBar.ButtonPressedForegroundColor = Colors.White;
+
+            Uri imageSource = new(@$"ms-appx:///Resources/Images/{fileName}");
+            WindowIcon.Source = new BitmapImage(imageSource);
+        }
+
+        /*private void SetDragRegionForCustomTitleBar()
+        {
+            //Infer titlebar height
+            int titleBarHeight = 32;
+
+            // Get caption button occlusion information
+            // Use LeftInset if you've explicitly set your window layout to RTL or if app language is a RTL language
+            int CaptionButtonOcclusionWidth = thisWindow.TitleBar.RightInset;
+
+            // Define your drag Regions
+            int windowIconWidthAndPadding = (int)(PresenterModeButton.Width + WindowIcon.Width + WindowTitleTextBlock.Width + 10);
+            int dragRegionWidth = thisWindow.Size.Width - (CaptionButtonOcclusionWidth + windowIconWidthAndPadding);
+
+            RectInt32[] dragRects = new RectInt32[] { };
+            RectInt32 dragRect;
+
+            dragRect.X = windowIconWidthAndPadding;
+            dragRect.Y = 0;
+            dragRect.Height = titleBarHeight;
+            dragRect.Width = dragRegionWidth;
+
+            thisWindow.TitleBar.SetDragRectangles(dragRects.Append(dragRect).ToArray());
+        }*/
+
         #region window events
+        private void PresenterModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (thisWindow.Presenter.Kind != AppWindowPresenterKind.CompactOverlay)
+            {
+                thisWindow.SetPresenter(AppWindowPresenterKind.CompactOverlay);
+            }
+            else
+            {
+                thisWindow.SetPresenter(AppWindowPresenterKind.Default);
+            }
+        }
+
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             if (!closed)
             {
-                //_ = DispatcherQueue?.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
+                WindowSize = args.Size;
             }
         }
 
@@ -133,6 +288,8 @@ namespace MultitoolWinUI
             MessageDisplay.Silence();
             try
             {
+                PositionX = thisWindow.Position.X;
+                PositionY = thisWindow.Position.Y;
                 App.Settings.Save(this);
             }
             catch (ArgumentException ex)
@@ -152,7 +309,7 @@ namespace MultitoolWinUI
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-
+            
         }
         #endregion
     }

@@ -28,6 +28,7 @@
 
             <AutoSuggestBox
                 x:Name="UriTextBox"
+                IsRightTapEnabled="False"
                 Text="{x:Bind LastVisited, Mode=TwoWay}"
                 QueryIcon="Zoom"
                 VerticalContentAlignment="Center"
@@ -42,17 +43,15 @@
                 Grid.Row="1"/>
         </Grid>
 
-        <Button Content="Connect" Click="Button_Click" Grid.Row="0" Grid.Column="1"/>
-        <!--<TabView
+        <TabView
             x:Name="Chats"
-            TabItemsSource="{x:Bind Tabs}"
             Background="Transparent"
             VerticalAlignment="Stretch"
             Margin="0,0,0,5"
             CornerRadius="3"
-            Grid.Row="0"
+            Grid.RowSpan="2"
             Grid.Column="1"
             AddTabButtonClick="Chats_AddTabButtonClick"
-            TabCloseRequested="Chats_TabCloseRequested"/>-->
+            TabCloseRequested="Chats_TabCloseRequested"/>
     </Grid>
 </Page>

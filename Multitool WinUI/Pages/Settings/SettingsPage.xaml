@@ -45,7 +45,7 @@
             Grid.Row="1"
             Grid.ColumnSpan="2"
             Margin="40,10,0,10">
-            <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
+            <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                 <!--#region General settings -->
                 <TextBlock 
                     x:Name="GeneralHeader"
@@ -268,10 +268,19 @@
                     FontSize="{StaticResource SettingTitleFontSize}" 
                     FontWeight="{StaticResource SettingTitleFontWeight}"
                     Margin="0,0,0,10"/>
-                <StackPanel>
+                <StackPanel Orientation="Vertical" Spacing="{StaticResource StackPanelButtonSpacing}">
                     <HyperlinkButton
                         Content="Go to project repository"
                         NavigateUri="{x:Bind GithubUri}"/>
+                    <HyperlinkButton
+                        Content="Open temporary folder"
+                        Click="TempDataFolderHyperlink_Click"/>
+                    <HyperlinkButton
+                        Content="Open application folder"
+                        Click="AppDataFolderHyperlink_Click"/>
+                    <HyperlinkButton
+                        Content="Open application settings folder"
+                        Click="AppSettingsFolderHyperlink_Click"/>
                 </StackPanel>
                 <!--#endregion-->
             </StackPanel>

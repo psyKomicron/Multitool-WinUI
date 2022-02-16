@@ -2,12 +2,21 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.Net.Imaging;
+using Multitool.Drawing;
+using Multitool.Net.Twitch;
+using Multitool.Net.Twitch.Factories;
+using Multitool.Net.Twitch.Irc;
+using Multitool.Net.Twitch.Security;
 
+using MultitoolWinUI.Models;
+using MultitoolWinUI.Pages.Irc;
+
+using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Text;
+using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -19,27 +28,55 @@ namespace MultitoolWinUI.Pages.Test
     /// </summary>
     public sealed partial class TestPage : Page
     {
+        //private TwitchIrcClient client;
+
         public TestPage()
         {
             InitializeComponent();
         }
 
-        public ObservableCollection<Emote> Emotes { get; set; } = new();
+        public List<string> Items { get; } = new() { "https", "www", "twitch", "tv", "buddha" };
 
-        public string Channel { get; set; }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void SetControl(Control control)
         {
-            Trace.TraceError("dsflknbsdflknsdflkn");
-            List<byte> data = new();
-            string[] input = ChatInput.Text.Split(' ');
-            foreach (string c in input)
+            if (ControlsGrid.Children.Count > 0)
             {
-                byte.TryParse(c, out byte res);
-                data.Add(res);
+                ControlsGrid.Children.Clear();
             }
-            byte[] vs = data.ToArray();
-            Result.Text = Encoding.UTF8.GetString(vs);
+            Grid.SetColumn(control, 0);
+            Grid.SetRow(control, 0);
+            ControlsGrid.Children.Add(control);
+        }
+
+        private void BreadcrumbBar_GotFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void BreadcrumbBar_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ColorsButton_Click(object sender, RoutedEventArgs e)
+        {
+            ColorBrowserControl control = new()
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            SetControl(control);
+        }
+
+        private void ColorSpectrumButton_Click(object sender, RoutedEventArgs e)
+        {
+            ColorPicker picker = new()
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Height = 400
+            };
+            SetControl(picker);
         }
     }
 }

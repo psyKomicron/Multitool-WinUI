@@ -42,6 +42,10 @@
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
     <None Remove="Pages\IrcChatPage.xaml" />
     <None Remove="Pages\Irc\ChatControl.xaml" />
+    <None Remove="Pages\MusicPlayer\MusicFileView.xaml" />
+    <None Remove="Pages\MusicPlayer\MusicPlayerPage.xaml" />
+    <None Remove="Pages\MusicPlayer\MusicSearchPage.xaml" />
+    <None Remove="Pages\MusicPlayer\PlaylistCreationPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
     <None Remove="Pages\Settings\SettingsPage.xaml" />
     <None Remove="Pages\Test\TestPage.xaml" />
@@ -59,9 +63,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
+    <ProjectReference Include="..\Multitool BL\Multitool.csproj" />
     <ProjectReference Include="..\Multitool.Net\Multitool.Net.csproj" />
-    <ProjectReference Include="..\MultitoolDAL\Multitool.DAL.csproj" />
+    <ProjectReference Include="..\MultitoolDAL\Multitool.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -85,7 +89,13 @@
     <Content Update="Resources\Images\lock_ico.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Update="Resources\Images\peepoPoopoo.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Update="Resources\Images\power_ico.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Resources\Images\pugPls.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Update="Resources\Images\restart_ico.png">
@@ -104,6 +114,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Update="Pages\Librairies\LibrairyPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Librairies\MusicFileView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\MusicPlayer\PlaylistCreationPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\MusicPlayer\MusicSearchPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <None Update="Resources\Images\ico151.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -156,6 +178,9 @@
 
   <ItemGroup>
     <Page Update="Pages\ControlPanels\SettingPathView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Test\ColorBrowserControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

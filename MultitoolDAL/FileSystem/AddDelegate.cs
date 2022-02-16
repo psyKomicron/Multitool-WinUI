@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     /// <summary>
     /// Delegate.

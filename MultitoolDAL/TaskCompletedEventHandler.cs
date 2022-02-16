@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     public delegate void TaskCompletedEventHandler(TaskStatus status, Task completedTask = null);
 }

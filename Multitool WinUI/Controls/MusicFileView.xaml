@@ -1,0 +1,77 @@
+﻿<UserControl
+    x:Class="MultitoolWinUI.Pages.MusicPlayer.MusicFileView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Grid
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Top"
+        ColumnSpacing="20"
+        Margin="0,7,0,7">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="5*"/>
+            <ColumnDefinition Width="5*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition MaxWidth="20"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Image
+            Source="{x:Bind Thumbnail, Mode=OneWay}"
+            Height="45"
+            VerticalAlignment="Center"
+            Grid.RowSpan="3"
+            Grid.Column="0"/>
+
+        <TextBlock 
+            Text="{x:Bind Title, Mode=OneWay}" 
+            TextWrapping="Wrap" 
+            FontStretch="ExtraExpanded" 
+            FontSize="16" 
+            Grid.Column="1"
+            Grid.Row="0"/>
+        
+        <TextBlock 
+            Text="{x:Bind Artist, Mode=OneWay}" 
+            TextWrapping="Wrap"
+            Opacity="0.7"
+            Grid.Column="1" 
+            Grid.Row="1"/>
+
+        <TextBlock 
+            Text="{x:Bind Album, Mode=OneWay}" 
+            TextWrapping="Wrap" 
+            Grid.Column="2" 
+            Grid.Row="1"/>
+
+        <TextBlock 
+            Text="{x:Bind Length, Mode=OneWay}" 
+            TextWrapping="Wrap" 
+            Opacity="0.8" 
+            Grid.Column="3" 
+            Grid.RowSpan="3" 
+            VerticalAlignment="Center"/>
+
+        <TextBlock
+            Text="{x:Bind PlayCount, Mode=OneWay}" 
+            Grid.Column="4" 
+            Grid.RowSpan="3" 
+            VerticalAlignment="Center"/>
+
+        <Grid.ContextFlyout>
+            <Flyout>
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Orientation="Vertical">
+                    <TextBlock Text="{x:Bind FileName}"/>
+                    <TextBlock Text="{x:Bind FullPath}" IsTextSelectionEnabled="True"/>
+                    <TextBlock Text="{x:Bind Comment}" Visibility="{x:Bind CommentVisibility}"/>
+                </StackPanel>
+            </Flyout>
+        </Grid.ContextFlyout>
+    </Grid>
+</UserControl>

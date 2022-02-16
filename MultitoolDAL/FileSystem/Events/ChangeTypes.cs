@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Multitool.DAL.FileSystem.Events
+namespace Multitool.Data.FileSystem.Events
 {
     /// <summary>
     /// Change types.

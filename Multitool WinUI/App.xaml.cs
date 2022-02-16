@@ -1,8 +1,8 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.DAL;
-using Multitool.DAL.Settings;
+using Multitool.Data;
+using Multitool.Data.Settings;
 
 using MultitoolWinUI.Helpers;
 
@@ -41,16 +41,19 @@ namespace MultitoolWinUI
 
         public static void TraceInformation(string info)
         {
+            Trace.TraceInformation(info);
             TraceMessage("Information", info, infoBrush);
         }
 
         public static void TraceWarning(string warning)
         {
+            Trace.TraceWarning(warning);
             TraceMessage("Warning", warning, warningBrush);
         }
 
         public static void TraceError(Exception error)
         {
+            Trace.TraceError(error.ToString());
 #if DEBUG
             TraceMessage("Error", error.ToString(), errorBrush);
 #else
@@ -67,7 +70,7 @@ namespace MultitoolWinUI
         {
             Trace.TraceInformation("Application starting...");
             Settings =
-#if DEBUG
+#if true
                 await XmlSettingManager.Get();
 #else
         new SettingsManager(ApplicationData.Current.LocalSettings)

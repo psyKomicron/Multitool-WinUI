@@ -5,11 +5,11 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL;
-using Multitool.DAL.Completion;
-using Multitool.DAL.FileSystem;
-using Multitool.DAL.FileSystem.Events;
-using Multitool.DAL.Settings;
+using Multitool.Data;
+using Multitool.Data.Completion;
+using Multitool.Data.FileSystem;
+using Multitool.Data.FileSystem.Events;
+using Multitool.Data.Settings;
 using Multitool.Parsers;
 using Multitool.Sorting;
 using Multitool.Threading;

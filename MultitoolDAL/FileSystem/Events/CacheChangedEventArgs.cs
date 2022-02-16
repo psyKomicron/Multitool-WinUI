@@ -1,6 +1,6 @@
 ﻿using Multitool.Optimisation;
 
-namespace Multitool.DAL.FileSystem.Events
+namespace Multitool.Data.FileSystem.Events
 {
     internal class CacheChangedEventArgs : PoolableObject
     {

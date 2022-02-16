@@ -7,7 +7,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL.Settings;
+using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
 using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Pages.Explorer;
@@ -16,6 +17,9 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+
+using Windows.Storage;
+using Windows.System;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -299,7 +303,7 @@ namespace MultitoolWinUI.Pages.Settings
                 TokenValidationProgressRing.IsIndeterminate = false;
                 TokenValidationProgressRing.Visibility = Visibility.Collapsed;
 
-                DispatcherQueueTimer timer = DispatcherQueue.CreateTimer();
+                Microsoft.UI.Dispatching.DispatcherQueueTimer timer = DispatcherQueue.CreateTimer();
                 timer.Interval = TimeSpan.FromMilliseconds(3_000);
                 timer.IsRepeating = false;
                 timer.Tick += (s, e) => LoginPasswordBox.BorderBrush = null;
@@ -361,6 +365,20 @@ namespace MultitoolWinUI.Pages.Settings
         private void ShowMentionsHelp_Click(object sender, RoutedEventArgs e)
         {
             MentionsTeachingTip.IsOpen = !MentionsTeachingTip.IsOpen;
+        }
+
+        private void TempDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
+        {
+            _ = Launcher.LaunchUriAsync(new(ApplicationData.Current.TemporaryFolder.Path));
+        }
+
+        private void AppDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
+        {
+            _ = Launcher.LaunchUriAsync(new(ApplicationData.Current.LocalFolder.Path));
+        }
+
+        private void AppSettingsFolderHyperlink_Click(object sender, RoutedEventArgs e)
+        {
         }
         #endregion
     }

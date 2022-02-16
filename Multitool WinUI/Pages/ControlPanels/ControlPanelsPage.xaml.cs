@@ -2,7 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL;
+using Multitool.Data;
 
 using System;
 using System.Collections.Generic;

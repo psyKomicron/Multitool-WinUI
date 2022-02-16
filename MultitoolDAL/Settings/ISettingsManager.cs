@@ -2,7 +2,7 @@
 
 using Windows.Foundation;
 
-namespace Multitool.DAL.Settings
+namespace Multitool.Data.Settings
 {
     /// <summary>
     /// Defines behavior for classes handling app settings.

@@ -12,12 +12,24 @@
             <param name="items">Reference to a list of items for the delegate</param>
             <param name="item">The new item to add</param>
         </member>
-        <member name="T:Multitool.DAL.FileSystem.ArrayConverter">
+        <member name="T:Multitool.DAL.Completion.IPathCompletor">
             <summary>
-            Converts a <see cref="T:System.Collections.IList"/> to a string array.
+            Defines a method to complete pathes.
             </summary>
         </member>
-        <member name="M:Multitool.DAL.FileSystem.ArrayConverter.Convert(System.Collections.IList)">
+        <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
+            <summary>
+            Completes a path by a list of possible choices.
+            </summary>
+            <param name="input">Path input</param>
+            <returns>A list of possible choices</returns>
+        </member>
+        <member name="T:Multitool.DAL.Completion.PathCompletor">
+            <summary>
+            Completes filesystem pathes
+            </summary>
+        </member>
+        <member name="M:Multitool.DAL.Completion.PathCompletor.Complete(System.String)">
             <inheritdoc/>
         </member>
         <member name="T:Multitool.DAL.FileSystem.Events.CacheUpdatingEventArgs">
@@ -252,7 +264,7 @@
             per path loaded).
             </summary>
         </member>
-        <member name="M:Multitool.DAL.FileSystem.IFileSystemManager.GetFileSystemEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
+        <member name="M:Multitool.DAL.FileSystem.IFileSystemManager.GetEntries``1(System.String,System.Collections.Generic.IList{``0},Multitool.DAL.AddDelegate{``0},System.Threading.CancellationToken)">
             <summary>
             List the content of a directory as a <see cref="T:System.Collections.Generic.IList`1"/>.
             Because each directory size is calculated, the task can be 
@@ -279,26 +291,6 @@
             Cleans the internal cache.
             </summary>
         </member>
-        <member name="T:Multitool.DAL.Completion.IPathCompletor">
-            <summary>
-            Defines a method to complete pathes.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.Completion.IPathCompletor.Complete(System.String)">
-            <summary>
-            Completes a path by a list of possible choices.
-            </summary>
-            <param name="input">Path input</param>
-            <returns>A list of possible choices</returns>
-        </member>
-        <member name="T:Multitool.DAL.Completion.PathCompletor">
-            <summary>
-            Completes filesystem pathes
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.Completion.PathCompletor.Complete(System.String)">
-            <inheritdoc/>
-        </member>
         <member name="P:Multitool.DAL.DirectoryEntry.Size">
             <inheritdoc/>
         </member>
@@ -321,13 +313,13 @@
             Default constructor.
             </summary>
         </member>
-        <member name="P:Multitool.DAL.DirectorySizeCalculator.Notify">
-            <inheritdoc/>
-        </member>
         <member name="E:Multitool.DAL.DirectorySizeCalculator.Progress">
             <inheritdoc/>
         </member>
         <member name="E:Multitool.DAL.DirectorySizeCalculator.Exception">
+            <inheritdoc/>
+        </member>
+        <member name="P:Multitool.DAL.DirectorySizeCalculator.Notify">
             <inheritdoc/>
         </member>
         <member name="M:Multitool.DAL.DirectorySizeCalculator.CalculateDirectorySizeAsync(System.String,System.Action{System.Int64},System.Threading.CancellationToken)">
@@ -780,118 +772,37 @@
             Defines behavior for classes handling app settings.
             </summary>
         </member>
-        <member name="P:Multitool.DAL.Settings.ISettingsManager.DataContainer">
-            <summary>
-            The <see cref="T:Windows.Storage.ApplicationDataContainer"/> associated with this instance.
-            </summary>
-        </member>
-        <member name="M:Multitool.DAL.Settings.ISettingsManager.Load``1(``0,System.Boolean)">
-            <summary>
-            Loads values into the corresponding properties of <paramref name="toLoad"/> from the 
-            <see cref="T:Windows.Storage.ApplicationDataContainer"/>.
-            </summary>
-            <typeparam name="T">Generic for the class</typeparam>
-            <param name="toLoad">Instance to load</param>
-            <param name="useSettingAttribute">
-            <see langword="true"/> to save only properties with a <see cref="T:Multitool.DAL.Settings.SettingAttribute"/>,
-            <see langword="false"/> to save all properties of <paramref name="toLoad"/>
-            </param>
-        </member>
-        <member name="M:Multitool.DAL.Settings.ISettingsManager.Save``1(``0,System.Boolean)">
-            <summary>
-            Saves the properties of <paramref name="toSave"/> to <see cref="P:Multitool.DAL.Settings.ISettingsManager.DataContainer"/>.
-            </summary>
-            <typeparam name="T">Generic for the class</typeparam>
-            <param name="toSave">Instance to save</param>
-            <param name="useSettingAttribute">
-            <see langword="true"/> to save only properties with a <see cref="T:Multitool.DAL.Settings.SettingAttribute"/>,
-            <see langword="false"/> to save all properties of <paramref name="toLoad"/>
-            </param>
-        </member>
-        <member name="M:Multitool.DAL.Settings.ISettingsManager.GetSetting``1(System.String,System.String)">
-            <summary>
-            Gets a setting from <see cref="P:Multitool.DAL.Settings.ISettingsManager.DataContainer"/> using a specific key 
-            (created by formatting <paramref name="globalKey"/> and <paramref name="settingKey"/> with <see cref="!:SettingFormat"/>)
-            </summary>
-            <typeparam name="T">The type of the setting.</typeparam>
-            <param name="globalKey"></param>
-            <param name="settingKey"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Multitool.DAL.Settings.ISettingsManager.SaveSetting(System.String,System.String,System.Object)">
+        <member name="M:Multitool.DAL.Settings.SettingAttribute.#ctor(System.Type)">
             <summary>
             <para>
-            Saves a setting to the provided <see cref="P:Multitool.DAL.Settings.ISettingsManager.DataContainer"/>, formatting <paramref name="callerName"/> and <paramref name="name"/> with <see cref="!:SettingFormat"/>.
+            Sets the property to be saved by a <see cref="!:SettingsManager"/>.
             </para>
             <para>
-                If the setting does not exists an entry will be created, if it does the value will be updated.
+            The class will create an instance of <see cref="!:SettingConverter"/> (<paramref name="converterType"/>) to convert saved value back and forth.
             </para>
             </summary>
-            <param name="callerName">Name of the caller (should be unique)</param>
-            <param name="name">Name of the setting</param>
-            <param name="value">Value to save</param>
+            <param name="converterType"></param>
         </member>
-        <member name="M:Multitool.DAL.Settings.ISettingsManager.TryGetSetting(System.String,System.String)">
+        <member name="M:Multitool.DAL.Settings.SettingAttribute.#ctor(System.Object,System.String)">
             <summary>
-            Gets a setting from <see cref="P:Multitool.DAL.Settings.ISettingsManager.DataContainer"/> using a specific key 
-            (created by formatting <paramref name="globalKey"/> and <paramref name="settingKey"/> with <see cref="!:SettingFormat"/>)
-            <para>
-            The retrieved setting will not be converted, thus will not throw any conversion exceptions.
-            </para>
+            Creates a <see cref="T:Multitool.DAL.Settings.SettingAttribute"/>, the property will be instanciated with <paramref name="defaultValue"/>
+            if the setting does not exists
             </summary>
-            <param name="globalKey"></param>
-            <param name="settingKey"></param>
-            <returns>The setting value if found (usually a string) or null if the setting was not found.</returns>
+            <param name="defaultValue"></param>
         </member>
-        <member name="M:Multitool.DAL.Settings.ISettingsManager.TryGetSetting(System.Type,System.String,System.String,System.Object@)">
+        <member name="M:Multitool.DAL.Settings.SettingAttribute.#ctor">
             <summary>
-            Same as <see cref="M:Multitool.DAL.Settings.ISettingsManager.GetSetting``1(System.String,System.String)"/>, but with no generics and no exceptions.
-            </summary>
-            <param name="settingType">Type to convert the setting to.</param>
-            <param name="callerName"></param>
-            <param name="name"></param>
-            <param name="value">If the setting is found, <paramref name="value"/> will be valued to the setting's value.</param>
-            <returns>The setting value if found (usually a string) or null if the setting was not found.</returns>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingAttribute.#ctor(System.Type,System.Object[])">
-            <summary>
-            Marks the property as a setting, so that a setting loader will load the corresponding setting. If no corresponding setting is found, the property will be instanciated with an instance of <paramref name="propertyType"/>.
-            </summary>
-            <param name="propertyType"></param>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingConverter.#ctor">
-            <summary>
-            Default constructor
+            Default parameter-less constructor.
             </summary>
         </member>
-        <member name="P:Multitool.DAL.Settings.SettingsManager.DataContainer">
-            <inheritdoc/>
-        </member>
-        <member name="P:Multitool.DAL.Settings.SettingsManager.SettingFormat">
+        <member name="P:Multitool.DAL.Settings.SettingAttribute.DefaultValue">
             <summary>
-            How the setting key will be created
+            Setting default value.
             </summary>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingsManager.Save``1(``0,System.Boolean)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingsManager.Load``1(``0,System.Boolean)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingsManager.SaveSetting(System.String,System.String,System.Object)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingsManager.GetSetting``1(System.String,System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingsManager.TryGetSetting(System.String,System.String)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.SettingsManager.TryGetSetting(System.Type,System.String,System.String,System.Object@)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Multitool.DAL.Settings.GetAllSettings">
-            <inheritdoc/>
+            <remarks>
+            Do not check if the property is <see langword="null"/>, but use the <see cref="P:Multitool.DAL.Settings.SettingAttribute.HasDefaultValue"/> property to check if you can use
+            the property
+            </remarks>
         </member>
     </members>
 </doc>

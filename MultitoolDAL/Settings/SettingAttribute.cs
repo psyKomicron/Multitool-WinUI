@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Multitool.Data.Settings.Converters;
+
+using System;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Multitool.DAL.Settings
+namespace Multitool.Data.Settings
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
     public class SettingAttribute : Attribute
@@ -16,7 +18,7 @@ namespace Multitool.DAL.Settings
         /// </para>
         /// </summary>
         /// <param name="converterType"></param>
-        public SettingAttribute(Type converterType, bool defaultInstanciate = true, string settingName = null)
+        public SettingAttribute(Type converterType)
         {
             if (converterType != null)
             {
@@ -33,9 +35,7 @@ namespace Multitool.DAL.Settings
                     Trace.TraceError($"Failed to create custom setting converter: {ex}");
                 }
             }
-
-            SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
-            DefaultInstanciate = defaultInstanciate;
+            DefaultInstanciate = true;
         }
 
         public SettingAttribute(Type memberType, string settingName)
@@ -54,6 +54,12 @@ namespace Multitool.DAL.Settings
             DefaultValue = defaultValue;
             HasDefaultValue = true;
             SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
+        }
+
+        public SettingAttribute(Type converterType, params object[] parameters) : this(converterType)
+        {
+            DefaultValue = parameters;
+            HasDefaultValue = true;
         }
 
         /// <summary>

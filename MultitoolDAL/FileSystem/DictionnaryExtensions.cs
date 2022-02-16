@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Multitool.DAL.FileSystem
+namespace Multitool.Data.FileSystem
 {
     internal static class DictionnaryExtensions
     {

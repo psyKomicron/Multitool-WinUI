@@ -1,7 +1,7 @@
 ﻿using System;
 
 #nullable enable
-namespace Multitool.DAL.FileSystem.Events
+namespace Multitool.Data.FileSystem.Events
 {
     /// <summary>
     /// Provides data for file system changes events.

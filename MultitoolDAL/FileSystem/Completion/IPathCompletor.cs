@@ -1,4 +1,4 @@
-﻿namespace Multitool.DAL.Completion
+﻿namespace Multitool.Data.Completion
 {
     /// <summary>
     /// Defines a method to complete pathes.
