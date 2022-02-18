@@ -7,8 +7,6 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Multitool.BL.Interop;
 using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
-using Multitool.Drawing;
-using Multitool.Interop;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
@@ -23,14 +21,9 @@ using MultitoolWinUI.Pages.Test;
 
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
 using Windows.Foundation;
-using Windows.Graphics;
 using Windows.UI;
-
-using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.

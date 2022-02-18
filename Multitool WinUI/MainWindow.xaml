@@ -6,7 +6,10 @@
     xmlns:controls="using:MultitoolWinUI.Controls"
     Closed="Window_Closed"
     Activated="Window_Activated">
-    <Grid>
+    <Grid Background="{ThemeResource SystemControlAcrylicWindowBrush}">
+        <!--<Grid.Background>
+            <AcrylicBrush TintOpacity="0.7" TintColor="{ThemeResource SystemAccentColor}" FallbackColor="{ThemeResource SystemAccentColor}" TintLuminosityOpacity="0.2"/>
+        </Grid.Background>-->
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
@@ -14,7 +17,7 @@
             <RowDefinition Height="32" MinHeight="32"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Grid x:Name="MyTitleBar" Grid.Row="0" Background="{StaticResource DarkBlack}">
+        <Grid x:Name="MyTitleBar" Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -34,11 +37,12 @@
                 VerticalAlignment="Center"
                 Grid.Column="1"/>
         </Grid>
+        <!--Background="{StaticResource NavigationViewDefaultPaneBackground}"-->
         <NavigationView
             x:Name="WindowNavigationView"
             IsPaneOpen="{Binding ElementName=Window, Path=IsPaneOpen, Mode=TwoWay}"
             IsBackEnabled="{Binding ElementName=ContentFrame, Path=CanGoBack}"
-            Background="{StaticResource NavigationViewDefaultPaneBackground}"
+            
             Grid.Row="1"
             Loaded="NavigationView_Loaded"
             BackRequested="NavigationView_BackRequested"
