@@ -212,21 +212,30 @@ namespace MultitoolWinUI
         {
             IntPtr windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
             WindowId windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
+
             thisWindow = AppWindow.GetFromWindowId(windowId);
-            thisWindow.TitleBar.ExtendsContentIntoTitleBar = true;
 
-            thisWindow.TitleBar.ButtonBackgroundColor = Tool.GetAppRessource<Color>("DarkBlack");
-            thisWindow.TitleBar.ButtonForegroundColor = Colors.White;
-            thisWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-            thisWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Gray;
-            //ColorConverter.ConvertFromString("#968677", 122)
-            thisWindow.TitleBar.ButtonHoverBackgroundColor = Tool.GetAppRessource<Color>("AppTitleBarHoverColor");
-            thisWindow.TitleBar.ButtonHoverForegroundColor = Colors.White;
-            thisWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
-            thisWindow.TitleBar.ButtonPressedForegroundColor = Colors.White;
+            if (AppWindowTitleBar.IsCustomizationSupported())
+            {
+                thisWindow.TitleBar.ExtendsContentIntoTitleBar = true;
 
-            Uri imageSource = new(@$"ms-appx:///Resources/Images/{fileName}");
-            WindowIcon.Source = new BitmapImage(imageSource);
+                thisWindow.TitleBar.ButtonBackgroundColor = Tool.GetAppRessource<Color>("DarkBlack");
+                thisWindow.TitleBar.ButtonForegroundColor = Colors.White;
+                thisWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+                thisWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Gray;
+                //ColorConverter.ConvertFromString("#968677", 122)
+                thisWindow.TitleBar.ButtonHoverBackgroundColor = Tool.GetAppRessource<Color>("AppTitleBarHoverColor");
+                thisWindow.TitleBar.ButtonHoverForegroundColor = Colors.White;
+                thisWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
+                thisWindow.TitleBar.ButtonPressedForegroundColor = Colors.White;
+
+                Uri imageSource = new(@$"ms-appx:///Resources/Images/{fileName}");
+                WindowIcon.Source = new BitmapImage(imageSource); 
+            }
+            else
+            {
+                TitleBarGrid.Visibility = Visibility.Collapsed;
+            }
         }
 
         /*private void SetDragRegionForCustomTitleBar()
