@@ -2,6 +2,7 @@
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -37,7 +38,6 @@ namespace MultitoolWinUI.Pages.Irc
     public sealed partial class ChatControl : UserControl, IAsyncDisposable
     {
         private readonly DelayedActionQueue delayedActionQueue = new(1000);
-        private readonly SolidColorBrush messageBackground = new(Colors.MediumPurple);
         private readonly SolidColorBrush userSubBackground = new(Colors.MediumPurple)
         {
             Opacity = 0.5
@@ -55,6 +55,7 @@ namespace MultitoolWinUI.Pages.Irc
         {
             InitializeComponent();
             this.client = client;
+
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
 
@@ -63,27 +64,36 @@ namespace MultitoolWinUI.Pages.Irc
             client.RoomChanged += Client_RoomChanged;
             client.UserTimedOut += Client_UserTimedOut;
             client.UserNotice += Client_UserNotice;
+
+            delayedActionQueue.QueueEmpty += DelayedActionQueue_QueueEmpty;
         }
 
         #region properties
+        #region normal props
         public string Channel { get; set; }
         public List<Emote> ChannelEmotes { get; } = new();
         public List<Emote> Emotes { get; } = new();
         public TabViewItem Tab { get; set; }
-        public FontWeight UserMessagesFontWeight { get; set; } = FontWeights.SemiLight;
+        public FontWeight UserMessagesFontWeight { get; set; } = FontWeights.Normal;
         public FontWeight SystemMessagesFontWeight { get; set; } = FontWeights.SemiLight;
+        #endregion
 
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.TimestampFormat))]
-        public string TimestampFormat { get; set; } = "t";
-
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMaxNumberOfMessages))]
-        public int MaxMessages { get; set; }
-
+        #region settings
         [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatEmoteSize))]
         public double EmoteSize { get; set; } = 30;
 
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMaxNumberOfMessages))]
+        public int MaxMessages { get; set; }        
+
         [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMentionRegex))]
         public Regex MentionRegex { get; set; }
+
+        //[Setting]
+        public bool ReplyWithAt { get; set; }
+
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.TimestampFormat))]
+        public string TimestampFormat { get; set; } = "t";
+        #endregion
         #endregion
 
         public async ValueTask DisposeAsync()
@@ -100,7 +110,7 @@ namespace MultitoolWinUI.Pages.Irc
                 {
                     await client.Join(Channel);
                     joined = true;
-                    delayedActionQueue.QueueAction(() => DisplayMessage($"Joined {Channel}", string.Empty, messageBackground));
+                    delayedActionQueue.QueueAction(() => DisplayMessage($"Joined {Channel}"));
                     ChannelEmotes.AddRange(await EmoteProxy.Get().FetchChannelEmotes(Channel));
                 }
                 catch (ArgumentException ex)
@@ -118,11 +128,9 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
-        private void DisplayMessage(string title, string message, Brush background)
+        private void DisplayMessage(string message)
         {
-            UpdateInfoBar.Title = title;
             UpdateInfoBar.Message = message;
-            UpdateInfoBar.Background = background;
             UpdateInfoBar.IsOpen = true;
         }
 
@@ -137,7 +145,7 @@ namespace MultitoolWinUI.Pages.Irc
             // name
             paragraph.Inlines.Add(new Run()
             {
-                Text = (string.IsNullOrEmpty(message.Author.DisplayName) ? message.Author.Name : message.Author.DisplayName) + ": ",
+                Text = $"{(string.IsNullOrEmpty(message.Author.DisplayName) ? message.Author.Name : message.Author.DisplayName)}: ",
                 Foreground = messageColors.GetOrAdd(message.Author.NameColor, GetOrCreate),
                 FontWeight = FontWeights.SemiBold
             });
@@ -172,13 +180,12 @@ namespace MultitoolWinUI.Pages.Irc
                     };
                     if (words[i].Length > 0)
                     {
-                        run.FontWeight = words[i][0] == '@' ? FontWeights.Bold : UserMessagesFontWeight;
+                        run.FontWeight = words[i][0] == '@' ? FontWeights.SemiBold : UserMessagesFontWeight;
                     }
                     paragraph.Inlines.Add(run);
                 }
                 text = true;
             }
-
             presenter.Blocks.Add(paragraph);
             return presenter;
         }
@@ -197,18 +204,18 @@ namespace MultitoolWinUI.Pages.Irc
         {
             return new()
             {
-                LineHeight = 24,
+                LineHeight = EmoteSize,
                 CharacterSpacing = 15,
                 LineStackingStrategy = LineStackingStrategy.MaxHeight
             };
         }
 
-        private RichTextBlock CreatePresenter()
+        private static RichTextBlock CreatePresenter()
         {
             return new()
             {
                 TextWrapping = TextWrapping.WrapWholeWords,
-                IsTextSelectionEnabled = true,
+                IsTextSelectionEnabled = true
             };
         }
 
@@ -225,12 +232,12 @@ namespace MultitoolWinUI.Pages.Irc
                     Text = text,
                     FontWeight = FontWeights.SemiLight
                 });
-
                 paragraph.Inlines.Add(container);
                 return false;
             }
             catch (UriFormatException ex)
             {
+                Trace.TraceError($"Cannot create uri: {text}");
                 App.TraceError(ex);
                 return true;
             }
@@ -238,19 +245,22 @@ namespace MultitoolWinUI.Pages.Irc
 
         private void PutImage(Paragraph paragraph, Emote emote)
         {
+            Image image = new()
+            {
+                Source = emote.Image,
+                Height = EmoteSize,
+                //Margin = new(0, 0, 0, -((EmoteSize / 2) - 4)),
+                VerticalAlignment = VerticalAlignment.Bottom
+            };
             InlineUIContainer imageContainer = new()
             {
-                Child = new Image()
-                {
-                    Source = emote.Image,
-                    Height = EmoteSize,
-                    Margin = new(0, 0, 0, -(EmoteSize / 2)),
-                    ContextFlyout = new Flyout()
-                    {
-                        Content = new TextBlock() { Text = $"Provider {emote.Provider}" }
-                    }
-                }
+                Child = image,
+                KeyTipPlacementMode = KeyTipPlacementMode.Center
             };
+            ToolTipService.SetToolTip(image, new TextBlock()
+            {
+                Text = $"{emote.Name}, {emote.Provider}"
+            });
             paragraph.Inlines.Add(imageContainer);
         }
 
@@ -267,21 +277,25 @@ namespace MultitoolWinUI.Pages.Irc
         private void Client_MessageReceived(IIrcClient sender, Message args)
         {
             if (DispatcherQueue == null) return;
-
+            
             Chat_ListView.DispatcherQueue.TryEnqueue(() =>
             {
-                MessageModel model = new()
+                RichTextBlock content = CreateMessage(args);
+
+                MessageModel model = new(args)
                 {
-                    Content = CreateMessage(args),
-                    HorizontalAlignment = args.Author.Name == client.NickName ? HorizontalAlignment.Right : HorizontalAlignment.Left
+                    Content = content
                 };
+                content.IsDoubleTapEnabled = true;
+                content.DoubleTapped += model.OnReply;
+                model.Reply += OnMessageReply;
+
                 if (MentionRegex != null)
                 {
                     model.Background = MentionRegex.IsMatch(args.ActualMessage) ? mentionBrush : null;
                 }
 
                 Chat_ListView.Items.Add(model);
-
                 NumberOfMessages_TextBlock.Text = Chat_ListView.Items.Count.ToString();
             });
 
@@ -309,6 +323,8 @@ namespace MultitoolWinUI.Pages.Irc
             
         }
 
+        
+
         private void Client_RoomChanged(IIrcClient sender, RoomStateEventArgs args)
         {
             DispatcherQueue.TryEnqueue(() =>
@@ -316,31 +332,31 @@ namespace MultitoolWinUI.Pages.Irc
                 switch (args.States)
                 {
                     case RoomStates.EmoteOnlyOn:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", "Emote only on", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage("Emote only on"));
                         break;
                     case RoomStates.EmoteOnlyOff:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", "Emote only off", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage("Emote only off"));
                         break;
 
                     case RoomStates.FollowersOnlyOn:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", $"Followers only on ({args.Data[RoomStates.FollowersOnlyOn]} min)", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage($"Followers only on ({args.Data[RoomStates.FollowersOnlyOn]} min)"));
                         break;
                     case RoomStates.FollowersOnlyOff:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", "Followers only off", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage("Followers only off"));
                         break;
 
                     case RoomStates.R9KOn:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", "R9K on", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage("R9K on"));
                         break;
                     case RoomStates.R9KOff:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", "R9K off", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage("R9K off"));
                         break;
 
                     case RoomStates.SlowModeOn:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", $"Slow mode on ({args.Data[RoomStates.FollowersOnlyOn]} s)", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage($"Slow mode on ({args.Data[RoomStates.FollowersOnlyOn]} s)"));
                         break;
                     case RoomStates.SlowModeOff:
-                        delayedActionQueue.QueueAction(() => DisplayMessage("Room change", "Slow mode off", messageBackground));
+                        delayedActionQueue.QueueAction(() => DisplayMessage("Slow mode off"));
                         break;
                 }
             });
@@ -350,7 +366,7 @@ namespace MultitoolWinUI.Pages.Irc
         {
             if (DispatcherQueue != null)
             {
-                delayedActionQueue.QueueAction(() => DisplayMessage("Warning", "The client has been disconnected from the channel", messageBackground));
+                delayedActionQueue.QueueAction(() => DisplayMessage("The client has been disconnected from the channel"));
             }
         }
 
@@ -363,33 +379,18 @@ namespace MultitoolWinUI.Pages.Irc
                 
                 // timestamp
                 paragraph.Inlines.Add(CreateTimestamp());
-                if (args.Timeout.Ticks == 0)
+                paragraph.Inlines.Add(new Run()
                 {
-                    paragraph.Inlines.Add(new Run()
+                    Text = args.Timeout.Ticks == 0 ? $"{args.UserName} has been banned" : $"{args.UserName} has been timed out for {args.Timeout.TotalSeconds} seconds",
+                    Foreground = new SolidColorBrush(Colors.White)
                     {
-                        Text = $"{args.UserName} has been banned",
-                        Foreground = new SolidColorBrush(Colors.White)
-                        {
-                            Opacity = 0.7
-                        },
-                        FontWeight = SystemMessagesFontWeight
-                    });
-                }
-                else
-                {
-                    paragraph.Inlines.Add(new Run()
-                    {
-                        Text = $"{args.UserName} has been timed out for {args.Timeout.TotalSeconds} seconds",
-                        Foreground = new SolidColorBrush(Colors.White)
-                        {
-                            Opacity = 0.7
-                        },
-                        FontWeight = SystemMessagesFontWeight
-                    });
-                }
+                        Opacity = 0.7
+                    },
+                    FontWeight = SystemMessagesFontWeight
+                });
 
                 presenter.Blocks.Add(paragraph);
-                Chat_ListView.Items.Add(new MessageModel()
+                Chat_ListView.Items.Add(new MessageModel(null)
                 {
                     Content = presenter
                 });
@@ -426,7 +427,7 @@ namespace MultitoolWinUI.Pages.Irc
                     presenter.Blocks.Add(userMessageParagraph);
                 }
 
-                Chat_ListView.Items.Add(new MessageModel()
+                Chat_ListView.Items.Add(new MessageModel(null)
                 {
                     Content = presenter,
                     Background = userSubBackground
@@ -436,6 +437,13 @@ namespace MultitoolWinUI.Pages.Irc
         #endregion
 
         #region ui events
+        private void OnMessageReply(MessageModel sender, Message args)
+        {
+            ChatInput.Text += ReplyWithAt ? $"@{args.Author} " : $"{args.Author} ";
+            ChatInput.Focus(FocusState.Programmatic);
+            ChatInput.SelectionStart = ChatInput.Text.Length;
+        }
+
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (!loaded)
@@ -445,9 +453,9 @@ namespace MultitoolWinUI.Pages.Irc
 
                 TextBox header = new()
                 {
-                    PlaceholderText = Channel ?? "Select channel...",
+                    PlaceholderText = Channel ?? "Select channel.",
                     BorderThickness = new(0),
-                    Background = new SolidColorBrush(Colors.Transparent)
+                    FontWeight = FontWeights.SemiLight
                 };
                 if (Tab != null)
                 {
@@ -469,8 +477,7 @@ namespace MultitoolWinUI.Pages.Irc
 
                 try
                 {
-                    var l = await EmoteProxy.Get().FetchGlobalEmotes();
-                    Emotes.AddRange(l);
+                    Emotes.AddRange(await EmoteProxy.Get().FetchGlobalEmotes());
                 }
                 catch (Exception ex)
                 {
@@ -543,10 +550,7 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
-        private void ChatInput_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            ctrlOn = e.Key == VirtualKey.LeftControl;
-        }
+        private void ChatInput_PreviewKeyDown(object sender, KeyRoutedEventArgs e) => ctrlOn = e.Key == VirtualKey.LeftControl;
 
         private async void ChatInput_KeyDown(object sender, KeyRoutedEventArgs e)
         {
@@ -568,10 +572,16 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
-        private void ChatInput_KeyUp(object sender, KeyRoutedEventArgs e)
+        private void ChatInput_KeyUp(object sender, KeyRoutedEventArgs e) => ctrlOn = e.Key != VirtualKey.LeftControl;
+
+        private void DelayedActionQueue_QueueEmpty(DelayedActionQueue sender, System.Timers.ElapsedEventArgs args)
         {
-            ctrlOn = e.Key != VirtualKey.LeftControl;
+#if false
+            UpdateInfoBar.IsOpen = false;
+#endif
         }
+
+        private void DismissPopupButton_Click(object sender, RoutedEventArgs e) => UpdateInfoBar.IsOpen = false;
         #endregion
 
         #endregion

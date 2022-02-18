@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:models="using:MultitoolWinUI.Models" 
+    xmlns:models="using:MultitoolWinUI.Models"
     xmlns:controls="using:MultitoolWinUI.Controls" 
     xmlns:imaging="using:Multitool.Net.Imaging"
     Background="#1A1C1C"
@@ -21,19 +21,61 @@
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <InfoBar x:Name="UpdateInfoBar" HorizontalAlignment="Center" Grid.Row="0" IsOpen="False"/>
+        <InfoBar
+            x:Name="UpdateInfoBar"
+            Severity="Informational"
+            Opacity="1"
+            Grid.ColumnSpan="2"
+            Grid.Row="0">
+            <InfoBar.Background>
+                <SolidColorBrush Color="MediumPurple" Opacity="1"/>
+            </InfoBar.Background>
+        </InfoBar>
+
+        <!--<Popup
+            x:Name="UpdateInfoBar"
+            MinHeight="50" 
+            Width="220"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Center"
+            Grid.ColumnSpan="2"
+            Grid.Row="0">
+            <Grid Padding="7,10" CornerRadius="{ThemeResource AppDefaultCornerRadius}" ColumnSpacing="20" >
+                <Grid.Background>
+                    <AcrylicBrush FallbackColor="MediumPurple" Opacity="0.9" TintOpacity="0.6" TintColor="White"/>
+                </Grid.Background>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon Glyph="&#xE946;" VerticalAlignment="Center" Grid.Column="0"/>
+                <TextBlock x:Name="TitleTextBlock" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1"/>
+                <Button 
+                    x:Name="DismissPopupButton" 
+                    VerticalAlignment="Center" 
+                    Background="Transparent" 
+                    BorderThickness="0"
+                    Height="25"
+                    Width="25"
+                    Padding="0"
+                    Click="DismissPopupButton_Click" 
+                    Grid.Column="2">
+                    <FontIcon Glyph="&#xE8BB;" FontSize="10"/>
+                </Button>
+            </Grid>
+        </Popup>-->
 
         <TextBlock 
             x:Name="NumberOfMessages_TextBlock" 
             Grid.Column="1"
-            Grid.Row="1"
+            Grid.Row="0"
             HorizontalAlignment="Right" 
             FontWeight="Bold" 
             FontFamily="Roboto"/>
 
         <ListView
             x:Name="Chat_ListView"
-            ScrollViewer.IsScrollInertiaEnabled="False"
             SelectionMode="None"
             Padding="0"
             HorizontalAlignment="Stretch"
@@ -52,9 +94,9 @@
                     <ContentPresenter
                         Content="{x:Bind Content, Mode=OneTime}"
                         Background="{x:Bind Background}"
-                        HorizontalAlignment="{x:Bind HorizontalAlignment}"
-                        Padding="4,5"
-                        CornerRadius="5"/>
+                        HorizontalAlignment="Stretch"
+                        CornerRadius="2"
+                        Margin="-5,0,0,2"/>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>

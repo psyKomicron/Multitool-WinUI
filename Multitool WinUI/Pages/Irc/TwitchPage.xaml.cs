@@ -31,7 +31,6 @@ namespace MultitoolWinUI.Pages
     public sealed partial class TwitchPage : Page, INotifyPropertyChanged
     {
         private bool saved;
-        private bool webviewLoaded;
         private TwitchConnectionToken token;
 
         public TwitchPage()
@@ -210,9 +209,8 @@ namespace MultitoolWinUI.Pages
                     };
 
                     tab.Content = chat;
-
                     sender.TabItems.Add(tab);
-                    sender.SelectedIndex = 0;
+                    sender.SelectedIndex = -1;
                 }
                 catch (ArgumentNullException)
                 {
@@ -234,44 +232,12 @@ namespace MultitoolWinUI.Pages
             NavigateTo("https://www." + args.QueryText);
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            if (token == null || !token.Validated)
-            {
-                App.TraceWarning("Cannot connect to any chat without login");
-            }
-            else
-            {
-                try
-                {
-                    IIrcClient client = new TwitchIrcClient(token, true)
-                    {
-                        NickName = "psykomicron",
-                        Encoding = Encoding.UTF8
-                    };
-                    ChatControl chat = new(client)
-                    {
-                        //Tab = tab,
-                        MentionRegex = new(client.NickName),
-                        MaxMessages = ChatMaxNumberOfMessages
-                    };
-                    Grid.SetColumn(chat, 1);
-                    Grid.SetRow(chat, 1);
-                    MainGrid.Children.Add(chat);
-                }
-                catch (ArgumentNullException)
-                {
-                    App.TraceWarning("Login is empty");
-                }
-            }
-        }
-        #endregion
-
-        #endregion
-
         private void UriTextBox_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
         {
 
         }
+        #endregion
+
+        #endregion
     }
 }
