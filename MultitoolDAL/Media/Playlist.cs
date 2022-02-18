@@ -43,6 +43,7 @@ namespace Multitool.Data.Media
 
         public void Add(StorageFile newSong)
         {
+            //if ()
         }
 
         public int IndexOf(StorageFile item) => songs.IndexOf(item);
@@ -79,9 +80,10 @@ namespace Multitool.Data.Media
         } 
         #endregion
 
-        public async Task Add(string path)
+        public async Task AddFile(string path)
         {
             StorageFile file = await StorageFile.GetFileFromPathAsync(path);
+            Add(file);
         }
 
 #nullable enable

@@ -1,4 +1,5 @@
-﻿using Multitool.Data.Settings.Converters;
+﻿using Multitool.Data.Media;
+using Multitool.Data.Settings.Converters;
 
 using System;
 using System.Xml;
@@ -20,11 +21,11 @@ namespace MultitoolWinUI.Models
                 node.Attributes.Append(name);
                 node.Attributes.Append(desc);
 
-                foreach (var song in model.Songs)
+                foreach (var song in model.Playlist)
                 {
                     XmlNode songNode = doc.CreateElement(nameof(String));
                     var value = doc.CreateAttribute("Value");
-                    value.Value = song;
+                    value.Value = song.Path;
                     songNode.Attributes.Append(value);
                     node.AppendChild(songNode);
                 }
@@ -39,12 +40,11 @@ namespace MultitoolWinUI.Models
             var name = toRestore.Attributes[nameof(PlaylistModel.Name)]?.Value;
             if (!string.IsNullOrEmpty(name))
             {
-                var description = toRestore.Attributes[nameof(PlaylistModel.Description)]?.Value ?? string.Empty;
-                PlaylistModel model = new()
+                string description = toRestore.Attributes[nameof(PlaylistModel.Description)]?.Value ?? string.Empty;
+                Playlist playlist = new()
                 {
-                    Name = name,
                     Description = description,
-                    Songs = new()
+                    Name = name
                 };
                 if (toRestore.HasChildNodes)
                 {
@@ -53,10 +53,13 @@ namespace MultitoolWinUI.Models
                         var value = node.Attributes["Value"];
                         if (value != null)
                         {
-                            model.Songs.Add(value.ToString());
+                            playlist.AddFile(value.ToString()).Wait();
                         }
                     }
+
                 }
+                PlaylistModel model = new(playlist);
+                return model;
             }
             return null;
         }
