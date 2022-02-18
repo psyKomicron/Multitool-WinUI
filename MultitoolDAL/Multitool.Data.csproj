@@ -2,10 +2,10 @@
   <PropertyGroup>
     <TargetFramework>net5.0-windows10.0.19041</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>Multitool.DAL</RootNamespace>
+    <RootNamespace>Multitool.Data</RootNamespace>
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
-    <AssemblyName>Multitool.DAL</AssemblyName>
+    <AssemblyName>Multitool.Data</AssemblyName>
     <Platforms>AnyCPU;x64</Platforms>
     <Version>1.1.0</Version>
   </PropertyGroup>
