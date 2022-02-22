@@ -47,6 +47,13 @@ namespace MultitoolWinUI
             try
             {
                 App.Settings.Load(this);
+#if DEBUG
+                // 
+                if (LastPage == null)
+                {
+                    LastPage = typeof(MainPage);
+                }
+#endif
                 WindowInteropHelper.SetWindow(this, WindowSize, new(PositionX, PositionY));
             }
             catch
@@ -76,7 +83,11 @@ namespace MultitoolWinUI
         {
             try
             {
-                return ContentFrame.Navigate(pageType);
+                if (pageType == null)
+                {
+                    return false;
+                }
+                return ContentFrame.Navigate(pageType, navigationParameters);
             }
             catch (Exception ex)
             {
@@ -89,11 +100,14 @@ namespace MultitoolWinUI
         {
             try
             {
-                if (save)
+                if (pageType != null)
                 {
-                    LastPage = pageType;
+                    if (save)
+                    {
+                        LastPage = pageType;
+                    }
+                    _ = ContentFrame.Navigate(pageType); 
                 }
-                _ = ContentFrame.Navigate(pageType);
             }
             catch (Exception ex)
             {
@@ -184,7 +198,7 @@ namespace MultitoolWinUI
                         NavigateTo(typeof(TwitchPage), true);
                         break;
                     case "test":
-                        NavigateTo(typeof(TestPage), false);
+                        NavigateTo(typeof(TestPage), true);
                         break;
                     case "Settings":
                         NavigateTo(typeof(SettingsPage), true);
