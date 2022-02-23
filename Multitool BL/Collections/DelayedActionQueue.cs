@@ -6,9 +6,9 @@ using System.Timers;
 
 using Windows.Foundation;
 
-namespace MultitoolWinUI.Helpers
+namespace Multitool.Collections
 {
-    internal class DelayedActionQueue
+    public class DelayedActionQueue
     {
         private readonly ConcurrentQueue<DispatcherQueueHandler> displayQueue = new();
         private readonly Timer messageTimer = new() { AutoReset = true, Enabled = false };
@@ -58,6 +58,13 @@ namespace MultitoolWinUI.Helpers
 
         public void Silence()
         {
+            silenced = true;
+            messageTimer.Stop();
+        }
+
+        public void Clear()
+        {
+            displayQueue.Clear();
             silenced = true;
             messageTimer.Stop();
         }
