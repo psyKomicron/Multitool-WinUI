@@ -79,7 +79,7 @@ namespace Multitool.Data.Media
         } 
         #endregion
 
-        public async Task Add(string path)
+        public async Task AddFile(string path)
         {
             StorageFile file = await StorageFile.GetFileFromPathAsync(path);
         }
