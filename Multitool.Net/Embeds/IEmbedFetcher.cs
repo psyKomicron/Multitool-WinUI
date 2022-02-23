@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Multitool.Net.Embeds
 {
     public interface IEmbedFetcher
     {
-        Task<object> Fetch(string url);
+        bool CanFetch(string url);
+        Task<Embed> Fetch(string url);
     }
 }
