@@ -15,7 +15,7 @@ namespace Multitool.Net.Twitch.Security
         /// <param name="token">The <see cref="string"/> representing the connection's token (OAuth2, .</param>
         public TwitchConnectionToken(string token)
         {
-            Token = token;
+            Token = token ?? throw new ArgumentNullException(nameof(token), "Provided string token is null");
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Multitool.Net.Twitch.Security
             using HttpClient client = new();
             client.DefaultRequestHeaders.Authorization = new("Bearer", Token);
 
-            HttpResponseMessage res = await client.GetAsync(new(Properties.Resources.TwitchOAuthValidationUrl));
+            using HttpResponseMessage res = await client.GetAsync(new(Properties.Resources.TwitchOAuthValidationUrl));
             JsonDocument json = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
 
             if (res.StatusCode == HttpStatusCode.Unauthorized)
