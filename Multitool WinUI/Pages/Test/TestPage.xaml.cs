@@ -2,7 +2,10 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
+using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
 using Multitool.Drawing;
+using Multitool.Net.Embeds;
 using Multitool.Net.Twitch;
 using Multitool.Net.Twitch.Factories;
 using Multitool.Net.Twitch.Irc;
@@ -15,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,9 +37,13 @@ namespace MultitoolWinUI.Pages.Test
         public TestPage()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+            App.MainWindow.Closed += MainWindow_Closed;
         }
 
-        public List<string> Items { get; } = new() { "https", "www", "twitch", "tv", "buddha" };
+        [Setting(typeof(TypeSettingConverter), DefaultInstanciate = false)]
+        public Type LastControl { get; set; }
 
         private void SetControl(Control control)
         {
@@ -46,17 +54,23 @@ namespace MultitoolWinUI.Pages.Test
             Grid.SetColumn(control, 0);
             Grid.SetRow(control, 0);
             ControlsGrid.Children.Add(control);
+            LastControl = control.GetType();
         }
 
-        private void BreadcrumbBar_GotFocus(object sender, RoutedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-
+            App.Settings.Load(this);
+            if (LastControl != null)
+            {
+                var ctor = LastControl.GetConstructor(Array.Empty<Type>());
+                Control control = (Control)ctor.Invoke(Array.Empty<object>());
+                SetControl(control);
+            }
         }
 
-        private void BreadcrumbBar_LostFocus(object sender, RoutedEventArgs e)
-        {
+        private void OnUnloaded(object sender, RoutedEventArgs e) => App.Settings.Save(this);
 
-        }
+        private void MainWindow_Closed(object sender, WindowEventArgs args) => App.Settings.Save(this);
 
         private void ColorsButton_Click(object sender, RoutedEventArgs e)
         {
@@ -78,5 +92,9 @@ namespace MultitoolWinUI.Pages.Test
             };
             SetControl(picker);
         }
+
+        private void EmbedsButton_Click(object sender, RoutedEventArgs e) => SetControl(new EmbedFetcherControl());
+
+        private void ImageButton_Click(object sender, RoutedEventArgs e) => SetControl(new ImageTester());
     }
 }

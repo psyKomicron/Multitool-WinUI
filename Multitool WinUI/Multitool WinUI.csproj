@@ -32,6 +32,8 @@
     <None Remove="Controls\FileSystemEntryView.xaml" />
     <None Remove="Controls\MainPageItem.xaml" />
     <None Remove="Controls\TimerPicker.xaml" />
+    <None Remove="Controls\VideoEmbedView.xaml" />
+    <None Remove="Controls\YoutubeEmbedView.xaml" />
     <None Remove="Pages\ComputerDevicesPage.xaml" />
     <None Remove="Pages\ControlPanels\ControlPanelsFilePage.xaml" />
     <None Remove="Pages\ControlPanels\ControlPanelsPage.xaml" />
@@ -41,14 +43,17 @@
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
     <None Remove="Pages\IrcChatPage.xaml" />
-    <None Remove="Pages\Irc\ChatControl.xaml" />
+    <None Remove="Pages\Twitch\ChatControl.xaml" />
     <None Remove="Pages\MusicPlayer\MusicFileView.xaml" />
     <None Remove="Pages\MusicPlayer\MusicPlayerPage.xaml" />
     <None Remove="Pages\MusicPlayer\MusicSearchPage.xaml" />
     <None Remove="Pages\MusicPlayer\PlaylistCreationPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
     <None Remove="Pages\Settings\SettingsPage.xaml" />
+    <None Remove="Pages\Test\EmbedFetcherControl.xaml" />
+    <None Remove="Pages\Test\ImageTester.xaml" />
     <None Remove="Pages\Test\TestPage.xaml" />
+    <None Remove="Pages\Twitch\ChatPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
@@ -124,6 +129,21 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Pages\MusicPlayer\MusicSearchPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Test\EmbedFetcherControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Test\ImageTester.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\YoutubeEmbedView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\VideoEmbedView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Twitch\ChatPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <None Update="Resources\Images\ico151.ico">
@@ -222,7 +242,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Pages\ComputerDevicesPage.xaml">
+    <Page Update="Pages\ControlPanels\ComputerDevicesPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
