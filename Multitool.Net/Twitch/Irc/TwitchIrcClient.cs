@@ -44,6 +44,12 @@ namespace Multitool.Net.Twitch.Irc
         #endregion
 
         #region constructor
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        /// <param name="login">Twitch 2OAuth token</param>
+        /// <param name="silentExit"><see langword="true"/> to exit the websocket background thread without throwing any exceptions.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="login"/> is null.</exception>
         public TwitchIrcClient(TwitchConnectionToken login, bool silentExit)
         {
             // assert login
@@ -97,7 +103,7 @@ namespace Multitool.Net.Twitch.Irc
         public ConnectionToken ConnectionToken => _connectionToken;
 
         /// <inheritdoc/>
-        public Encoding Encoding { get; set; }
+        public Encoding Encoding { get; set; } = Encoding.Default;
 
         /// <inheritdoc/>
         public bool IsConnected => Interlocked.Read(ref disconnected) == 0;
