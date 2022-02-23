@@ -14,10 +14,13 @@ using Multitool.Net.Twitch.Security;
 using MultitoolWinUI.Pages.Explorer;
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
+using Windows.Foundation;
 using Windows.Storage;
 using Windows.System;
 
@@ -379,6 +382,25 @@ namespace MultitoolWinUI.Pages.Settings
 
         private void AppSettingsFolderHyperlink_Click(object sender, RoutedEventArgs e)
         {
+        }
+
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var files = await ApplicationData.Current.TemporaryFolder.GetFilesAsync();
+                List<Task> tasks = new();
+                foreach (var file in files)
+                {
+                    tasks.Add(file.DeleteAsync().AsTask());
+                }
+                await Task.WhenAll(tasks);
+                App.TraceInformation("Cleared temporary folder.");
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+            }
         }
         #endregion
     }
