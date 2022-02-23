@@ -190,11 +190,9 @@ namespace MultitoolWinUI.Pages
             {
                 try
                 {
-                    Encoding encoding = Encoding.Default;
                     IIrcClient client = new TwitchIrcClient(token, true)
                     {
-                        NickName = "psykomicron",
-                        Encoding = encoding
+                        NickName = "psykomicron"
                     };
 
                     TabViewItem tab = new()
@@ -203,14 +201,11 @@ namespace MultitoolWinUI.Pages
                     };
                     ChatControl chat = new(client)
                     {
-                        Tab = tab,
-                        MentionRegex = ChatMentionRegex,
-                        MaxMessages = ChatMaxNumberOfMessages
+                        Tab = tab
                     };
 
                     tab.Content = chat;
                     sender.TabItems.Add(tab);
-                    sender.SelectedIndex = -1;
                 }
                 catch (ArgumentNullException)
                 {

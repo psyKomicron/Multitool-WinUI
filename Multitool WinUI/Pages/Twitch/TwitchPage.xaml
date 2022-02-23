@@ -10,7 +10,7 @@
     <Grid x:Name="MainGrid" Background="{x:Bind Background}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="1*" MaxWidth="450" MinWidth="350"/>
+            <ColumnDefinition Width="1*" MaxWidth="380" MinWidth="150"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="50px"/>
