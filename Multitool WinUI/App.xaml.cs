@@ -51,7 +51,7 @@ namespace MultitoolWinUI
             TraceMessage("Warning", warning, warningBrush);
         }
 
-        public static void TraceError(Exception error)
+        public static void TraceError(Exception error, string additionalMessage = null)
         {
             Trace.TraceError(error.ToString());
 #if DEBUG
