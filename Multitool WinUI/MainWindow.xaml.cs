@@ -197,6 +197,9 @@ namespace MultitoolWinUI
                     case "irc":
                         NavigateTo(typeof(TwitchPage), true);
                         break;
+                    case "chat":
+                        NavigateTo(typeof(ChatPage), true);
+                        break;
                     case "test":
                         NavigateTo(typeof(TestPage), true);
                         break;
@@ -251,30 +254,6 @@ namespace MultitoolWinUI
                 TitleBarGrid.Visibility = Visibility.Collapsed;
             }
         }
-
-        /*private void SetDragRegionForCustomTitleBar()
-        {
-            //Infer titlebar height
-            int titleBarHeight = 32;
-
-            // Get caption button occlusion information
-            // Use LeftInset if you've explicitly set your window layout to RTL or if app language is a RTL language
-            int CaptionButtonOcclusionWidth = thisWindow.TitleBar.RightInset;
-
-            // Define your drag Regions
-            int windowIconWidthAndPadding = (int)(PresenterModeButton.Width + WindowIcon.Width + WindowTitleTextBlock.Width + 10);
-            int dragRegionWidth = thisWindow.Size.Width - (CaptionButtonOcclusionWidth + windowIconWidthAndPadding);
-
-            RectInt32[] dragRects = new RectInt32[] { };
-            RectInt32 dragRect;
-
-            dragRect.X = windowIconWidthAndPadding;
-            dragRect.Y = 0;
-            dragRect.Height = titleBarHeight;
-            dragRect.Width = dragRegionWidth;
-
-            thisWindow.TitleBar.SetDragRectangles(dragRects.Append(dragRect).ToArray());
-        }*/
 
         #region window events
         private void PresenterModeButton_Click(object sender, RoutedEventArgs e)

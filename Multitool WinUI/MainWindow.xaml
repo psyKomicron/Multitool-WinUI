@@ -65,13 +65,20 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <NavigationViewItemHeader Content="Web"/>
-                <NavigationViewItem Tag="irc"
-                                     Content="Twitch">
+                <!--#region Twitch -->
+                <NavigationViewItemHeader Content="Twitch"/>
+                <NavigationViewItem Tag="irc" Content="Twitch">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8AA;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                
+                <NavigationViewItem Tag="chat" Content="Chat">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F2;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <!--#endregion-->
 
                 <!--#region utilities -->
                 <NavigationViewItemHeader Content="Utilities"/>
