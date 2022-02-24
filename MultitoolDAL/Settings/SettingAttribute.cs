@@ -9,6 +9,9 @@ namespace Multitool.Data.Settings
     [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
     public class SettingAttribute : Attribute
     {
+        private object defaultValue;
+
+        #region constructors
         /// <summary>
         /// <para>
         /// Sets the property to be saved by a <see cref="SettingsManager"/>.
@@ -38,9 +41,20 @@ namespace Multitool.Data.Settings
             DefaultInstanciate = true;
         }
 
+        /// <summary>
+        /// Creates a 
+        /// </summary>
+        /// <param name="memberType"></param>
+        /// <param name="settingName"></param>
         public SettingAttribute(Type memberType, string settingName)
         {
-            SettingMember = memberType.FullName;
+            SettingKey = memberType.FullName;
+            SettingName = settingName;
+        }
+
+        public SettingAttribute(Type memberType, string settingName, Type converterType) : this(converterType)
+        {
+            SettingKey = memberType.FullName;
             SettingName = settingName;
         }
 
@@ -49,6 +63,7 @@ namespace Multitool.Data.Settings
         /// if the setting does not exists
         /// </summary>
         /// <param name="defaultValue"></param>
+        /// <param name="settingName"></param>
         public SettingAttribute(object defaultValue, string settingName = null)
         {
             DefaultValue = defaultValue;
@@ -56,6 +71,12 @@ namespace Multitool.Data.Settings
             SettingName = string.IsNullOrEmpty(settingName) ? null : settingName;
         }
 
+        /// <summary>
+        /// Creates a <see cref="SettingAttribute"/> with an instance of the provided <paramref name="converterType"/> as converter
+        /// and <paramref name="parameters"/> as default value if the setting does not exists.
+        /// </summary>
+        /// <param name="converterType"></param>
+        /// <param name="parameters"></param>
         public SettingAttribute(Type converterType, params object[] parameters) : this(converterType)
         {
             DefaultValue = parameters;
@@ -69,24 +90,78 @@ namespace Multitool.Data.Settings
         {
             DefaultInstanciate = true;
         }
+        #endregion
 
+        #region properties
+        /// <summary>
+        /// The 2 way converter (convert, restore) to convert this setting.
+        /// </summary>
+        /// <remarks>
+        /// Do not use this property to associate a converter with this instance of <see cref="SettingAttribute"/>, use
+        /// the following constructors
+        /// <list>
+        ///     <item>
+        ///         <see cref="SettingAttribute(Type)"/>
+        ///     </item>
+        ///     <item>
+        ///         <see cref="SettingAttribute(Type, string)"/>
+        ///     </item>
+        ///     <item>
+        ///         <see cref="SettingAttribute(Type, params object[])"/>
+        ///     </item>
+        /// </list>
+        /// </remarks>
         public ISettingConverter Converter { get; set; }
 
         /// <summary>
-        /// Setting default value.
+        /// Gets or sets the default value for this setting.
+        /// Setting the property will automatically set <see cref="HasDefaultValue"/> to <see langword="true"/>.
+        /// <para>Defaults to <see langword="null"/></para>
         /// </summary>
         /// <remarks>
         /// Do not check if the property is <see langword="null"/>, but use the <see cref="HasDefaultValue"/> property to check if you can use
         /// the property
         /// </remarks>
-        public object DefaultValue { get; set; }
+        public object DefaultValue
+        {
+            get => defaultValue;
+            set
+            {
+                defaultValue = value;
+                HasDefaultValue = true;
+            }
+        }
 
+        /// <summary>
+        /// Tells if the attribute has a default value that should be used if the setting is not found.
+        /// <para>Defaults to <see langword="false"/></para>
+        /// </summary>
         public bool HasDefaultValue { get; set; }
 
+        /// <summary>
+        /// Tells to instanciate this property with the property type default contructor if the setting is not found.
+        /// <para>Defaults to <see langword="true"/> if not default value is given.</para>
+        /// </summary>
         public bool DefaultInstanciate { get; set; }
 
-        public string SettingName { get; set; }
+        /// <summary>
+        /// Gets or sets the key of the setting. A setting is created with the combination of <see cref="SettingKey"/> and <see cref="SettingName"/>.
+        /// <para>Defaults <see cref="string.Empty"/></para>
+        /// </summary>
+        /// <remarks>
+        /// Setting this property is not needed for setting creation since the setting manager will defaults the setting key to the property's
+        /// declaring type.
+        /// </remarks>
+        public string SettingKey { get; set; }
 
-        public string SettingMember { get; set; }
+        /// <summary>
+        /// Gets or sets the name of the setting. A setting is created with the combination of <see cref="SettingKey"/> and <see cref="SettingName"/>.
+        /// <para>Defaults <see cref="string.Empty"/></para>
+        /// </summary>
+        /// <remarks>
+        /// Setting this property is not needed for setting creation since the setting manager will defaults the setting key to the property's name.
+        /// </remarks>
+        public string SettingName { get; set; } 
+        #endregion
     }
 }
