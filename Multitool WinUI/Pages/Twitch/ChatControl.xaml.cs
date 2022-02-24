@@ -90,16 +90,16 @@ namespace MultitoolWinUI.Pages.Irc
         #endregion
 
         #region settings
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatEmoteSize))]
-        public double EmoteSize { get; set; } = 30;
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatEmoteSize), DefaultValue = 30)]
+        public double EmoteSize { get; set; }
 
         [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMaxNumberOfMessages))]
         public int MaxMessages { get; set; }
 
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.TimestampFormat))]
-        public string TimestampFormat { get; set; } = "t";
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.TimestampFormat), DefaultValue = "t")]
+        public string TimestampFormat { get; set; }
 
-        [Setting(typeof(RegexSettingConverter), SettingKey = "MultitoolWinUI.Pages.TwitchPage", SettingName = nameof(TwitchPage.ChatMentionRegex))]
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMentionRegex), typeof(RegexSettingConverter))]
         public Regex Mention { get; set; }
 
         [Setting]
