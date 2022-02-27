@@ -42,15 +42,21 @@ namespace MultitoolWinUI.Pages.Irc
     public sealed partial class ChatControl : UserControl, IAsyncDisposable, IIrcSubscriber
     {
         private readonly DelayedActionQueue delayedActionQueue = new(1000);
+        private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
+        private readonly IIrcClient client;
+        //private readonly IEmbedFetcher embedFetcher = new YoutubeEmbedFetcher();
         private readonly SolidColorBrush userSubBackground = new(Colors.MediumPurple)
         {
             Opacity = 0.5
         };
-        private readonly SolidColorBrush timestampBrush = new(Colors.White) { Opacity = 0.5 };
-        private readonly SolidColorBrush mentionBrush = new(Colors.IndianRed) { Opacity = 0.5 };
-        private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
-        private readonly IIrcClient client;
-        private readonly IEmbedFetcher embedFetcher = new YoutubeEmbedFetcher();
+        private readonly SolidColorBrush timestampBrush = new(Colors.White)
+        {
+            Opacity = 0.5
+        };
+        private readonly SolidColorBrush mentionBrush = new(Colors.IndianRed)
+        {
+            Opacity = 0.3
+        };
 
         private bool joined;
         private bool loaded;
@@ -58,13 +64,12 @@ namespace MultitoolWinUI.Pages.Irc
 
         public ChatControl(IIrcClient client)
         {
-            InitializeComponent();
             this.client = client;
+            client.Subscribe(this);
 
+            InitializeComponent();
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
-
-            client.Subscribe(this);
 
             delayedActionQueue.DispatcherQueue = DispatcherQueue;
             delayedActionQueue.QueueEmpty += DelayedActionQueue_QueueEmpty;
@@ -80,27 +85,25 @@ namespace MultitoolWinUI.Pages.Irc
         }
 
         #region properties
-        #region normal props
         public string Channel { get; set; }
         public List<Emote> ChannelEmotes { get; } = new();
         public List<Emote> Emotes { get; } = new();
         public TabViewItem Tab { get; set; }
         public FontWeight UserMessagesFontWeight { get; set; } = FontWeights.Normal;
         public FontWeight SystemMessagesFontWeight { get; set; } = FontWeights.SemiLight;
-        #endregion
 
         #region settings
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatEmoteSize), DefaultValue = 30)]
+        [Setting(30)]
         public double EmoteSize { get; set; }
 
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMaxNumberOfMessages))]
+        [Setting(1000)]
         public int MaxMessages { get; set; }
 
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.TimestampFormat), DefaultValue = "t")]
-        public string TimestampFormat { get; set; }
-
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.ChatMentionRegex), typeof(RegexSettingConverter))]
+        [Setting(typeof(RegexSettingConverter))]
         public Regex Mention { get; set; }
+
+        [Setting("t")]
+        public string TimestampFormat { get; set; }
 
         [Setting]
         public bool ReplyWithAt { get; set; }
@@ -508,6 +511,7 @@ namespace MultitoolWinUI.Pages.Irc
             {
                 loaded = true;
 
+                #region ui/textbox update
                 TextBox header = new()
                 {
                     PlaceholderText = Channel ?? "Select channel",
@@ -525,7 +529,8 @@ namespace MultitoolWinUI.Pages.Irc
                     Grid.SetRow(header, 0);
                     ContentGrid.Children.Add(header);
                 }
-                header.KeyDown += Header_KeyDown;
+                header.KeyDown += Header_KeyDown; 
+                #endregion
 
                 if (!string.IsNullOrEmpty(Channel))
                 {

@@ -95,8 +95,9 @@
                         Content="{x:Bind Content, Mode=OneTime}"
                         Background="{x:Bind Background}"
                         HorizontalAlignment="Stretch"
-                        CornerRadius="2"
-                        Margin="-5,0,0,2"/>
+                        VerticalContentAlignment="Center"
+                        VerticalAlignment="Center"
+                        CornerRadius="2"/>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
