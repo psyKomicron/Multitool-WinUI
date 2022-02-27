@@ -79,11 +79,6 @@ namespace MultitoolWinUI.Pages.Explorer
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
-        public ObservableCollection<FileSystemEntryView> CurrentFiles { get; } = new();
-
-        [Setting(typeof(PathHistoryItemSettingConverter))]
-        public ObservableCollection<PathHistoryItem> History { get; set; }
-
         [Setting("C:\\")]
         public string CurrentPath
         {
@@ -94,6 +89,17 @@ namespace MultitoolWinUI.Pages.Explorer
                 PropertyChanged?.Invoke(this, new(nameof(CurrentPath)));
             }
         }
+
+        public ObservableCollection<FileSystemEntryView> CurrentFiles { get; } = new();
+
+        [Setting(typeof(PathHistoryItemSettingConverter))]
+        public ObservableCollection<PathHistoryItem> History { get; set; }
+
+        [Setting(true)]
+        public bool KeepHistory { get; set; }
+
+        [Setting(true)]
+        public bool LoadLastPath { get; set; }
         #endregion
 
         #region private methods
