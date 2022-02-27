@@ -62,14 +62,14 @@ namespace MultitoolWinUI
             }
         }
 
+        //[Setting(ElementTheme.Default)]
+        public ElementTheme CurrentTheme { get; set; }
+
         [Setting(true)]
         public bool IsPaneOpen { get; set; }
 
         [Setting(typeof(TypeSettingConverter), HasDefaultValue = true, DefaultValue = typeof(MainPage))]
         public Type LastPage { get; set; }
-
-        [Setting(typeof(SizeSettingConverter), 1000, 600)]
-        public Size WindowSize { get; set; }
 
         [Setting(0)]
         public int PositionX { get; set; }
@@ -78,6 +78,9 @@ namespace MultitoolWinUI
         public int PositionY { get; set; }
 
         public int TitleBarHeight { get; private set; }
+
+        [Setting(typeof(SizeSettingConverter), 1000, 600)]
+        public Size WindowSize { get; set; }
 
         public bool NavigateTo(Type pageType, params object[] navigationParameters)
         {
