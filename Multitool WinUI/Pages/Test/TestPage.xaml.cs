@@ -96,5 +96,7 @@ namespace MultitoolWinUI.Pages.Test
         private void EmbedsButton_Click(object sender, RoutedEventArgs e) => SetControl(new EmbedFetcherControl());
 
         private void ImageButton_Click(object sender, RoutedEventArgs e) => SetControl(new ImageTester());
+
+        private void SpotlightButton_Click(object sender, RoutedEventArgs e) => SetControl(new SpotlightImporter());
     }
 }

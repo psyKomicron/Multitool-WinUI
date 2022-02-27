@@ -17,6 +17,7 @@
             <Button Content="Color spectrum" HorizontalAlignment="Center" VerticalAlignment="Center" Click="ColorSpectrumButton_Click"/>
             <Button Content="Embed" HorizontalAlignment="Center" VerticalAlignment="Center" Click="EmbedsButton_Click"/>
             <Button Content="Image" HorizontalAlignment="Center" VerticalAlignment="Center" Click="ImageButton_Click"/>
+            <Button Content="Spotlight" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SpotlightButton_Click"/>
         </StackPanel>
 
         <Grid
