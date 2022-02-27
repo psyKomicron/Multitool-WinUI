@@ -12,6 +12,8 @@ using Multitool.Data.Settings.Converters;
 using Multitool.Net.Twitch.Security;
 
 using MultitoolWinUI.Pages.Explorer;
+using MultitoolWinUI.Pages.Irc;
+using MultitoolWinUI.Pages.Test;
 
 using System;
 using System.Collections.Generic;
@@ -32,7 +34,7 @@ namespace MultitoolWinUI.Pages.Settings
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SettingsPage : Page, INotifyPropertyChanged
+    internal sealed partial class SettingsPage : Page, INotifyPropertyChanged
     {
         private readonly ISettingsManager settingsManager = App.Settings;
         private string typeToNavigateTo;
@@ -46,19 +48,14 @@ namespace MultitoolWinUI.Pages.Settings
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
-        #region settings
         [Setting(true)]
         public bool AutoLoadPageSetting { get; set; }
-        #endregion
 
-        public bool LoadWebView { get; set; }
-        public string Login { get; set; }
-        public int ChatMaxNumberOfMessages { get; set; }
-        public Uri GithubUri { get; set; } = new(Properties.Resources.GithubUri);
-        public bool LoadLastPath { get; set; }
-        public bool KeepHistory { get; set; }
+        public Uri GithubUri { get; } = new(Properties.Resources.GithubUri);
+
+        public SettingsHolder Holder { get; set; }
+
         public bool ClearHistoryButtonEnabled { get; set; }
-        public bool MainPageLoadShortcuts { get; set; }
         #endregion
 
         private bool NavigateTo(string tag)
@@ -73,7 +70,7 @@ namespace MultitoolWinUI.Pages.Settings
                         success = true;
                         break;
                     case "TwitchPage":
-                        TwitchHeader.StartBringIntoView();
+                        TwitchHeader.Focus(FocusState.Programmatic);
                         success = true;
                         break;
                     case "General":
@@ -92,36 +89,8 @@ namespace MultitoolWinUI.Pages.Settings
 
         private void LoadSettings()
         {
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.LoadWebView), out bool loadWebView))
-            {
-                LoadWebView = loadWebView;
-            }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.Login), out string login))
-            {
-                Login = login;
-            }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMaxNumberOfMessages), out int n))
-            {
-                ChatMaxNumberOfMessages = n;
-            }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMentionRegex), out login))
-            {
-                MentionsTextBox.Text = login;
-            }
-
-            if (settingsManager.TryGetSetting(typeof(MainPage).FullName, "LoadShortcuts", out bool loadShortcuts))
-            {
-                MainPageLoadShortcuts = loadShortcuts;
-            }
-            else
-            {
-                MainPageLoadShortcuts = true;
-                settingsManager.SaveSetting(typeof(MainPage).FullName, "LoadShortcuts", true);
-            }
-
+            Holder = new();
+            settingsManager.Load(Holder);
             PropertyChanged?.Invoke(this, new(string.Empty));
         }
 
@@ -183,37 +152,17 @@ namespace MultitoolWinUI.Pages.Settings
 
         private void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            // i can use a flag to not save already saved values
-#if DEBUG
-            settingsManager.SaveSetting(typeof(MainPage).FullName, "LoadShortcuts", LoadShortcutsToggleSwitch.IsOn);
-
-            settingsManager.SaveSetting(typeof(ExplorerPage).FullName, nameof(LoadLastPath), LoadLastPath);
-            settingsManager.SaveSetting(typeof(ExplorerPage).FullName, nameof(KeepHistory), KeepHistory);
-
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.LoadWebView), LoadWebView);
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.Login), Login);
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMaxNumberOfMessages), ChatMaxNumberOfMessages);
-
-            Regex reg = new(MentionsTextBox.Text);
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMentionRegex), new RegexSettingConverter().Convert(reg));
-#else
-            settingsManager.EditSetting(typeof(MainPage).FullName, "LoadShortcuts", LoadShortcutsToggleSwitch.IsOn);
-
-            settingsManager.EditSetting(typeof(ExplorerPage).FullName, nameof(LoadLastPath), LoadLastPath);
-            settingsManager.EditSetting(typeof(ExplorerPage).FullName, nameof(KeepHistory), KeepHistory);
-
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(LoadWebView), LoadWebView);
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(Login), Login);
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(ChatMaxNumberOfMessages), ChatMaxNumberOfMessages);
-
-            settingsManager.Commit(); 
-#endif
+            try
+            {
+                settingsManager.Save(Holder);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex, "Error occured when saving settings");
+            }
         }
 
-        private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e)
-        {
-            await Windows.System.Launcher.LaunchUriAsync(new(App.Settings.SettingFilePath));
-        }
+        private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(App.Settings.SettingFilePath));
 
         private void DarkThemeButton_Click(object sender, RoutedEventArgs e)
         {
@@ -290,7 +239,7 @@ namespace MultitoolWinUI.Pages.Settings
 
         private async void ValidateTokenButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(Login))
+            if (string.IsNullOrEmpty(Holder.Login))
             {
                 App.TraceWarning("Login is empty");
                 return;
@@ -298,7 +247,7 @@ namespace MultitoolWinUI.Pages.Settings
 
             try
             {
-                TwitchConnectionToken token = new(Login);
+                TwitchConnectionToken token = new(Holder.Login);
 
                 TokenValidationProgressRing.IsIndeterminate = true;
                 TokenValidationProgressRing.Visibility = Visibility.Visible;
@@ -370,21 +319,21 @@ namespace MultitoolWinUI.Pages.Settings
             MentionsTeachingTip.IsOpen = !MentionsTeachingTip.IsOpen;
         }
 
-        private void TempDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
+        private async void TempDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
         {
-            _ = Launcher.LaunchUriAsync(new(ApplicationData.Current.TemporaryFolder.Path));
+            await Launcher.LaunchUriAsync(new(ApplicationData.Current.TemporaryFolder.Path));
         }
 
-        private void AppDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
+        private async void AppDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
         {
-            _ = Launcher.LaunchUriAsync(new(ApplicationData.Current.LocalFolder.Path));
+            await Launcher.LaunchUriAsync(new(ApplicationData.Current.LocalFolder.Path));
         }
 
         private void AppSettingsFolderHyperlink_Click(object sender, RoutedEventArgs e)
         {
         }
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private async void ClearTempFolderButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -402,6 +351,62 @@ namespace MultitoolWinUI.Pages.Settings
                 App.TraceError(ex);
             }
         }
+        #endregion
+    }
+
+    internal record SettingsHolder
+    {
+        #region Twitch
+        [Setting(typeof(ChatControl), nameof(ChatControl.MaxMessages))]
+        public int ChatMaxNumberOfMessages { get; set; }
+
+        [Setting(typeof(ChatControl), nameof(ChatControl.Mention), typeof(RegexSettingConverter))]
+        public Regex ChatMentionRegex { get; set; }
+
+        [Setting(typeof(ChatControl), nameof(ChatControl.EmoteSize))]
+        public int EmoteSize { get; set; }
+
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.LoadWebView))]
+        public bool LoadWebView { get; set; }
+
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.Login))]
+        public string Login { get; set; }
+
+        [Setting(typeof(ChatControl), nameof(ChatControl.TimestampFormat))]
+        public string MessageTimestampFormat { get; set; } 
+        #endregion
+
+        #region Explorer
+        [Setting(typeof(ExplorerPage), nameof(ExplorerPage.LoadLastPath))]
+        public bool LoadLastPath { get; set; }
+
+        [Setting(typeof(ExplorerPage), nameof(ExplorerPage.KeepHistory))]
+        public bool KeepHistory { get; set; }
+        #endregion
+
+        #region Main page
+        // Main page
+        [Setting(typeof(MainPage), nameof(MainPage.LoadShortcuts))]
+        public bool MainPageLoadShortcuts { get; set; }
+        #endregion
+
+        #region Main window
+        [Setting(typeof(MainWindow), nameof(MainWindow.CurrentTheme))]
+        public ElementTheme ApplicationTheme { get; set; }
+        #endregion
+
+        #region Spotlight importer
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.CollisionOption))]    
+        public CreationCollisionOption SpotlightCollisionOption { get; set; }
+
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.MenuBarLabelPosition))]
+        public bool SpotlightDeleteTempData { get; set; }
+
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.MenuBarLabelPosition))]
+        public CommandBarDefaultLabelPosition SpotlightMenuBarLabelPosition { get; set; }
+
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.OpenTempFolder))]
+        public bool SpotlightOpenTempFolder { get; set; } 
         #endregion
     }
 }

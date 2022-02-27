@@ -58,7 +58,7 @@
                         x:Name="OpenSettingsFile"
                         Click="OpenSettingsFile_Click">
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
-                            <SymbolIcon Symbol="OpenFile"/>
+                            <FontIcon Glyph="&#xE8A7;"/>
                             <TextBlock Text="Open setting file (default editor)"/>
                         </StackPanel>
                     </Button>
@@ -84,6 +84,34 @@
                 </StackPanel>
                 <!--#endregion-->
 
+                <!--#region Explorer settings -->
+                <TextBlock 
+                    x:Name="ExplorerHeader"
+                    Text="Explorer" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"
+                    Margin="0,0,0,10"/>
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
+                    <ToggleSwitch
+                        Header="Load last path on start"
+                        IsOn="{x:Bind Holder.LoadLastPath}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+
+                    <ToggleSwitch
+                        Header="Keep history"
+                        IsOn="{x:Bind Holder.KeepHistory}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+
+                    <Button
+                        x:Name="ClearHistoryButton"
+                        IsEnabled="{x:Bind ClearHistoryButtonEnabled}"
+                        Click="ClearHistoryButton_Click"
+                        Content="Clear path history"/>
+                </StackPanel>
+                <!--#endregion-->
+
                 <!--#region Home settings -->
                 <TextBlock 
                     x:Name="MainPageHeader"
@@ -95,7 +123,7 @@
                     <ToggleSwitch
                         x:Name="LoadShortcutsToggleSwitch"
                         Header="Load saved shortcuts on start-up"
-                        IsOn="{x:Bind MainPageLoadShortcuts}"
+                        IsOn="{x:Bind Holder.MainPageLoadShortcuts}"
                         OnContent="Yes"
                         OffContent="No"/>
                 </StackPanel>
@@ -111,36 +139,36 @@
                 <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" HorizontalAlignment="Left" Margin="0,0,0,40">
                     <ToggleSwitch
                         x:Name="LoadWebViewButton"
-                        IsOn="{x:Bind LoadWebView, Mode=TwoWay}"
+                        IsOn="{x:Bind Holder.LoadWebView, Mode=TwoWay}"
                         OffContent="Webview off"
                         OnContent="Webview on"
                         VerticalAlignment="Center"/>
 
-                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelDefaultSpacing}">
+                    <StackPanel Orientation="Vertical" Spacing="{StaticResource StackPanelDefaultSpacing}" Padding="0">
                         <PasswordBox
                             x:Name="LoginPasswordBox"
-                            Password="{x:Bind Login, Mode=TwoWay}"
+                            Password="{x:Bind Holder.Login, Mode=TwoWay}"
                             Header="Twitch login"
                             PlaceholderText="Login"
                             KeyDown="PasswordBox_KeyDown"
-                            Width="300"
-                            MaxWidth="450"
+                            HorizontalAlignment="Stretch"
                             Grid.Row="0"/>
                         <Button
                             x:Name="ValidateTokenButton"
                             VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
                             Click="ValidateTokenButton_Click">
                             <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
                                 <FontIcon Glyph="&#xE73E;"/>
                                 <TextBlock Text="Validate token"/>
-                                <ProgressRing
-                                    x:Name="TokenValidationProgressRing"
-                                    IsIndeterminate="False"
-                                    Height="20"
-                                    Width="20"
-                                    Visibility="Collapsed"/>
                             </StackPanel>
                         </Button>
+                        <ProgressRing
+                            x:Name="TokenValidationProgressRing"
+                            IsIndeterminate="False"
+                            Height="20"
+                            Width="20"
+                            Visibility="Collapsed"/>
                     </StackPanel>
                     <Button
                         x:Name="LoadOAuth"
@@ -168,7 +196,7 @@
                         MaxWidth="350"
                         StepFrequency="10"
                         Margin="3,0"
-                        Value="{x:Bind ChatMaxNumberOfMessages, Mode=TwoWay}"/>
+                        Value="{x:Bind Holder.ChatMaxNumberOfMessages, Mode=TwoWay}"/>
 
                     <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
                         <TextBox
@@ -233,31 +261,21 @@
                 </StackPanel>
                 <!--#endregion-->
 
-                <!--#region Explorer settings -->
-                <TextBlock 
-                    x:Name="ExplorerHeader"
-                    Text="Explorer" 
+                <!--#region Spotlight -->
+                <TextBlock
+                    Text="Spotlight importer" 
                     FontSize="{StaticResource SettingTitleFontSize}" 
                     FontWeight="{StaticResource SettingTitleFontWeight}"
                     Margin="0,0,0,10"/>
-                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Margin="0,0,0,40">
-                    <ToggleSwitch
-                        Header="Load last path on start"
-                        IsOn="{x:Bind LoadLastPath}"
-                        OnContent="Yes"
-                        OffContent="No"/>
-
-                    <ToggleSwitch
-                        Header="Keep history"
-                        IsOn="{x:Bind KeepHistory}"
-                        OnContent="Yes"
-                        OffContent="No"/>
-
-                    <Button
-                        x:Name="ClearHistoryButton"
-                        IsEnabled="{x:Bind ClearHistoryButtonEnabled}"
-                        Click="ClearHistoryButton_Click"
-                        Content="Clear path history"/>
+                <StackPanel Orientation="Vertical" Spacing="{StaticResource StackPanelButtonSpacing}">
+                    <ToggleSwitch Header="Delete data on unload" IsOn="{x:Bind Holder.SpotlightDeleteTempData, Mode=TwoWay}"/>
+                    <ToggleSwitch Header="Delete temporary data" IsOn="{x:Bind Holder.SpotlightDeleteTempData, Mode=TwoWay}"/>
+                    <ComboBox Header="Command bar style" IsEnabled="False">
+                        <ComboBoxItem Content="Bottom" Tag="Bottom"/>
+                        <ComboBoxItem Content="Right" Tag="Right"/>
+                        <ComboBoxItem Content="Collapsed" Tag="Collapsed"/>
+                    </ComboBox>
+                    <ToggleSwitch Header="Open temporary folder" IsOn="{x:Bind Holder.SpotlightOpenTempFolder, Mode=TwoWay}"/>
                 </StackPanel>
                 <!--#endregion-->
 
@@ -274,7 +292,7 @@
                     <HyperlinkButton
                         Content="Open temporary folder"
                         Click="TempDataFolderHyperlink_Click"/>
-                    <Button Content="Clear temporary folder" Click="Button_Click"/>
+                    <Button Content="Clear temporary folder" Click="ClearTempFolderButton_Click"/>
                     <HyperlinkButton
                         Content="Open application folder"
                         Click="AppDataFolderHyperlink_Click"/>
