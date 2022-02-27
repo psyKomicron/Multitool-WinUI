@@ -70,7 +70,10 @@ namespace Multitool.Data.Settings
             XmlNode values = settingsRootNode.SelectSingleNode($".//{typeof(T).FullName}");
 
             Trace.TraceInformation($"Loading settings for {toLoad.GetType().Name}");
-            Trace.TraceWarning($"No values associated with {toLoad.GetType().Name} in the setting file.");
+            if (values == null)
+            {
+                Trace.TraceWarning($"No values associated with {toLoad.GetType().Name} in the setting file."); 
+            }
             
             PropertyInfo[] props = typeof(T).GetProperties();
             for (int i = 0; i < props.Length; i++)
@@ -124,7 +127,7 @@ namespace Multitool.Data.Settings
             }
             if (!useSettingAttribute)
             {
-                throw new NotSupportedException("Function is not implemented to save all object properties. The property tree can be too big.");
+                throw new NotSupportedException("Function is not implemented to save all object properties. The property tree may be too big.");
             }
 
             XmlNode rootNode = settingsRootNode.SelectSingleNode(".//" + typeof(T).FullName);
@@ -207,17 +210,20 @@ namespace Multitool.Data.Settings
                                         valueAttribute.Value = propValue.ToString();
                                         settingNode.Attributes.Append(valueAttribute);
                                     }
+                                    else if (props[i].PropertyType.IsEnum)
+                                    {
+                                        XmlAttribute valueAttribute = document.CreateAttribute("value");
+                                        valueAttribute.Value = ((int)propValue).ToString();
+                                        settingNode.Attributes.Append(valueAttribute);
+                                    }
+                                    else if (IsList(props[i].PropertyType))
+                                    {
+                                        // can crash with casting exception
+                                        FlattenList(settingNode, (IList)propValue, props[i].PropertyType);
+                                    }
                                     else
                                     {
-                                        if (IsList(props[i].PropertyType))
-                                        {
-                                            // can crash with casting exception
-                                            FlattenList(settingNode, (IList)propValue, props[i].PropertyType);
-                                        }
-                                        else
-                                        {
-                                            throw new ArgumentException($"Cannot save {props[i].DeclaringType}.{props[i].Name}. It is neither a primitive type (string included) or a list and it does not have a custom converter.");
-                                        }
+                                        throw new ArgumentException($"Cannot save {props[i].DeclaringType}.{props[i].Name}. It is neither a primitive type (string included) or a list and it does not have a custom converter.");
                                     }
                                 }
 
@@ -436,6 +442,7 @@ namespace Multitool.Data.Settings
         public void Reset()
         {
             document.RemoveAll();
+            document.AppendChild(document.CreateElement("Settings"));
             Commit();
             Trace.TraceInformation("Cleared setting file.");
         }
@@ -547,7 +554,7 @@ namespace Multitool.Data.Settings
             }
             else
             {
-                object value;
+                object value = null;
                 if (IsList(propertyInfo.PropertyType))
                 {
                     var xmlGenericType = node.Attributes["type"];
@@ -586,11 +593,22 @@ namespace Multitool.Data.Settings
 
                     value = list;
                 }
+                else if (propertyInfo.PropertyType.IsEnum)
+                {
+                    var attr = node.Attributes["value"];
+                    if (attr != null)
+                    {
+                        if (!Enum.TryParse(typeof(T), attr.Value, out value))
+                        {
+                            Trace.TraceWarning($"Cannot convert \"{attr.Value}\" to {typeof(T).Name}");
+                        }
+                    }
+                }
                 else
                 {
                     if (settingAttribute.Converter != null)
                     {
-                        value = settingAttribute.Converter.Restore(node);
+                        value = settingAttribute.Converter.Restore(node.FirstChild);
                         // if we cannot restore then we ask for the converter to restore the default value
                         if (value == null && settingAttribute.HasDefaultValue)
                         {
@@ -603,7 +621,15 @@ namespace Multitool.Data.Settings
                         value = xmlAttribute != null ? xmlAttribute.Value : node.InnerText;
                     }
                 }
-                SetPropertyValue(propertyInfo, toLoad, settingAttribute, value);
+
+                if (value != null)
+                {
+                    SetPropertyValue(propertyInfo, toLoad, settingAttribute, value);
+                }
+                else
+                {
+                    Trace.TraceWarning($"{typeof(T).Name}.{propertyInfo.Name} not assigned, value from XML file is null");
+                }
             }
         }
 
@@ -631,6 +657,10 @@ namespace Multitool.Data.Settings
                             prop.SetValue(toLoad, GetTypeDefaultValue(prop.PropertyType));
                         }
                     }
+                    else if (typeof(T) == typeof(Type))
+                    {
+                        prop.SetValue(toLoad, value);
+                    }
                     else
                     {
                         prop.SetValue(toLoad, Convert.ChangeType(value, prop.PropertyType));
@@ -638,7 +668,7 @@ namespace Multitool.Data.Settings
                 }
                 catch (InvalidCastException ex)
                 {
-                    Trace.TraceWarning($"Failed to convert value for {typeof(T).Name}.{prop.Name}, trying to set the value with no conversion.\n{ex}");
+                    Trace.TraceWarning($"Failed to convert value for {typeof(T).Name}.{prop.Name}, trying to set the value with no conversion.\n{ex.Message}");
                     prop.SetValue(toLoad, value);
                     Trace.TraceInformation($"Set {typeof(T).Name}.{prop.Name} value with no conversion.");
                 }

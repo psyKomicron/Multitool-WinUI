@@ -26,9 +26,9 @@ namespace Multitool.Data.Settings.Converters
 
         public object Restore(XmlNode toRestore)
         {
-            if (toRestore != null && toRestore.HasChildNodes && toRestore.FirstChild.Name == "Type")
+            if (toRestore != null && toRestore.Name == "Type" && toRestore.Attributes != null)
             {
-                var attributes = toRestore.FirstChild.Attributes;
+                var attributes = toRestore.Attributes;
                 var value = attributes["value"]?.Value;
                 if (value is string typeAssemblyQualifiedName && !string.IsNullOrWhiteSpace(typeAssemblyQualifiedName))
                 {

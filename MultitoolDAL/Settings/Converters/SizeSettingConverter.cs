@@ -14,8 +14,8 @@ namespace Multitool.Data.Settings.Converters
                 XmlDocument xmlDoc = new();
                 var node = xmlDoc.CreateElement("Size");
 
-                var widthAttr = xmlDoc.CreateAttribute("Width");
-                var heightAttr = xmlDoc.CreateAttribute("Height");
+                var widthAttr = xmlDoc.CreateAttribute(nameof(Size.Width));
+                var heightAttr = xmlDoc.CreateAttribute(nameof(Size.Height));
                 widthAttr.Value = size.Width.ToString();
                 heightAttr.Value = size.Height.ToString();
 
@@ -28,11 +28,10 @@ namespace Multitool.Data.Settings.Converters
 
         public object Restore(XmlNode toRestore)
         {
-            var node = toRestore.SelectSingleNode($"./Size");
-            if (node != null)
+            if (toRestore != null && toRestore.Name == "Size")
             {
-                var widthAttr = node.Attributes["Width"];
-                var heightAttr = node.Attributes["Height"];
+                var widthAttr = toRestore.Attributes[nameof(Size.Width)];
+                var heightAttr = toRestore.Attributes[nameof(Size.Height)];
                 if (heightAttr != null && widthAttr != null)
                 {
                     if (double.TryParse(heightAttr.Value, out double height) && double.TryParse(widthAttr.Value, out double width))
