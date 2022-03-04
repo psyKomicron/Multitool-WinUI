@@ -29,6 +29,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Controls\AppMessageControl.xaml" />
+    <None Remove="Controls\EmoteDisplay.xaml" />
     <None Remove="Controls\FileSystemEntryView.xaml" />
     <None Remove="Controls\MainPageItem.xaml" />
     <None Remove="Controls\TimerPicker.xaml" />
@@ -43,6 +44,7 @@
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
     <None Remove="Pages\IrcChatPage.xaml" />
+    <None Remove="Pages\Test\SpotlightImporter.xaml" />
     <None Remove="Pages\Twitch\ChatControl.xaml" />
     <None Remove="Pages\MusicPlayer\MusicFileView.xaml" />
     <None Remove="Pages\MusicPlayer\MusicPlayerPage.xaml" />
@@ -131,10 +133,10 @@
     <Page Update="Pages\MusicPlayer\MusicSearchPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Pages\Test\EmbedFetcherControl.xaml">
+    <Page Update="Controls\EmbedFetcherControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Pages\Test\ImageTester.xaml">
+    <Page Update="Controls\ImageTester.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Controls\YoutubeEmbedView.xaml">
@@ -144,6 +146,12 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Pages\Twitch\ChatPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\SpotlightImporter.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\EmoteDisplay.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <None Update="Resources\Images\ico151.ico">
@@ -200,7 +208,7 @@
     <Page Update="Pages\ControlPanels\SettingPathView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Pages\Test\ColorBrowserControl.xaml">
+    <Page Update="Controls\ColorBrowserControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
