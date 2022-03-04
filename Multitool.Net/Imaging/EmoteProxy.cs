@@ -1,23 +1,37 @@
 ﻿
+using Multitool.Net.Properties;
+using Multitool.Net.Irc.Security;
+
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 
+using Windows.Foundation.Metadata;
+using Windows.Media.Protection.PlayReady;
+using Windows.Security.Cryptography;
+using Windows.Storage;
+using Windows.Storage.Streams;
+using Windows.Web.Http;
+
 namespace Multitool.Net.Imaging
 {
-    public sealed class EmoteProxy : IEmoteFetcher
+    public sealed class EmoteProxy : IEmoteFetcher, IDisposable
     {
-        private const int timeout = 500;
         private static EmoteProxy instance;
+        private const int timeout = 500; //ms
+        private const int fileStreamBufferSize = 0x2000;
 
         private readonly System.Timers.Timer cacheTimer;
+        // concurrent channel emote downloading
         private readonly ConcurrentDictionary<string, SemaphoreSlim> semaphores = new();
 
         private readonly SemaphoreSlim globalEmotesDownloadSemaphore = new(1);
@@ -25,22 +39,63 @@ namespace Multitool.Net.Imaging
 
         private readonly List<Emote> globalEmotesCache = new();
         private readonly ConcurrentBag<Emote> emotesCache = new();
+        private readonly HashAlgorithm hasher = SHA256.Create();
+        private readonly string cacheFolderPath;
 
         private EmoteProxy()
         {
+            cacheFolderPath = string.Format(Resources.EmoteCacheFolder, ApplicationData.Current.TemporaryFolder.Path);
+            if (!Directory.Exists(cacheFolderPath))
+            {
+                Trace.TraceInformation("Creating emote cache folder");
+                Directory.CreateDirectory(cacheFolderPath);
+                Trace.TraceInformation($"Created emote cache folder: \"{cacheFolderPath}\".");
+            }
+
             cacheTimer = new(5_000);
             cacheTimer.Elapsed += OnCacheTimerElapsed;
             EmoteFetchers = new(3);
         }
 
         public List<EmoteFetcher> EmoteFetchers { get; init; }
-        public ImageSize DefaultImageSize { get; set; }
+        public string Provider { get; }
 
-        public static EmoteProxy Get()
+        public void Dispose()
         {
-            if (instance is null)
+            cacheTimer.Elapsed -= OnCacheTimerElapsed;
+            cacheTimer.Dispose();
+
+            hasher.Dispose();
+
+            emotesCache.Clear();
+            globalEmotesCache.Clear();
+            semaphores.Clear();
+
+            for (int i = 0; i < EmoteFetchers.Count; i++)
             {
+                EmoteFetchers[i].Dispose();
+            }
+        }
+
+        public static EmoteProxy Get(TwitchConnectionToken token = null, bool ignoreValidation = false)
+        {
+            if (instance == null)
+            {
+                if (token == null)
+                {
+                    throw new ArgumentNullException(nameof(token));
+                }
+                if (!ignoreValidation && !token.Validated)
+                {
+                    throw new ArgumentException("Connection token needs to be validated.");
+                }
+
                 instance = new();
+                
+                instance.EmoteFetchers.Add(new FfzEmoteFetcher());
+                instance.EmoteFetchers.Add(new SevenTVEmoteFetcher());
+                instance.EmoteFetchers.Add(new TwitchEmoteFetcher(token));
+                instance.EmoteFetchers.Add(new BttvEmoteFetcher(token));
             }
             return instance;
         }
@@ -62,6 +117,8 @@ namespace Multitool.Net.Imaging
                     tasks.Add(fetcher.FetchGlobalEmotes());
                 }
 
+                TimeSpan mean = new();
+                Stopwatch watch = new();
                 while (tasks.Count > 0)
                 {
                     Task<List<Emote>> completed = await Task.WhenAny(tasks);
@@ -72,6 +129,17 @@ namespace Multitool.Net.Imaging
                         if (completed.IsCompletedSuccessfully && result.Count > 0)
                         {
                             globalEmotesCache.AddRange(result);
+                            watch.Restart();
+                            await CacheEmotes(result);
+                            watch.Stop();
+                            if (mean.Ticks == 0)
+                            {
+                                mean = watch.Elapsed;
+                            }
+                            else
+                            {
+                                mean.Add(watch.Elapsed);
+                            }
                         }
                     }
                     #region Exceptions
@@ -121,12 +189,15 @@ namespace Multitool.Net.Imaging
                         if (ex.Data != null && ex.Data.Count > 0)
                         {
                             StringBuilder builder = new();
-                            builder.Append(ex.ToString());
+                            builder.AppendLine(ex.ToString());
                             builder.AppendLine("Exception data:");
                             foreach (var d in ex.Data)
                             {
-                                builder.Append('t').AppendLine(d.ToString());
+                                string key = ((KeyValuePair<object, object>)d).Key.ToString();
+                                string value = ((KeyValuePair<object, object>)d).Value.ToString();
+                                builder.Append('\t').Append(key).Append(' ').Append('=').Append(' ').AppendLine(value);
                             }
+                            Trace.TraceError(builder.ToString());
                         }
                         else
                         {
@@ -135,8 +206,9 @@ namespace Multitool.Net.Imaging
                     } 
                     #endregion
                 }
-                Trace.TraceInformation($"Downloaded {globalEmotesCache.Count} emotes.");
+
                 globalEmotesDownloadSemaphore.Release();
+                Trace.TraceInformation($"Downloaded and cached {globalEmotesCache.Count} emotes in {mean:T}.");
                 return globalEmotesCache;
             }
             else
@@ -156,9 +228,9 @@ namespace Multitool.Net.Imaging
             }
         }
 
+        [Deprecated("Not stable", DeprecationType.Remove, 1)]
         public async Task<List<Emote>> FetchChannelEmotes(string channel)
         {
-            // not the way i want to do it. Maybe will copy behavior from Multitool.DAL.FileSystem
             if (semaphores.TryGetValue(channel, out SemaphoreSlim semaphore))
             {
                 if (await semaphore.WaitAsync(60_000))
@@ -166,40 +238,6 @@ namespace Multitool.Net.Imaging
                     semaphore.Release();
                     try
                     {
-#if false
-                        if (await emoteCacheSemaphore.WaitAsync(timeout))
-                        {
-                            Trace.TraceInformation($"Getting emotes for {channel} from cache...");
-                            List<Emote> channelEmotes = new(10);
-                            for (int i = 0; i < emotesCache.Count; i++)
-                            {
-                                if (emotesCache.TryPeek(out Emote emote) && emote.ChannelOwner == channel)
-                                {
-                                    channelEmotes.Add(emote);
-                                }
-                            }
-                            emoteCacheSemaphore.Release();
-
-                            return channelEmotes;
-                        }
-                        else
-                        {
-                            throw new OperationCanceledException("Operation cancelled after timeout.");
-                        } 
-#else
-                        Trace.TraceInformation($"Getting emotes from #{channel} from cache...");
-                        List<Emote> channelEmotes = new(10);
-                        for (int i = 0; i < emotesCache.Count; i++)
-                        {
-                            if (emotesCache.TryPeek(out Emote emote) && emote.ChannelOwner == channel)
-                            {
-                                channelEmotes.Add(emote);
-                            }
-                        }
-                        emoteCacheSemaphore.Release();
-
-                        return channelEmotes;
-#endif
                     }
                     catch
                     {
@@ -215,7 +253,13 @@ namespace Multitool.Net.Imaging
             else
             {
                 Trace.TraceInformation("Checking cache for emotes");
-                List<string> ids = await ListChannelEmotes(channel);
+                List<string> ids = new();
+                List<Task<List<Emote>>> tasks = new();
+                for (int i = 0; i < EmoteFetchers.Count; i++)
+                {
+                    EmoteFetchers[i].
+                }
+
                 int count = ids.Count;
                 foreach (var emotes in emotesCache)
                 {
@@ -299,7 +343,12 @@ namespace Multitool.Net.Imaging
             }
         }
 
-        public async Task<List<Emote>> GetEmoteSets(string sets)
+        public Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<Emote>> GetEmoteSets(string sets)
         {
             throw new NotImplementedException();
         }
@@ -314,11 +363,60 @@ namespace Multitool.Net.Imaging
             return list;
         }
 
+        private async Task CacheEmotes(List<Emote> emotes)
+        {
+            Trace.TraceInformation($"Caching {emotes.Count} emotes from {emotes[0].Provider}");
+            using HttpClient client = new();
+            Encoding encoding = Encoding.UTF8;
+            List<Task> cacheTask = new(emotes.Count);
+            for (int i = 0; i < emotes.Count; i++)
+            {
+                Emote emote = emotes[i];
+                cacheTask.Add(CacheEmote(emote, encoding, client));
+            }
+            await Task.WhenAll(cacheTask);
+        }
+
+        private async Task CacheEmote(Emote emote, Encoding encoding, HttpClient client)
+        {
+            byte[] arr = await emote.GetHashCode(hasher, encoding);
+            string hash = CryptographicBuffer.EncodeToHexString(CryptographicBuffer.CreateFromByteArray(arr));
+            string path =  cacheFolderPath + hash;
+            if (!File.Exists(path))
+            {
+                try
+                {
+                    // Check performance with File.Create(string path, int bufferSize)
+                    using FileStream stream = File.Create(path, fileStreamBufferSize, FileOptions.WriteThrough | FileOptions.SequentialScan);
+                    using BinaryWriter writer = new(stream);
+
+                    Task<byte[]> imageData = emote.GetImageAsync(client, ImageSize.Medium);
+                    writer.Write(await imageData);
+                    emote.SetImage(new(path));
+
+                    stream.Close();
+                }
+                catch (IOException ex)
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+                    Trace.TraceError($"{ex}");
+                }
+            }
+            else
+            {
+                emote.SetImage(new(path));
+            }
+        }
+
         #region event handlers
         private void OnCacheTimerElapsed(object sender, ElapsedEventArgs e)
         {
-
+            // check for new emotes, unused ones...
         }
         #endregion
+
     }
 }

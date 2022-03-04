@@ -37,29 +37,36 @@ namespace Multitool.Net.Imaging
         {
             CheckIfDisposed();
 
-            using HttpResponseMessage httpResponse = await Client.GetAsync(new(Resources.FfzApiGlobalEmotesEndPoint), HttpCompletionOption.ResponseHeadersRead);
-            httpResponse.EnsureSuccessStatusCode();
-
-            string s = await httpResponse.Content.ReadAsStringAsync();
-            var json = JsonSerializer.Deserialize<FfzJsonData>(s);
+            var json = await GetJsonAsync<FfzJsonData>(Resources.FfzApiGlobalEmotesEndPoint);
 
             List<Emote> emotes = new();
-            List<Task> downloadTasks = new();
-
             foreach (KeyValuePair<string, FfzJsonSet> set in json.sets)
             {
                 FfzJsonSet jsonEmotes = set.Value;
                 foreach (var jsonEmote in jsonEmotes.emoticons)
                 {
-                    Emote emote = new(new(jsonEmote.id), jsonEmote.name);
-                    emote.Provider = "FFZ Global emote";
-                    downloadTasks.Add(DownloadEmoteAsync(emote, new($"https:{jsonEmote.urls["1"]}"), string.Empty));
+                    Dictionary<ImageSize, string> urls = new();
+                    if (jsonEmote.urls.TryGetValue("1", out string url))
+                    {
+                        urls.Add(ImageSize.Small, $"https:{url}");
+                    }
+                    if (jsonEmote.urls.TryGetValue("2", out url))
+                    {
+                        urls.Add(ImageSize.Medium, $"https:{url}");
+                    }
+                    if (jsonEmote.urls.TryGetValue("4", out url))
+                    {
+                        urls.Add(ImageSize.Big, $"https:{url}");
+                    }
+
+                    Emote emote = new(new(jsonEmote.id), jsonEmote.name, urls)
+                    {
+                        Provider = "FFZ",
+                        Type = "Global"
+                    };
                     emotes.Add(emote);
                 }
             }
-
-            await Task.WhenAll(downloadTasks);
-
             return emotes;
         }
 
