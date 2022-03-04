@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 using Windows.UI;
 
-namespace Multitool.Net.Twitch
+namespace Multitool.Net.Irc
 {
     public class User
     {

@@ -1,5 +1,5 @@
-﻿using Multitool.Net.Twitch.Factories;
-using Multitool.Net.Twitch.Security;
+﻿using Multitool.Net.Irc.Factories;
+using Multitool.Net.Irc.Security;
 
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 
-namespace Multitool.Net.Twitch.Irc
+namespace Multitool.Net.Irc.Twitch
 {
     public class TwitchIrcClient : IIrcClient
     {

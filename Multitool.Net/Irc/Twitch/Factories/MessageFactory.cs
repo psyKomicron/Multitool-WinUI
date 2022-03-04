@@ -1,11 +1,11 @@
 ﻿
-using Multitool.Net.Twitch.Irc;
+using Multitool.Net.Irc.Twitch;
 
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Multitool.Net.Twitch.Factories
+namespace Multitool.Net.Irc.Factories
 {
     internal class MessageFactory
     {

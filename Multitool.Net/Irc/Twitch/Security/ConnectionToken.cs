@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Multitool.Net.Twitch.Security
+namespace Multitool.Net.Irc.Security
 {
     public abstract class ConnectionToken
     {

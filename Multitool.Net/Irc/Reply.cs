@@ -1,4 +1,4 @@
-﻿namespace Multitool.Net.Twitch
+﻿namespace Multitool.Net.Irc
 {
     public class Reply
     {

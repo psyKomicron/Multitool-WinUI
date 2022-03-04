@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Multitool.Net.Twitch.Irc
+namespace Multitool.Net.Irc.Twitch
 {
     public class UserTimeoutEventArgs : EventArgs
     {

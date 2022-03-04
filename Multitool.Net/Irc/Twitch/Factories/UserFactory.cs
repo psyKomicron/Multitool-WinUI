@@ -8,7 +8,7 @@ using System.Threading;
 
 using Windows.UI;
 
-namespace Multitool.Net.Twitch.Factories
+namespace Multitool.Net.Irc.Factories
 {
     internal class UserFactory
     {

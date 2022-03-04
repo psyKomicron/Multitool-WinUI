@@ -1,4 +1,4 @@
-﻿namespace Multitool.Net.Twitch.Irc
+﻿namespace Multitool.Net.Irc.Twitch
 {
     public enum NoticeType
     {

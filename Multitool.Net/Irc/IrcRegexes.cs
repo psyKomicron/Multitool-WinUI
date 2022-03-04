@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Multitool.Net.Twitch.Irc
+namespace Multitool.Net.Irc.Twitch
 {
     internal static class IrcRegexes
     {

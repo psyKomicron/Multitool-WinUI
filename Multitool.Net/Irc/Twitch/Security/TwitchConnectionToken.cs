@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 using Windows.Web.Http;
 
-namespace Multitool.Net.Twitch.Security
+namespace Multitool.Net.Irc.Security
 {
     public class TwitchConnectionToken : ConnectionToken
     {
