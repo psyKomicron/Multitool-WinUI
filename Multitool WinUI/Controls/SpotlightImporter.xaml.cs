@@ -54,7 +54,7 @@ namespace MultitoolWinUI.Pages.Test
             }
             try
             {
-                App.Settings.Load(this);
+                App.UserSettings.Load(this);
             }
             catch { }
         }

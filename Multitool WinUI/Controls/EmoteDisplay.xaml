@@ -1,0 +1,44 @@
+﻿<UserControl
+    x:Class="MultitoolWinUI.Controls.EmoteDisplay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MultitoolWinUI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:imaging="using:Multitool.Net.Imaging"
+    mc:Ignorable="d">
+
+    <Grid>
+        <TextBlock Text="{x:Bind EmoteProvider}" FontSize="18" Grid.Row="0"/>
+        <GridView
+            x:Name="EmoteGridView"
+            MaxHeight="300"
+            ItemsSource="{x:Bind Emotes}"
+            IsItemClickEnabled="True"
+            BorderBrush="{ThemeResource LightBlack}"
+            CornerRadius="3"
+            BorderThickness="1"
+            Grid.Row="1"
+            ItemClick="EmoteGridView_ItemClick">
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="imaging:Emote">
+                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="{x:Bind Height}">
+                        <ToolTipService.ToolTip>
+                            <ToolTip>
+                                <StackPanel Orientation="Vertical">
+                                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="70"/>
+                                    <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{x:Bind Provider}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </ToolTipService.ToolTip>
+                    </Image>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid MinHeight="300" Orientation="Horizontal" MaximumRowsOrColumns="10"/>
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+        </GridView>
+    </Grid>
+</UserControl>
