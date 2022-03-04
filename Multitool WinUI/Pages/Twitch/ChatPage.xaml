@@ -5,7 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource PageBackgroundBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -15,11 +15,11 @@
         <InfoBar Name="InfoBar" Grid.Row="0" HorizontalAlignment="Center"/>
 
         <TabView 
+            Name="ChatTabView"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             AddTabButtonClick="ChatTabView_AddTabButtonClick" 
             TabCloseRequested="ChatTabView_TabCloseRequested" 
-            CloseButtonOverlayMode="OnPointerOver" 
             Grid.Row="1"/>
     </Grid>
 </Page>
