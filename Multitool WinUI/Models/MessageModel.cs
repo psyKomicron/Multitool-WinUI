@@ -2,7 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.Net.Twitch;
+using Multitool.Net.Irc;
 
 using Windows.Foundation;
 
