@@ -37,7 +37,8 @@ namespace MultitoolWinUI
 
         public static MainWindow MainWindow { get; private set; }
 
-        public static ISettingsManager Settings { get; private set; }
+        public static IUserSettingsManager UserSettings { get; private set; }
+        public static ISecureSettingsManager SecureSettings { get; private set; }
 
         public static void TraceInformation(string info)
         {
@@ -69,7 +70,7 @@ namespace MultitoolWinUI
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
-            Settings =
+            UserSettings =
 #if true
                 await XmlSettingManager.Get();
 #else
@@ -78,6 +79,12 @@ namespace MultitoolWinUI
             SettingFormat = "{0}/{1}"
         }; 
 #endif
+            SecureSettings = new SecureSettingsManager()
+            {
+                HashKey = true,
+                HashAlgorithm = System.Security.Cryptography.SHA512.Create()
+            };            
+
             try
             {
                 errorBrush = new(Tool.GetAppRessource<Color>("SystemAccentColor"));
