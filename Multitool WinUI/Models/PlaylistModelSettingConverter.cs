@@ -20,11 +20,11 @@ namespace MultitoolWinUI.Models
                 node.Attributes.Append(name);
                 node.Attributes.Append(desc);
 
-                foreach (var song in model.Songs)
+                foreach (var song in model.Playlist)
                 {
                     XmlNode songNode = doc.CreateElement(nameof(String));
                     var value = doc.CreateAttribute("Value");
-                    value.Value = song;
+                    value.Value = song.Path;
                     songNode.Attributes.Append(value);
                     node.AppendChild(songNode);
                 }
@@ -40,12 +40,11 @@ namespace MultitoolWinUI.Models
             if (!string.IsNullOrEmpty(name))
             {
                 var description = toRestore.Attributes[nameof(PlaylistModel.Description)]?.Value ?? string.Empty;
-                PlaylistModel model = new()
+                PlaylistModel model = new(new()
                 {
                     Name = name,
-                    Description = description,
-                    Songs = new()
-                };
+                    Description = description
+                });
                 if (toRestore.HasChildNodes)
                 {
                     foreach (XmlNode node in toRestore.ChildNodes)
@@ -53,7 +52,7 @@ namespace MultitoolWinUI.Models
                         var value = node.Attributes["Value"];
                         if (value != null)
                         {
-                            model.Songs.Add(value.ToString());
+                            model.Playlist.AddFile(value.ToString()).Wait();
                         }
                     }
                 }
