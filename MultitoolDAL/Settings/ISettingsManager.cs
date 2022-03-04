@@ -4,26 +4,30 @@ using Windows.Foundation;
 
 namespace Multitool.Data.Settings
 {
-    /// <summary>
-    /// Defines behavior for classes handling app settings.
-    /// </summary>
     public interface ISettingsManager
     {
-        event TypedEventHandler<ISettingsManager, string> SettingsChanged;
-
-        string SettingFilePath { get; }
-
-        void Commit();
-        void EditSetting(string globalKey, string settingKey, object value);
-        T GetSetting<T>(string globalKey, string settingKey);
-        void Load<T>(T toLoad, bool useSettingAttribute = true);
-        List<string> ListSettingsKeys();
-        List<string> ListSettingsKeys(string globalKey);
-        void RemoveSetting(string globalKey, string settingKey);
+        void Edit(string globalKey, string settingKey, object value);
+        T Get<T>(string globalKey, string settingKey);
+        List<string> ListKeys();
+        List<string> ListKeys(string globalKey);
+        void Remove(string globalKey, string settingKey);
+        /// <summary>
+        /// Deletes all entries managed by this <see cref="ISettingsManager"/>
+        /// </summary>
         void Reset();
-        void Save<T>(T toSave, bool useSettingAttribute = true);
-        void SaveSetting(string globalKey, string name, object value);
-        object TryGetSetting(string globalKey, string settingKey);
-        bool TryGetSetting<T>(string globalKey, string name, out T value);
+        /// <summary>
+        /// Saves a value into the implementation's medium.
+        /// </summary>
+        /// <remarks>
+        /// A setting is the combination of 2 <see cref="string"/> to create it's unique name, and a value.
+        /// </remarks>
+        /// <param name="globalKey"></param>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        void Save(string globalKey, string name, object value);
+        bool TryGet<T>(string globalKey, string name, out T value);
+        object TryGet(string globalKey, string settingKey);
+
+        event TypedEventHandler<IUserSettingsManager, string> SettingsChanged;
     }
 }

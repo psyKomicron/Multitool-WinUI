@@ -16,7 +16,7 @@ using Windows.Storage;
 
 namespace Multitool.Data.Settings
 {
-    public class XmlSettingManager : ISettingsManager
+    public class XmlSettingManager : IUserSettingsManager
     {
         private readonly string filePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "settings.xml");
         private readonly XmlDocument document;
@@ -50,7 +50,7 @@ namespace Multitool.Data.Settings
             }
         }
 
-        public event TypedEventHandler<ISettingsManager, string> SettingsChanged;
+        public event TypedEventHandler<IUserSettingsManager, string> SettingsChanged;
 
         #region properties
         public bool AutoCommit { get; set; } = true;
@@ -255,7 +255,7 @@ namespace Multitool.Data.Settings
         }
 
         #region additional methods
-        public void SaveSetting(string callerName, string name, object value)
+        public void Save(string callerName, string name, object value)
         {
             if (value == null)
             {
@@ -297,7 +297,7 @@ namespace Multitool.Data.Settings
             }
         }
 
-        public T GetSetting<T>(string globalKey, string settingKey)
+        public T Get<T>(string globalKey, string settingKey)
         {
             XmlNode globalNode = settingsRootNode.SelectSingleNode(".//" + globalKey);
             if (globalNode != null)
@@ -327,7 +327,7 @@ namespace Multitool.Data.Settings
             }
         }
 
-        public object TryGetSetting(string globalKey, string settingKey)
+        public object TryGet(string globalKey, string settingKey)
         {
             XmlNode globalNode = settingsRootNode.SelectSingleNode(".//" + globalKey);
             if (globalNode != null)
@@ -348,7 +348,7 @@ namespace Multitool.Data.Settings
             }
         }
 
-        public bool TryGetSetting<T>(string callerName, string name, [MaybeNullWhen(false)] out T value)
+        public bool TryGet<T>(string callerName, string name, [MaybeNullWhen(false)] out T value)
         {
             XmlNode settingNode = settingsRootNode.SelectSingleNode($".//{callerName}/{name}");
             if (settingNode != null)
@@ -372,12 +372,12 @@ namespace Multitool.Data.Settings
             }
         }
 
-        public void RemoveSetting(string globalKey, string settingKey)
+        public void Remove(string globalKey, string settingKey)
         {
             throw new NotImplementedException();
         } 
 
-        public List<string> ListSettingsKeys()
+        public List<string> ListKeys()
         {
             List<string> keys = new();
             var nodes = settingsRootNode.ChildNodes;
@@ -388,7 +388,7 @@ namespace Multitool.Data.Settings
             return keys;
         }
 
-        public List<string> ListSettingsKeys(string globalKey)
+        public List<string> ListKeys(string globalKey)
         {
             List<string> keys = new();
             var node = settingsRootNode.SelectSingleNode($".//{globalKey}");
@@ -403,7 +403,7 @@ namespace Multitool.Data.Settings
             return keys;
         }
 
-        public void EditSetting(string globalKey, string settingKey, object value)
+        public void Edit(string globalKey, string settingKey, object value)
         {
             XmlNode node = settingsRootNode.SelectSingleNode($".//{globalKey}/{settingKey}");
             if (node != null)
@@ -600,7 +600,7 @@ namespace Multitool.Data.Settings
                     {
                         if (!Enum.TryParse(typeof(T), attr.Value, out value))
                         {
-                            Trace.TraceWarning($"Cannot convert \"{attr.Value}\" to {typeof(T).Name}");
+                            Trace.TraceWarning($"Cannot convert \"{attr.Value}\" to {typeof(T).Name}.");
                         }
                     }
                 }
@@ -668,7 +668,7 @@ namespace Multitool.Data.Settings
                 }
                 catch (InvalidCastException ex)
                 {
-                    Trace.TraceWarning($"Failed to convert value for {typeof(T).Name}.{prop.Name}, trying to set the value with no conversion.\n{ex.Message}");
+                    Trace.TraceWarning($"Failed to convert value for {typeof(T).Name}.{prop.Name}, trying to set the value with no conversion. {ex.Message}");
                     prop.SetValue(toLoad, value);
                     Trace.TraceInformation($"Set {typeof(T).Name}.{prop.Name} value with no conversion.");
                 }
