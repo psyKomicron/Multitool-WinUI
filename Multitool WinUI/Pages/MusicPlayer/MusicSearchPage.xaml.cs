@@ -62,13 +62,13 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            App.Settings.Load(this);
+            App.UserSettings.Load(this);
             PropertyChanged?.Invoke(this, new(string.Empty));
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            App.Settings.Save(this);
+            App.UserSettings.Save(this);
             base.OnNavigatedFrom(e);
         }
 

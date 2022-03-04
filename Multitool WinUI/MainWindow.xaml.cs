@@ -24,6 +24,7 @@ using System.Diagnostics;
 
 using Windows.Foundation;
 using Windows.UI;
+using Windows.UI.ViewManagement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -38,6 +39,7 @@ namespace MultitoolWinUI
         private const string fileName = "peepoPoopoo.gif";
         private static AppWindow thisWindow;
         private bool closed;
+        private bool fullScreen;
 
         public MainWindow()
         {
@@ -46,7 +48,7 @@ namespace MultitoolWinUI
             SizeChanged += MainWindow_SizeChanged;
             try
             {
-                App.Settings.Load(this);
+                App.UserSettings.Load(this);
 #if DEBUG
                 // 
                 if (LastPage == null)
@@ -234,6 +236,7 @@ namespace MultitoolWinUI
             WindowId windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
 
             thisWindow = AppWindow.GetFromWindowId(windowId);
+            thisWindow.Changed += AppWindow_Changed;
 
             if (AppWindowTitleBar.IsCustomizationSupported())
             {
@@ -258,6 +261,20 @@ namespace MultitoolWinUI
             }
         }
 
+        private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+        {
+            if (thisWindow.Presenter is OverlappedPresenter overlappedPresenter)
+            {
+                fullScreen = overlappedPresenter.State == OverlappedPresenterState.Maximized;
+
+                if (args.DidPositionChange && !fullScreen)
+                {
+                    PositionX = thisWindow.Position.X;
+                    PositionY = thisWindow.Position.Y;
+                }
+            }
+        }
+
         #region window events
         private void PresenterModeButton_Click(object sender, RoutedEventArgs e)
         {
@@ -273,7 +290,7 @@ namespace MultitoolWinUI
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
-            if (!closed)
+            if (!closed && !fullScreen)
             {
                 WindowSize = args.Size;
             }
@@ -286,9 +303,7 @@ namespace MultitoolWinUI
             MessageDisplay.Silence();
             try
             {
-                PositionX = thisWindow.Position.X;
-                PositionY = thisWindow.Position.Y;
-                App.Settings.Save(this);
+                App.UserSettings.Save(this);
             }
             catch (ArgumentException ex)
             {

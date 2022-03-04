@@ -6,10 +6,10 @@ using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
 using Multitool.Drawing;
 using Multitool.Net.Embeds;
-using Multitool.Net.Twitch;
-using Multitool.Net.Twitch.Factories;
-using Multitool.Net.Twitch.Irc;
-using Multitool.Net.Twitch.Security;
+using Multitool.Net.Irc;
+using Multitool.Net.Irc.Factories;
+using Multitool.Net.Irc.Twitch;
+using Multitool.Net.Irc.Security;
 
 using MultitoolWinUI.Models;
 using MultitoolWinUI.Pages.Irc;
@@ -59,7 +59,7 @@ namespace MultitoolWinUI.Pages.Test
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            App.Settings.Load(this);
+            App.UserSettings.Load(this);
             if (LastControl != null)
             {
                 var ctor = LastControl.GetConstructor(Array.Empty<Type>());
@@ -68,9 +68,9 @@ namespace MultitoolWinUI.Pages.Test
             }
         }
 
-        private void OnUnloaded(object sender, RoutedEventArgs e) => App.Settings.Save(this);
+        private void OnUnloaded(object sender, RoutedEventArgs e) => App.UserSettings.Save(this);
 
-        private void MainWindow_Closed(object sender, WindowEventArgs args) => App.Settings.Save(this);
+        private void MainWindow_Closed(object sender, WindowEventArgs args) => App.UserSettings.Save(this);
 
         private void ColorsButton_Click(object sender, RoutedEventArgs e)
         {
