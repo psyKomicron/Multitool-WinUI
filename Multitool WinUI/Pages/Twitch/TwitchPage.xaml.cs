@@ -6,8 +6,8 @@ using Microsoft.UI.Xaml.Navigation;
 using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
 using Multitool.Net.Imaging;
-using Multitool.Net.Twitch.Irc;
-using Multitool.Net.Twitch.Security;
+using Multitool.Net.Irc.Twitch;
+using Multitool.Net.Irc.Security;
 
 using MultitoolWinUI.Pages.Irc;
 
@@ -44,26 +44,14 @@ namespace MultitoolWinUI.Pages
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
-        [Setting("")]
-        public string Login { get; set; }
+        /*[Setting("psykomicron", DefaultInstanciate = false)]
+        public string DefaultUser { get; set; }*/
 
         [Setting(true)]
         public bool LoadWebView { get; set; }
 
         [Setting("twitch.tv")]
         public string LastVisited { get; set; }
-
-        [Setting(500)]
-        public int ChatMaxNumberOfMessages { get; set; }
-
-        [Setting(30)]
-        public int ChatEmoteSize { get; set; }
-
-        [Setting(typeof(RegexSettingConverter), DefaultInstanciate = false)]
-        public Regex ChatMentionRegex { get; set; }
-
-        [Setting("t")]
-        public string TimestampFormat { get; set; }
 
         public List<string> Channels { get; set; }
         #endregion
@@ -73,7 +61,7 @@ namespace MultitoolWinUI.Pages
         {
             if (!saved)
             {
-                App.Settings.Save(this);
+                App.UserSettings.Save(this);
                 saved = true;
             }
         }
@@ -135,7 +123,7 @@ namespace MultitoolWinUI.Pages
         {
             try
             {
-                App.Settings.Load(this);
+                App.UserSettings.Load(this);
                 PropertyChanged(this, new(string.Empty));
 
                 if (LoadWebView)
@@ -143,20 +131,18 @@ namespace MultitoolWinUI.Pages
                     NavigateTo($"https://{LastVisited}");
                 }
 
-                if (!string.IsNullOrEmpty(Login))
+                string login = App.SecureSettings.Get<string>(null, "twitch-oauth-token");
+                if (!string.IsNullOrEmpty(login))
                 {
-                    token = new(Login);
+                    token = new(login);
                     if (!await token.ValidateToken())
                     {
                         App.TraceWarning("Your twitch connection token is not valid. Generate one, or check if the current one is the right one.");
                     }
                     else
                     {
-                        EmoteProxy proxy = EmoteProxy.Get();
-                        proxy.EmoteFetchers.Add(new TwitchEmoteFetcher(token));
-                        proxy.EmoteFetchers.Add(new FfzEmoteFetcher());
-                        proxy.EmoteFetchers.Add(new SevenTVEmoteFetcher());
-
+                        EmoteProxy proxy = EmoteProxy.Get(token);
+                        // cache emotes on "start-up"
                         _ = proxy.FetchGlobalEmotes();
                         //_ = proxy.FetchChannelEmotes("xqcow");
                     }

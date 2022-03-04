@@ -12,8 +12,8 @@ using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
 using Multitool.Net.Embeds;
 using Multitool.Net.Imaging;
-using Multitool.Net.Twitch;
-using Multitool.Net.Twitch.Irc;
+using Multitool.Net.Irc;
+using Multitool.Net.Irc.Twitch;
 
 using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
@@ -76,7 +76,7 @@ namespace MultitoolWinUI.Pages.Irc
 
             try
             {
-                App.Settings.Load(this);
+                App.UserSettings.Load(this);
             }
             catch (Exception ex)
             {
@@ -86,10 +86,17 @@ namespace MultitoolWinUI.Pages.Irc
 
         #region properties
         public string Channel { get; set; }
+
         public List<Emote> ChannelEmotes { get; } = new();
+        
         public List<Emote> Emotes { get; } = new();
+
+        public IEmoteFetcher EmoteFetcher { get; set; }
+
         public TabViewItem Tab { get; set; }
+
         public FontWeight UserMessagesFontWeight { get; set; } = FontWeights.Normal;
+
         public FontWeight SystemMessagesFontWeight { get; set; } = FontWeights.SemiLight;
 
         #region settings
@@ -108,6 +115,7 @@ namespace MultitoolWinUI.Pages.Irc
         [Setting]
         public bool ReplyWithAt { get; set; }
         #endregion
+
         #endregion
 
         public async ValueTask DisposeAsync()
@@ -126,7 +134,7 @@ namespace MultitoolWinUI.Pages.Irc
                     joined = true;
 
                     delayedActionQueue.QueueAction(() => DisplayMessage($"Joined {Channel}"));
-                    ChannelEmotes.AddRange(await EmoteProxy.Get().FetchChannelEmotes(Channel));
+                    //ChannelEmotes.AddRange(await EmoteProxy.Get().FetchChannelEmotes(Channel));
                 }
                 catch (ArgumentException ex)
                 {
@@ -547,7 +555,8 @@ namespace MultitoolWinUI.Pages.Irc
 
                 try
                 {
-                    Emotes.AddRange(await EmoteProxy.Get().FetchGlobalEmotes());
+                    List<Emote> emotes = await EmoteFetcher.FetchGlobalEmotes();
+                    Emotes.AddRange(emotes);
                 }
                 catch (Exception ex)
                 {
