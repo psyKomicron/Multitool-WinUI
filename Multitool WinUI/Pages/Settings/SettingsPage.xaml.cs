@@ -9,7 +9,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
-using Multitool.Net.Twitch.Security;
+using Multitool.Net.Irc.Security;
 
 using MultitoolWinUI.Pages.Explorer;
 using MultitoolWinUI.Pages.Irc;
@@ -36,7 +36,7 @@ namespace MultitoolWinUI.Pages.Settings
     /// </summary>
     internal sealed partial class SettingsPage : Page, INotifyPropertyChanged
     {
-        private readonly ISettingsManager settingsManager = App.Settings;
+        private readonly IUserSettingsManager settingsManager = App.UserSettings;
         private string typeToNavigateTo;
 
         public SettingsPage()
@@ -98,7 +98,7 @@ namespace MultitoolWinUI.Pages.Settings
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            App.Settings.Load(this);
+            App.UserSettings.Load(this);
             #region navigation
             if (e.Parameter is string page)
             {
@@ -133,7 +133,7 @@ namespace MultitoolWinUI.Pages.Settings
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            App.Settings.Save(this);
+            App.UserSettings.Save(this);
         }
         #endregion
 
@@ -144,7 +144,7 @@ namespace MultitoolWinUI.Pages.Settings
             {
                 if (!NavigateTo(typeToNavigateTo))
                 {
-                    App.TraceWarning($"Setting page not found for {typeToNavigateTo}");
+                    App.TraceWarning($"Setting page not found for {typeToNavigateTo}.");
                 }
             }
             typeToNavigateTo = null;
@@ -158,11 +158,11 @@ namespace MultitoolWinUI.Pages.Settings
             }
             catch (Exception ex)
             {
-                App.TraceError(ex, "Error occured when saving settings");
+                App.TraceError(ex, "Error occured when saving settings.");
             }
         }
 
-        private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(App.Settings.SettingFilePath));
+        private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(App.UserSettings.SettingFilePath));
 
         private void DarkThemeButton_Click(object sender, RoutedEventArgs e)
         {
@@ -187,6 +187,8 @@ namespace MultitoolWinUI.Pages.Settings
                         DefaultThemeButton.IsChecked = false;
                     }
                 }
+
+                Holder.ApplicationTheme = main.RequestedTheme;
             }
         }
 
@@ -213,6 +215,7 @@ namespace MultitoolWinUI.Pages.Settings
                         DefaultThemeButton.IsChecked = false;
                     }
                 }
+                Holder.ApplicationTheme = main.RequestedTheme;
             }
         }
 
@@ -234,12 +237,14 @@ namespace MultitoolWinUI.Pages.Settings
                 {
                     LightThemeButton.IsChecked = false;
                 }
+
+                Holder.ApplicationTheme = ElementTheme.Default;
             }
         }
 
         private async void ValidateTokenButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(Holder.Login))
+            if (string.IsNullOrEmpty(LoginPasswordBox.Password))
             {
                 App.TraceWarning("Login is empty");
                 return;
@@ -247,7 +252,7 @@ namespace MultitoolWinUI.Pages.Settings
 
             try
             {
-                TwitchConnectionToken token = new(Holder.Login);
+                TwitchConnectionToken token = new(LoginPasswordBox.Password);
 
                 TokenValidationProgressRing.IsIndeterminate = true;
                 TokenValidationProgressRing.Visibility = Visibility.Visible;
@@ -259,14 +264,18 @@ namespace MultitoolWinUI.Pages.Settings
                 timer.Interval = TimeSpan.FromMilliseconds(3_000);
                 timer.IsRepeating = false;
                 timer.Tick += (s, e) => LoginPasswordBox.BorderBrush = null;
-                timer.Start();
-
+                
                 if (valid)
                 {
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.Green);
+                        timer.Start();
                     });
+
+                    // SECURE_SETTINGS
+                    App.SecureSettings.Save(null, "twitch-oauth-token", token.Token);
+                    App.TraceInformation("Login saved into windows credential manager.");
                 }
                 else
                 {
@@ -274,6 +283,7 @@ namespace MultitoolWinUI.Pages.Settings
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.IndianRed);
+                        timer.Start();
                     });
                 }
             }
@@ -281,18 +291,6 @@ namespace MultitoolWinUI.Pages.Settings
             {
                 Trace.TraceError(ex.ToString());
             }
-        }
-
-        private void ChatEmoteSize_Slider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-        {
-            //int value = (int)e.NewValue;
-            //settingsManager.EditSetting(typeof(TwitchPage).FullName, , value);
-        }
-
-        private void PasswordBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            /*string value = LoginPasswordBox.Password;
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, "ChatMaxNumberOfMessages", value);*/
         }
 
         private void LoadOAuth_Click(object sender, RoutedEventArgs e)
@@ -306,7 +304,7 @@ namespace MultitoolWinUI.Pages.Settings
 
         private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
         {
-            settingsManager.RemoveSetting(typeof(ExplorerPage).FullName, "History");
+            settingsManager.Remove(typeof(ExplorerPage).FullName, "History");
         }
 
         private void ResetSettingsFile_Click(object sender, RoutedEventArgs e)
@@ -343,12 +341,56 @@ namespace MultitoolWinUI.Pages.Settings
                 {
                     tasks.Add(file.DeleteAsync().AsTask());
                 }
+                var folders = await ApplicationData.Current.TemporaryFolder.GetFoldersAsync();
+                foreach (var folder in folders)
+                {
+                    tasks.Add(folder.DeleteAsync().AsTask());
+                }
                 await Task.WhenAll(tasks);
-                App.TraceInformation("Cleared temporary folder.");
+                App.TraceInformation($"Cleared temporary folder ({files.Count} files, {folders.Count} folders).");
             }
             catch (Exception ex)
             {
                 App.TraceError(ex);
+            }
+        }
+
+        private void ClearSecureSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            App.SecureSettings.Reset();
+            App.TraceInformation("Cleared passwords.");
+        }
+
+
+        private void MentionsTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Enter)
+            {
+                e.Handled = true;
+                try
+                {
+                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex, "Regex is not valid.");
+                }
+            }
+        }
+
+        private void MentionsTextBox_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Enter)
+            {
+                e.Handled = true;
+                try
+                {
+                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex, "Regex is not valid.");
+                }
             }
         }
         #endregion
@@ -368,9 +410,6 @@ namespace MultitoolWinUI.Pages.Settings
 
         [Setting(typeof(TwitchPage), nameof(TwitchPage.LoadWebView))]
         public bool LoadWebView { get; set; }
-
-        [Setting(typeof(TwitchPage), nameof(TwitchPage.Login))]
-        public string Login { get; set; }
 
         [Setting(typeof(ChatControl), nameof(ChatControl.TimestampFormat))]
         public string MessageTimestampFormat { get; set; } 
