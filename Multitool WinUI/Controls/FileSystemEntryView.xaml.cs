@@ -13,6 +13,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
+using System.Threading.Tasks;
 
 using Windows.Foundation;
 
@@ -23,6 +24,7 @@ namespace MultitoolWinUI.Controls
 {
     public sealed partial class FileSystemEntryView : UserControl, IFileSystemEntry, INotifyPropertyChanged
     {
+        // replace those fields with FontIcons
         private const ushort uiUpdateMs = 120;
         private const string DirectoryIcon = "📁";
         private const string FileIcon = "📄";
@@ -63,7 +65,7 @@ namespace MultitoolWinUI.Controls
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
-            App.MainWindow.SizeChanged += OnWindowSizeChanged;
+
             item.AttributesChanged += OnAttributesChanged;
             item.Deleted += OnDeleted;
             item.SizedChanged += OnSizeChanged;
@@ -178,9 +180,63 @@ namespace MultitoolWinUI.Controls
 
         #endregion
 
-        #region public
+        #region view properties
+        public Brush Color
+        {
+            get => _color;
+            set
+            {
+                _color = value;
+                RaiseNotifyPropertyChanged();
+            }
+        }
+        public string DisplaySizeUnit
+        {
+            get => _displaySizeUnit;
+            set
+            {
+                _displaySizeUnit = value;
+                RaiseNotifyPropertyChanged();
+            }
+        }
+        public string DisplaySize
+        {
+            get => _displaySize;
+            set
+            {
+                _displaySize = value;
+                RaiseNotifyPropertyChanged();
+            }
+        }
+        public bool IsFile => !IsDirectory;
+        public string Icon { get; }
+        public string IsHiddenEcon => FileSystemEntry.IsHidden ? HiddenIcon : string.Empty;
+        public string IsSystemEcon => FileSystemEntry.IsSystem ? SystemIcon : string.Empty;
+        public string IsReadOnlyEcon => FileSystemEntry.IsReadOnly ? ReadOnlyIcon : string.Empty;
+        public string IsEncryptedEcon => FileSystemEntry.IsEncrypted ? EncryptedIcon : string.Empty;
+        public string IsCompressedEcon => FileSystemEntry.IsCompressed ? CompressedIcon : string.Empty;
+        public string IsDeviceEcon => FileSystemEntry.IsDevice ? DeviceIcon : string.Empty;
+        public ListView ListView { get; set; }
+        public Page Page { get; set; }
+        public string PartialIcon
+        {
+            get => _partialIcon;
+            set
+            {
+                _partialIcon = value;
+                RaiseNotifyPropertyChanged();
+            }
+        }
+        #endregion
 
-        ///<inheritdoc/>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #region public methods
+        public Task<Windows.Storage.IStorageItem> AsIStorageItem()
+        {
+            return FileSystemEntry.AsIStorageItem();
+        }
+
         public int CompareTo(IFileSystemEntry other)
         {
             return FileSystemEntry.CompareTo(other);
@@ -223,72 +279,20 @@ namespace MultitoolWinUI.Controls
 
         #endregion
 
-        #region view
-        public ListView ListView { get; set; }
-
-        public Page Page { get; set; }
-
-        public string Icon { get; }
-
-        public string PartialIcon
-        {
-            get => _partialIcon;
-            set
-            {
-                _partialIcon = value;
-                RaiseNotifyPropertyChanged();
-            }
-        }
-
-        public string IsHiddenEcon => FileSystemEntry.IsHidden ? HiddenIcon : string.Empty;
-
-        public string IsSystemEcon => FileSystemEntry.IsSystem ? SystemIcon : string.Empty;
-
-        public string IsReadOnlyEcon => FileSystemEntry.IsReadOnly ? ReadOnlyIcon : string.Empty;
-
-        public string IsEncryptedEcon => FileSystemEntry.IsEncrypted ? EncryptedIcon : string.Empty;
-
-        public string IsCompressedEcon => FileSystemEntry.IsCompressed ? CompressedIcon : string.Empty;
-
-        public string IsDeviceEcon => FileSystemEntry.IsDevice ? DeviceIcon : string.Empty;
-
-        public Brush Color
-        {
-            get => _color;
-            set
-            {
-                _color = value;
-                RaiseNotifyPropertyChanged();
-            }
-        }
-
-        public string DisplaySize
-        {
-            get => _displaySize;
-            set
-            {
-                _displaySize = value;
-                RaiseNotifyPropertyChanged();
-            }
-        }
-
-        public string DisplaySizeUnit
-        {
-            get => _displaySizeUnit;
-            set
-            {
-                _displaySizeUnit = value;
-                RaiseNotifyPropertyChanged();
-            }
-        }
-        #endregion
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
         #region private
+        private static TextBlock CreateAttributeTextBlock(string text, string tooltip)
+        {
+            TextBlock textBlock = new()
+            {
+                Text = text
+            };
+            ToolTipService.SetToolTip(textBlock, tooltip);
+            return textBlock;
+        }
+
         private void RaiseNotifyPropertyChanged([CallerMemberName] string propName = "")
         {
-            _ = DispatcherQueue?.TryEnqueue(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)));
+            _ = DispatcherQueue?.TryEnqueue(() => PropertyChanged?.Invoke(this, new(propName)));
         }
 
         private string GetIcon()
@@ -330,14 +334,10 @@ namespace MultitoolWinUI.Controls
             }
         }
 
-        private TextBlock CreateAttributeTextBlock(string text, string tooltip)
+        private void UpdateControlSize()
         {
-            TextBlock textBlock = new()
-            {
-                Text = text
-            };
-            ToolTipService.SetToolTip(textBlock, tooltip);
-            return textBlock;
+            if (!loaded) return;
+            Width = ListView == null ? double.NaN : ListView.ActualWidth - 40;
         }
         #endregion
 
@@ -427,15 +427,9 @@ namespace MultitoolWinUI.Controls
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             loaded = true;
-            Width = ListView == null ? double.NaN : ListView.ActualWidth - 40;
-            //App.MainWindow.SizeChanged += OnWindowSizeChanged;
+            UpdateControlSize();
+            App.MainWindow.SizeChanged += OnWindowSizeChanged;
             Page.SizeChanged += OnPageChanged;
-        }
-
-        private void OnPageChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (!loaded) return;
-            Width = ListView == null ? double.NaN : ListView.ActualWidth - 40;
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -444,11 +438,9 @@ namespace MultitoolWinUI.Controls
             App.MainWindow.SizeChanged -= OnWindowSizeChanged;
         }
 
-        private void OnWindowSizeChanged(object sender, WindowSizeChangedEventArgs args)
-        {
-            if (!loaded) return;
-            Width = ListView == null ? double.NaN : ListView.ActualWidth - 40;
-        }
+        private void OnPageChanged(object sender, SizeChangedEventArgs e) => UpdateControlSize();
+
+        private void OnWindowSizeChanged(object sender, WindowSizeChangedEventArgs args) => UpdateControlSize();
         #endregion
 
         #endregion
