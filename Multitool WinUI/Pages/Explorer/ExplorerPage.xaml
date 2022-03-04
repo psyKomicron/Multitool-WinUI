@@ -90,7 +90,7 @@
                 <FontIcon Glyph="&#xE711;"/>
             </Button>
         </Grid>
-        
+
         <ListView 
             x:Name="History_ListView"
             ItemsSource="{x:Bind History, Mode=OneWay}"
@@ -147,11 +147,42 @@
                 VerticalAlignment="Stretch"
                 ItemsSource="{x:Bind CurrentFiles}"
                 IsItemClickEnabled="True"
+                SelectionMode="Extended"
+                Margin="0,0,0,20"
                 Grid.Row="1"
                 Grid.Column="1"
                 SelectionChanged="MainListView_SelectionChanged"
+                IsRightTapEnabled="True"
                 DoubleTapped="MainListView_DoubleTapped"
                 KeyDown="MainListView_KeyDown">
+                <ListView.ContextFlyout>
+                    <MenuFlyout Opening="MenuFlyout_Opening">
+                        <MenuFlyoutItem 
+                            Name="DeleteFileMenuItem" 
+                            Text="Delete" IsEnabled="False" 
+                            Click="DeleteFileMenuItem_Click">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Delete"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutItem
+                            Name="CopyFileMenuItem"
+                            Text="Copy"
+                            IsEnabled="False"
+                            Click="CopyFileMenuItem_Click">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="C" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutSubItem Name="ObfuscateFileMenuItem" Text="Obfuscate" IsEnabled="False">
+                            <MenuFlyoutItem 
+                                Text="Change name, remove extension" 
+                                Click="ObfuscateFileMenuItem_Click"/>
+                        </MenuFlyoutSubItem>
+                    </MenuFlyout>
+                </ListView.ContextFlyout>
             </ListView>
 
         </ScrollViewer>

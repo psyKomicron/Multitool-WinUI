@@ -27,7 +27,11 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
 using Windows.System;
+
+using FileAttributes = System.IO.FileAttributes;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -41,16 +45,17 @@ namespace MultitoolWinUI.Pages.Explorer
     {
         private static readonly SolidColorBrush RED = new(Colors.Red);
         private static readonly SolidColorBrush WHITE = new(Colors.White);
-        private readonly IPathCompletor pathCompletor = new PathCompletor();
+
         private readonly IFileSystemManager fileSystemManager = new FileSystemManager() { Notify = true };
         private readonly Stopwatch managerEventStopwatch = new();
+        private readonly IPathCompletor pathCompletor = new PathCompletor();
         private readonly Stopwatch sortEventStopwatch = new();
         private readonly Stack<string> previousStackPath = new(10);
         private readonly Stack<string> nextPathStack = new(10);
         private readonly Stopwatch taskStopwatch = new();
         private readonly object sortingLock = new();
-        private ListenableCancellationTokenSource fsCancellationTokenSource;
 
+        private ListenableCancellationTokenSource fsCancellationTokenSource;
         private string _currentPath;
 
         public ExplorerPage()
@@ -64,7 +69,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
             try
             {
-                App.Settings.Load(this);
+                App.UserSettings.Load(this);
                 foreach (var item in History)
                 {
                     item.DispatcherQueue = DispatcherQueue;
@@ -366,7 +371,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void SavePage()
         {
-            App.Settings.Save(this);
+            App.UserSettings.Save(this);
         }
         #endregion
 
@@ -516,25 +521,13 @@ namespace MultitoolWinUI.Pages.Explorer
             // TODO : 
         }
 
-        private void RefreshFileList_Click(object sender, RoutedEventArgs e)
-        {
-            DisplayFiles(CurrentPath);
-        }
+        private void RefreshFileList_Click(object sender, RoutedEventArgs e) => DisplayFiles(CurrentPath);
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            CancelFileTask();
-        }
+        private void CancelButton_Click(object sender, RoutedEventArgs e) => CancelFileTask();
 
-        private void Previous_Click(object sender, RoutedEventArgs e)
-        {
-            Back();
-        }
+        private void Previous_Click(object sender, RoutedEventArgs e) => Back();
 
-        private void Next_Click(object sender, RoutedEventArgs e)
-        {
-            Next();
-        }
+        private void Next_Click(object sender, RoutedEventArgs e) => Next();
 
         private void PathInput_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
@@ -559,10 +552,7 @@ namespace MultitoolWinUI.Pages.Explorer
 #endif
         }
 
-        private void PathInput_GotFocus(object sender, RoutedEventArgs e)
-        {
-            CompletePath();
-        }
+        private void PathInput_GotFocus(object sender, RoutedEventArgs e) => CompletePath();
 
         private void Page_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
@@ -587,7 +577,8 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void OnMainWindowClosed(object sender, WindowEventArgs args)
         {
-            Task.Run(() => CancelFileTask());
+            CancelFileTask();
+            App.MainWindow.Closed -= OnMainWindowClosed;
             // saving when the mainwindow is closed because this page is cached and thus never unloaded
             SavePage();
         }
@@ -595,6 +586,129 @@ namespace MultitoolWinUI.Pages.Explorer
         private void History_ListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
 
+        }
+
+        private void MenuFlyout_Opening(object sender, object e)
+        {
+            var selection = MainListView.SelectedItems;
+            bool canObfuscate = false;
+            bool canDelete = false;
+            bool canCopy = false;
+            foreach (var o in selection)
+            {
+                if (o is IFileSystemEntry entry)
+                {
+                    if (!canObfuscate && !entry.IsDirectory && !entry.Attributes.HasFlag(FileAttributes.System | FileAttributes.Device))
+                    {
+                        canObfuscate = true;
+                    }
+
+                    if (!entry.IsSystem && !entry.IsDevice)
+                    {
+                        canCopy = true;
+                        canDelete = true;
+                    }
+
+                    if (canCopy && canDelete && canObfuscate)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            MenuFlyoutItem delete = (MenuFlyoutItem)MainListView.FindName("DeleteFileMenuItem");
+            delete.IsEnabled = canDelete;
+            MenuFlyoutItem copy = (MenuFlyoutItem)MainListView.FindName("CopyFileMenuItem");
+            copy.IsEnabled = canCopy;
+            MenuFlyoutSubItem obfuscate = (MenuFlyoutSubItem)MainListView.FindName("ObfuscateFileMenuItem");
+            obfuscate.IsEnabled = canObfuscate;
+        }
+
+        private void DeleteFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var selection = MainListView.SelectedItems;
+            foreach (var o in selection)
+            {
+                if (o is IFileSystemEntry entry)
+                {
+                    try
+                    {
+                        entry.Delete();
+                    }
+                    catch (IOException ex)
+                    {
+                        App.TraceError(ex, $"Cannot delete {entry.Name}");
+                    } 
+                }
+            }
+        }
+
+        private async void CopyFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var selection = MainListView.SelectedItems;
+
+            DataPackage dataPackage = new();
+            dataPackage.RequestedOperation = DataPackageOperation.Copy;
+
+            List<IStorageItem> items = new(selection.Count);
+            List<Task<IStorageItem>> tasks = new(selection.Count);
+            foreach (var o in selection)
+            {
+                if (o is IFileSystemEntry entry)
+                {
+                    try
+                    {
+                        tasks.Add(entry.AsIStorageItem());
+                    }
+                    catch (IOException ex)
+                    {
+                        App.TraceError(ex, $"Cannot copy {entry.Name}");
+                    } 
+                }
+            }
+
+            while (tasks.Count > 0)
+            {
+                Task<IStorageItem> completed = await Task.WhenAny(tasks);
+                if (completed.IsCompletedSuccessfully)
+                {
+                    items.Add(completed.Result);
+                }
+                else
+                {
+                    App.TraceError(completed.Exception, $"Could not copy item to clipboard.");
+                }
+                tasks.Remove(completed);
+            }
+
+            dataPackage.SetStorageItems(items);
+            Clipboard.SetContent(dataPackage);
+        }
+
+        private async void ObfuscateFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var selection = MainListView.SelectedItems;
+                List<IFileSystemEntry> entries = new(selection.Count);
+                foreach (var o in selection)
+                {
+                    if (o is IFileSystemEntry entry)
+                    {
+                        entries.Add(entry);
+                    }
+                }
+
+                if (entries.Count == 1)
+                {
+                    FileObfuscator fileObfuscator = new(0);
+                    string newPath = await fileObfuscator.Obfuscate(entries[0].Path);
+                }
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex, "Failed to obfuscate files.");
+            }
         }
         #endregion
 
