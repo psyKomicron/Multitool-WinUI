@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Security.AccessControl;
+using System.Threading.Tasks;
+
+using Windows.Storage;
 
 namespace Multitool.Data
 {
@@ -23,7 +26,13 @@ namespace Multitool.Data
         }
 
         #region public methods
+        /// <inheritdoc/>
+        public override async Task<IStorageItem> AsIStorageItem()
+        {
+            return await StorageFile.GetFileFromPathAsync(Path);
+        }
 
+        /// <inheritdoc/>
         public override void Rename(string newName)
         {
             if (CanRename(newName))
@@ -54,6 +63,7 @@ namespace Multitool.Data
             }
         }
 
+        /// <inheritdoc/>
         public override void RefreshInfos()
         {
             string oldPath = Path;
@@ -65,6 +75,7 @@ namespace Multitool.Data
             SetInfos(fileInfo);
         }
 
+        /// <inheritdoc/>
         public override FileSystemSecurity GetAccessControl()
         {
             return fileInfo.GetAccessControl();

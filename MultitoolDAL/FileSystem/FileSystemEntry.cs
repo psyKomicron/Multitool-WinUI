@@ -6,6 +6,7 @@ using System.Security.AccessControl;
 using System.Threading.Tasks;
 
 using Windows.Foundation;
+using Windows.Storage;
 
 namespace Multitool.Data
 {
@@ -35,12 +36,12 @@ namespace Multitool.Data
         public FileSystemInfo Info { get; protected set; }
 
         /// <inheritdoc/>
-        public FileAttributes Attributes => Info.Attributes;
+        public System.IO.FileAttributes Attributes => Info.Attributes;
 
         /// <inheritdoc/>
         public bool IsHidden
         {
-            get => (Attributes & FileAttributes.Hidden) != 0;
+            get => (Attributes & System.IO.FileAttributes.Hidden) != 0;
             set
             {
                 if (!value)
@@ -54,12 +55,12 @@ namespace Multitool.Data
             }
         }
         /// <inheritdoc/>
-        public bool IsSystem => (Attributes & FileAttributes.System) != 0;
+        public bool IsSystem => (Attributes & System.IO.FileAttributes.System) != 0;
 
         /// <inheritdoc/>
         public bool IsReadOnly
         {
-            get => (Attributes & FileAttributes.ReadOnly) != 0;
+            get => (Attributes & System.IO.FileAttributes.ReadOnly) != 0;
             set
             {
                 if (!value)
@@ -74,16 +75,16 @@ namespace Multitool.Data
         }
 
         /// <inheritdoc/>
-        public bool IsEncrypted => (Attributes & FileAttributes.Encrypted) != 0;
+        public bool IsEncrypted => (Attributes & System.IO.FileAttributes.Encrypted) != 0;
 
         /// <inheritdoc/>
-        public bool IsCompressed => (Attributes & FileAttributes.Compressed) != 0;
+        public bool IsCompressed => (Attributes & System.IO.FileAttributes.Compressed) != 0;
 
         /// <inheritdoc/>
-        public bool IsDevice => (Attributes & FileAttributes.Device) != 0;
+        public bool IsDevice => (Attributes & System.IO.FileAttributes.Device) != 0;
 
         /// <inheritdoc/>
-        public bool IsDirectory => (Attributes & FileAttributes.Directory) != 0;
+        public bool IsDirectory => (Attributes & System.IO.FileAttributes.Directory) != 0;
 
         /// <inheritdoc/>
         public string Path { get; set; }
@@ -115,7 +116,7 @@ namespace Multitool.Data
         public event TypedEventHandler<IFileSystemEntry, long> SizedChanged;
 
         /// <inheritdoc/>
-        public event TypedEventHandler<IFileSystemEntry, FileAttributes> AttributesChanged;
+        public event TypedEventHandler<IFileSystemEntry, System.IO.FileAttributes> AttributesChanged;
 
         /// <inheritdoc/>
         public event TypedEventHandler<IFileSystemEntry, string> Renamed;
@@ -125,22 +126,18 @@ namespace Multitool.Data
         #endregion
 
         #region abstract methods
-
+        /// <inheritdoc/>
+        public abstract Task<IStorageItem> AsIStorageItem();
         /// <inheritdoc/>
         public abstract void CopyTo(string newPath);
-
         /// <inheritdoc/>
         public abstract FileSystemSecurity GetAccessControl();
-
         /// <inheritdoc/>
         public abstract void Move(string newPath);
-
         /// <inheritdoc/>
         public abstract void RefreshInfos();
-
         /// <inheritdoc/>
         public abstract void Rename(string newName);
-
         #endregion
 
         #region public methods
@@ -158,6 +155,7 @@ namespace Multitool.Data
             }
         }
 
+        #region IComparable
         /// <inheritdoc/>
         public int CompareTo(object obj)
         {
@@ -193,7 +191,9 @@ namespace Multitool.Data
             }
             return 0;
         }
+        #endregion
 
+        #region IEquatable
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {
@@ -204,7 +204,8 @@ namespace Multitool.Data
         public bool Equals(IFileSystemEntry other)
         {
             return other != null && Path.Equals(other.Path, StringComparison.OrdinalIgnoreCase);
-        }
+        } 
+        #endregion
 
         /// <inheritdoc/>
         public override int GetHashCode()
@@ -260,13 +261,24 @@ namespace Multitool.Data
 
         #region protected methods
         /// <summary>
-        /// Set path and name of this <see cref="FileSystemEntry"/>. Use after refreshing info.
+        /// Creates a <see cref="IOException"/> when the entry cannot be
+        /// deleted.
         /// </summary>
-        protected void SetInfos(FileSystemInfo newInfo)
+        /// <param name="info"></param>
+        /// <returns></returns>
+        protected static IOException CreateDeleteIOException(FileSystemInfo info)
         {
-            Info = newInfo;
-            Path = Info.FullName;
-            Name = Info.Name;
+            IOException e = new($"Cannot delete {info.FullName}");
+            e.Data.Add(info.ToString(), info);
+            return e;
+        }
+
+        /// <summary>
+        /// Removes the readonly attribute on <paramref name="info"/>.
+        /// </summary>
+        protected static void RemoveReadOnly(FileSystemInfo info)
+        {
+            info.Attributes &= ~System.IO.FileAttributes.ReadOnly;
         }
 
         /// <summary>
@@ -340,11 +352,11 @@ namespace Multitool.Data
         /// <returns><see langword="true"/> if the file can be deleted</returns>
         protected virtual bool CanDelete(FileSystemInfo fileInfo)
         {
-            if (((fileInfo.Attributes & FileAttributes.Device) != 0) || ((fileInfo.Attributes & FileAttributes.System) != 0))
+            if (((fileInfo.Attributes & System.IO.FileAttributes.Device) != 0) || ((fileInfo.Attributes & System.IO.FileAttributes.System) != 0))
             {
                 if (fileInfo.Name == "desktop.ini")
                 {
-                    if ((fileInfo.Attributes & FileAttributes.ReadOnly) != 0)
+                    if ((fileInfo.Attributes & System.IO.FileAttributes.ReadOnly) != 0)
                     {
                         RemoveReadOnly(fileInfo);
                     }
@@ -354,7 +366,7 @@ namespace Multitool.Data
                 return false;
             }
 
-            if ((fileInfo.Attributes & FileAttributes.ReadOnly) != 0)
+            if ((fileInfo.Attributes & System.IO.FileAttributes.ReadOnly) != 0)
             {
                 RemoveReadOnly(fileInfo);
             }
@@ -371,16 +383,13 @@ namespace Multitool.Data
         }
 
         /// <summary>
-        /// Creates a <see cref="IOException"/> when the entry cannot be
-        /// deleted.
+        /// Set path and name of this <see cref="FileSystemEntry"/>. Use after refreshing info.
         /// </summary>
-        /// <param name="info"></param>
-        /// <returns></returns>
-        protected static IOException CreateDeleteIOException(FileSystemInfo info)
+        protected void SetInfos(FileSystemInfo newInfo)
         {
-            IOException e = new("Cannot delete " + info.FullName);
-            e.Data.Add(info.ToString(), info);
-            return e;
+            Info = newInfo;
+            Path = Info.FullName;
+            Name = Info.Name;
         }
 
         /// <summary>
@@ -398,16 +407,8 @@ namespace Multitool.Data
         /// </summary>
         protected void RemoveReadOnly()
         {
-            Info.Attributes &= ~FileAttributes.ReadOnly;
-            RaiseAttributesChangedEvent(FileAttributes.ReadOnly);
-        }
-
-        /// <summary>
-        /// Removes the readonly attribute on <paramref name="info"/>.
-        /// </summary>
-        protected static void RemoveReadOnly(FileSystemInfo info)
-        {
-            info.Attributes &= ~FileAttributes.ReadOnly;
+            Info.Attributes &= ~System.IO.FileAttributes.ReadOnly;
+            RaiseAttributesChangedEvent(System.IO.FileAttributes.ReadOnly);
         }
 
         /// <summary>
@@ -415,8 +416,8 @@ namespace Multitool.Data
         /// </summary>
         protected void RemoveIsHidden()
         {
-            Info.Attributes &= ~FileAttributes.ReadOnly;
-            RaiseAttributesChangedEvent(FileAttributes.Hidden);
+            Info.Attributes &= ~System.IO.FileAttributes.ReadOnly;
+            RaiseAttributesChangedEvent(System.IO.FileAttributes.Hidden);
         }
 
         /// <summary>
@@ -424,7 +425,7 @@ namespace Multitool.Data
         /// </summary>
         protected void SetReadOnly()
         {
-            Info.Attributes |= FileAttributes.ReadOnly;
+            Info.Attributes |= System.IO.FileAttributes.ReadOnly;
         }
 
         /// <summary>
@@ -432,7 +433,7 @@ namespace Multitool.Data
         /// </summary>
         protected void SetHidden()
         {
-            Info.Attributes |= FileAttributes.Hidden;
+            Info.Attributes |= System.IO.FileAttributes.Hidden;
         }
 
         #region event invoke
@@ -457,7 +458,7 @@ namespace Multitool.Data
         /// <see langword="protected internal"/>
         /// </summary>
         /// <param name="attributes"></param>
-        protected void RaiseAttributesChangedEvent(FileAttributes attributes)
+        protected void RaiseAttributesChangedEvent(System.IO.FileAttributes attributes)
         {
             AttributesChanged?.Invoke(this, attributes);
         }
