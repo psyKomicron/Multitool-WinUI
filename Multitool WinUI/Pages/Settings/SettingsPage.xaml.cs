@@ -2,7 +2,6 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
@@ -11,9 +10,8 @@ using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
 using Multitool.Net.Irc.Security;
 
+using MultitoolWinUI.Controls;
 using MultitoolWinUI.Pages.Explorer;
-using MultitoolWinUI.Pages.Irc;
-using MultitoolWinUI.Pages.Test;
 
 using System;
 using System.Collections.Generic;
@@ -22,7 +20,6 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-using Windows.Foundation;
 using Windows.Storage;
 using Windows.System;
 
@@ -37,12 +34,21 @@ namespace MultitoolWinUI.Pages.Settings
     internal sealed partial class SettingsPage : Page, INotifyPropertyChanged
     {
         private readonly IUserSettingsManager settingsManager = App.UserSettings;
+        private readonly List<string> headers = new()/* { "General", "Explorer", "Home", "Twitch", "Spotlight", "Miscallenous" }*/;
         private string typeToNavigateTo;
 
         public SettingsPage()
         {
             InitializeComponent();
             Loaded += OnPageLoaded;
+
+            foreach (var listItem in SettingsListView.Items)
+            {
+                if (listItem is ListViewHeaderItem header && header.Content is TextBlock headerBlock)
+                {
+                    headers.Add(headerBlock.Text);
+                }
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -66,16 +72,36 @@ namespace MultitoolWinUI.Pages.Settings
                 switch (tag)
                 {
                     case "ExplorerPage":
-                        ExplorerHeader.StartBringIntoView();
+                    case "Explorer":
+                        SettingsListView.ScrollIntoView(ExplorerHeader);
                         success = true;
                         break;
+
                     case "TwitchPage":
-                        TwitchHeader.Focus(FocusState.Programmatic);
+                    case "Twitch":
+                        SettingsListView.ScrollIntoView(TwitchHeader);
                         success = true;
                         break;
-                    case "General":
+
+                    case "MainPage":
+                    case "Home":
+                        SettingsListView.ScrollIntoView(MainPageHeader);
+                        success = true;
+                        break;
+
+                    case "Spotlight":
+                        SettingsListView.ScrollIntoView(SpotlightHeader);
+                        success = true;
+                        break;
+
+                    case "Miscellaneous":
+                        MiscellaneousHeader.Focus(FocusState.Programmatic);
+                        //SettingsListView.ScrollIntoView(MiscellaneousHeader);
+                        success = true;
+                        break;
+
                     default:
-                        GeneralHeader.StartBringIntoView();
+                        SettingsListView.ScrollIntoView(GeneralHeader);
                         success = true;
                         break;
                 }
@@ -84,6 +110,7 @@ namespace MultitoolWinUI.Pages.Settings
             {
                 success = false;
             }
+
             return success;
         }
 
@@ -92,6 +119,28 @@ namespace MultitoolWinUI.Pages.Settings
             Holder = new();
             settingsManager.Load(Holder);
             PropertyChanged?.Invoke(this, new(string.Empty));
+        }
+
+        private List<string> GetSuggestions(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return headers;
+            }
+            else
+            {
+                List<string> suggestions = new();
+                Regex queryRegex = new(Regex.Escape(query), RegexOptions.IgnoreCase | RegexOptions.Multiline);
+                for (int i = 0; i < headers.Count; i++)
+                {
+                    if (queryRegex.IsMatch(headers[i]))
+                    {
+                        suggestions.Add(headers[i]);
+                    }
+                }
+
+                return suggestions;
+            }
         }
 
         #region navigation events
@@ -138,6 +187,34 @@ namespace MultitoolWinUI.Pages.Settings
         #endregion
 
         #region page event handlers
+        private void SettingSearch_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            string query = sender.Text;
+            if (!NavigateTo(query))
+            {
+                App.TraceWarning("Setting not found.");
+            }
+        }
+
+        private void SettingSearch_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            sender.ItemsSource = GetSuggestions(sender.Text);
+        }
+
+        private void SettingSearch_GotFocus(object sender, RoutedEventArgs e)
+        {
+            settingSearch.ItemsSource = GetSuggestions(string.Empty);
+        }
+
+        private void SettingSearch_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            string query = (string)args.SelectedItem;
+            if (!NavigateTo(query))
+            {
+                App.TraceWarning("Setting not found.");
+            }
+        }
+
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             if (typeToNavigateTo != null)
@@ -164,6 +241,7 @@ namespace MultitoolWinUI.Pages.Settings
 
         private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(App.UserSettings.SettingFilePath));
 
+        #region Theme buttons
         private void DarkThemeButton_Click(object sender, RoutedEventArgs e)
         {
             Grid main = App.MainWindow.Content as Grid;
@@ -240,7 +318,8 @@ namespace MultitoolWinUI.Pages.Settings
 
                 Holder.ApplicationTheme = ElementTheme.Default;
             }
-        }
+        } 
+        #endregion
 
         private async void ValidateTokenButton_Click(object sender, RoutedEventArgs e)
         {
@@ -302,30 +381,47 @@ namespace MultitoolWinUI.Pages.Settings
             }*/
         }
 
-        private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
+        private void ClearHistoryButton_Click(object sender, RoutedEventArgs e) => settingsManager.Remove(typeof(ExplorerPage).FullName, "History");
+
+        private void ResetSettingsFile_Click(object sender, RoutedEventArgs e) => settingsManager.Reset();
+
+        private void ShowMentionsHelp_Click(object sender, RoutedEventArgs e) => MentionsTeachingTip.IsOpen = !MentionsTeachingTip.IsOpen;
+
+        private void MentionsTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            settingsManager.Remove(typeof(ExplorerPage).FullName, "History");
+            if (e.Key == VirtualKey.Enter)
+            {
+                e.Handled = true;
+                try
+                {
+                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex, "Regex is not valid.");
+                }
+            }
         }
 
-        private void ResetSettingsFile_Click(object sender, RoutedEventArgs e)
+        private void MentionsTextBox_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
         {
-            settingsManager.Reset();
+            if (e.Key == VirtualKey.Enter)
+            {
+                e.Handled = true;
+                try
+                {
+                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex, "Regex is not valid.");
+                }
+            }
         }
 
-        private void ShowMentionsHelp_Click(object sender, RoutedEventArgs e)
-        {
-            MentionsTeachingTip.IsOpen = !MentionsTeachingTip.IsOpen;
-        }
+        private async void TempDataFolderHyperlink_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(ApplicationData.Current.TemporaryFolder.Path));
 
-        private async void TempDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
-        {
-            await Launcher.LaunchUriAsync(new(ApplicationData.Current.TemporaryFolder.Path));
-        }
-
-        private async void AppDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
-        {
-            await Launcher.LaunchUriAsync(new(ApplicationData.Current.LocalFolder.Path));
-        }
+        private async void AppDataFolderHyperlink_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(ApplicationData.Current.LocalFolder.Path));
 
         private void AppSettingsFolderHyperlink_Click(object sender, RoutedEventArgs e)
         {
@@ -360,58 +456,25 @@ namespace MultitoolWinUI.Pages.Settings
             App.SecureSettings.Reset();
             App.TraceInformation("Cleared passwords.");
         }
-
-
-        private void MentionsTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.Enter)
-            {
-                e.Handled = true;
-                try
-                {
-                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
-                }
-                catch (Exception ex)
-                {
-                    App.TraceError(ex, "Regex is not valid.");
-                }
-            }
-        }
-
-        private void MentionsTextBox_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.Enter)
-            {
-                e.Handled = true;
-                try
-                {
-                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
-                }
-                catch (Exception ex)
-                {
-                    App.TraceError(ex, "Regex is not valid.");
-                }
-            }
-        }
         #endregion
     }
 
     internal record SettingsHolder
     {
         #region Twitch
-        [Setting(typeof(ChatControl), nameof(ChatControl.MaxMessages))]
+        [Setting(typeof(ChatView), nameof(ChatView.MaxMessages))]
         public int ChatMaxNumberOfMessages { get; set; }
 
-        [Setting(typeof(ChatControl), nameof(ChatControl.Mention), typeof(RegexSettingConverter))]
+        [Setting(typeof(ChatView), nameof(ChatView.Mention), typeof(RegexSettingConverter))]
         public Regex ChatMentionRegex { get; set; }
 
-        [Setting(typeof(ChatControl), nameof(ChatControl.EmoteSize))]
+        [Setting(typeof(ChatView), nameof(ChatView.EmoteSize))]
         public int EmoteSize { get; set; }
 
         [Setting(typeof(TwitchPage), nameof(TwitchPage.LoadWebView))]
         public bool LoadWebView { get; set; }
 
-        [Setting(typeof(ChatControl), nameof(ChatControl.TimestampFormat))]
+        [Setting(typeof(ChatView), nameof(ChatView.TimestampFormat))]
         public string MessageTimestampFormat { get; set; } 
         #endregion
 
