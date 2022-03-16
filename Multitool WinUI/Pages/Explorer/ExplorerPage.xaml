@@ -11,7 +11,6 @@
     ScrollViewer.VerticalScrollMode="Disabled"
     CharacterReceived="Page_CharacterReceived"
     PointerPressed="Page_PointerPressed">
-    
     <Grid VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
@@ -32,7 +31,7 @@
             </Grid.ColumnDefinitions>
 
             <Button 
-                x:Name="PreviousButton"
+                x:Name="previousButton"
                 Click="Previous_Click"
                 Grid.Column="0">
                 <Button.Content>
@@ -40,7 +39,7 @@
                 </Button.Content>
             </Button>
             <Button 
-                x:Name="NextButton"
+                x:Name="nextButton"
                 Click="Next_Click" 
                 Grid.Column="1">
                 <Button.Content>
@@ -50,7 +49,7 @@
             
             <StackPanel Grid.Column="2">
                 <AutoSuggestBox 
-                    x:Name="PathInput"
+                    x:Name="pathInput"
                     Text="{x:Bind CurrentPath, Mode=TwoWay}"
                     HorizontalAlignment="Stretch"
                     MinHeight="25"
@@ -60,12 +59,12 @@
                     TextChanged="PathInput_TextChanged"
                     QuerySubmitted="PathInput_QuerySubmitted"/>
                 <TextBlock
-                    x:Name="Progress_TextBox"
+                    x:Name="progress_TextBox"
                     TextAlignment="Left"
                     MinHeight="25"
                     MaxHeight="50"/>
                 <ProgressBar 
-                    x:Name="Files_ProgressBar"
+                    x:Name="files_ProgressBar"
                     Background="Transparent"
                     IsIndeterminate="False"
                     Height="10"
@@ -75,14 +74,14 @@
             </StackPanel>
 
             <Button 
-                x:Name="RefreshFileList"
+                x:Name="refreshFileList"
                 FontSize="20"
                 Click="RefreshFileList_Click"
                 Grid.Column="3">
                 <FontIcon Glyph="&#xE72C;"/>
             </Button>
             <Button
-                x:Name="CancelAction_Button"
+                x:Name="cancelAction_Button"
                 FontSize="20"
                 Click="CancelButton_Click"
                 IsEnabled="False"
@@ -92,7 +91,7 @@
         </Grid>
 
         <ListView 
-            x:Name="History_ListView"
+            x:Name="historyListView"
             ItemsSource="{x:Bind History, Mode=OneWay}"
             BorderBrush="{StaticResource LightBlack}"
             IsRightTapEnabled="True"
@@ -143,7 +142,7 @@
             VerticalScrollMode="Enabled">
 
             <ListView
-                x:Name="MainListView"
+                x:Name="mainListView"
                 VerticalAlignment="Stretch"
                 ItemsSource="{x:Bind CurrentFiles}"
                 IsItemClickEnabled="True"
@@ -158,7 +157,7 @@
                 <ListView.ContextFlyout>
                     <MenuFlyout Opening="MenuFlyout_Opening">
                         <MenuFlyoutItem 
-                            Name="DeleteFileMenuItem" 
+                            x:Name="deleteFileMenuItem" 
                             Text="Delete" IsEnabled="False" 
                             Click="DeleteFileMenuItem_Click">
                             <MenuFlyoutItem.KeyboardAccelerators>
@@ -167,7 +166,7 @@
                         </MenuFlyoutItem>
 
                         <MenuFlyoutItem
-                            Name="CopyFileMenuItem"
+                            x:Name="copyFileMenuItem"
                             Text="Copy"
                             IsEnabled="False"
                             Click="CopyFileMenuItem_Click">
@@ -176,7 +175,7 @@
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
 
-                        <MenuFlyoutSubItem Name="ObfuscateFileMenuItem" Text="Obfuscate" IsEnabled="False">
+                        <MenuFlyoutSubItem x:Name="obfuscateFileMenuItem" Text="Obfuscate" IsEnabled="False">
                             <MenuFlyoutItem 
                                 Text="Change name, remove extension" 
                                 Click="ObfuscateFileMenuItem_Click"/>
