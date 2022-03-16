@@ -12,7 +12,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <InfoBar Name="InfoBar" Grid.Row="0" HorizontalAlignment="Center"/>
+        <InfoBar x:Name="infoBar" Grid.Row="0" HorizontalAlignment="Center"/>
 
         <TabView 
             Name="ChatTabView"

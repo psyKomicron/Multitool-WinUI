@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Media;
 using Multitool.Collections;
 using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
+using Multitool.Interop;
 using Multitool.Net.Embeds;
 using Multitool.Net.Imaging;
 using Multitool.Net.Irc;
@@ -23,6 +24,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -34,17 +36,14 @@ using Windows.UI.Text;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
-namespace MultitoolWinUI.Pages.Irc
+namespace MultitoolWinUI.Controls
 {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class ChatControl : UserControl, IAsyncDisposable, IIrcSubscriber
+    public sealed partial class ChatView : UserControl, IAsyncDisposable, IIrcSubscriber
     {
-        private readonly DelayedActionQueue delayedActionQueue = new(1000);
-        private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
-        private readonly IIrcClient client;
-        //private readonly IEmbedFetcher embedFetcher = new YoutubeEmbedFetcher();
+        #region Colors
         private readonly SolidColorBrush userSubBackground = new(Colors.MediumPurple)
         {
             Opacity = 0.5
@@ -56,21 +55,29 @@ namespace MultitoolWinUI.Pages.Irc
         private readonly SolidColorBrush mentionBrush = new(Colors.IndianRed)
         {
             Opacity = 0.3
-        };
+        }; 
+        #endregion
+        private readonly DelayedActionQueue delayedActionQueue = new(1000);
+        private readonly ConcurrentDictionary<Color, SolidColorBrush> messageColors = new();
+        private readonly IIrcClient client;
+        //private readonly IEmbedFetcher embedFetcher = new YoutubeEmbedFetcher();
 
+        private bool ctrlOn;
+        private int historyIndex;
         private bool joined;
         private bool loaded;
-        private bool ctrlOn;
+        private List<Emote> totalEmotes;
+        private List<Emote> suggestions;
 
-        public ChatControl(IIrcClient client)
+        public ChatView(IIrcClient client)
         {
-            this.client = client;
-            client.Subscribe(this);
-
             InitializeComponent();
+
+            this.client = client;
+
+            client.Subscribe(this);
             Loaded += OnLoaded;
             App.MainWindow.Closed += MainWindow_Closed;
-
             delayedActionQueue.DispatcherQueue = DispatcherQueue;
             delayedActionQueue.QueueEmpty += DelayedActionQueue_QueueEmpty;
 
@@ -80,16 +87,16 @@ namespace MultitoolWinUI.Pages.Irc
             }
             catch (Exception ex)
             {
-                App.TraceError(ex, "Chat settings failed to load.");
+                App.TraceError(ex, "Chat settings failed to load. Default settings will be used if possible.");
             }
         }
 
         #region properties
         public string Channel { get; set; }
 
-        public List<Emote> ChannelEmotes { get; } = new();
+        public ObservableCollection<Emote> ChannelEmotes { get; private set; }
         
-        public List<Emote> Emotes { get; } = new();
+        public ObservableCollection<Emote> GlobalEmotes { get; private set; }
 
         public IEmoteFetcher EmoteFetcher { get; set; }
 
@@ -109,11 +116,17 @@ namespace MultitoolWinUI.Pages.Irc
         [Setting(typeof(RegexSettingConverter))]
         public Regex Mention { get; set; }
 
-        [Setting("t")]
-        public string TimestampFormat { get; set; }
+        [Setting]
+        public List<string> MessageHistory { get; set; }
+
+        [Setting]
+        public bool OpenLinksIncognito { get; set; }
 
         [Setting]
         public bool ReplyWithAt { get; set; }
+
+        [Setting("t")]
+        public string TimestampFormat { get; set; }
         #endregion
 
         #endregion
@@ -133,20 +146,38 @@ namespace MultitoolWinUI.Pages.Irc
                     await client.Join(Channel);
                     joined = true;
 
-                    delayedActionQueue.QueueAction(() => DisplayMessage($"Joined {Channel}"));
-                    //ChannelEmotes.AddRange(await EmoteProxy.Get().FetchChannelEmotes(Channel));
+                    delayedActionQueue.QueueAction(() => DisplayMessage($"Joined {Channel}."));
+
+                    try
+                    {
+                        ChannelEmotes = new(await EmoteFetcher.FetchChannelEmotes(Channel));
+                        totalEmotes.AddRange(ChannelEmotes);
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.TraceError($"Couldn't load emotes for #{Channel} : {ex}.");
+                        DisplayMessage($"Couldn't load emotes for {Channel}.");
+                    }
                 }
                 catch (ArgumentException ex)
                 {
-                    App.TraceError(ex);
+                    Trace.TraceError($"Failed to join IRC channel {Channel}, socket invalid state or channel name not recognized. Exception {ex}");
                 }
                 catch (InvalidOperationException ex)
                 {
-                    App.TraceError(ex);
+                    Trace.TraceError($"Failed to join IRC channel {Channel}, socket was in invalid state. Exception {ex}");
                 }
                 catch (Exception ex)
                 {
-                    App.TraceError(ex);
+                    Trace.TraceError($"Failed to join IRC channel {Channel}. Exception {ex}");
+                    DisplayMessage($"Something went wrong, could not join {Channel}.");
+                }
+                finally
+                {
+                    if (!joined)
+                    {
+                        DisplayMessage($"Something went wrong, could not join {Channel}.");
+                    }
                 }
             }
         }
@@ -155,6 +186,49 @@ namespace MultitoolWinUI.Pages.Irc
         {
             UpdateInfoBar.Message = message;
             UpdateInfoBar.IsOpen = true;
+        }
+
+        private void StartCompletion()
+        {
+            string text = chatInput.Text;
+            if (text.Contains(' '))
+            {
+                var arr = text.Split(' ');
+            }
+
+            if (text.StartsWith('@'))
+            {
+
+            }
+            else
+            {
+                if (suggestions == null)
+                {
+                    Regex regex = new($"^{Regex.Escape(text)}");
+                    suggestions = new();
+                    for (int i = 0; i < totalEmotes.Count; i++)
+                    {
+                        if (regex.IsMatch(totalEmotes[i].Name))
+                        {
+                            suggestions.Add(totalEmotes[i]);
+                        }
+                    }
+                }
+
+                if (suggestions.Count > 0)
+                {
+                    chatInput.Text = suggestions[0].Name;
+                    Emote suggestion = suggestions[0];
+                    suggestions.RemoveAt(0);
+                    suggestions.Add(suggestion);
+                }
+            }
+        }
+
+        private void SetText(string text)
+        {
+            chatInput.Text = text;
+            chatInput.SelectionStart = chatInput.Text.Length;
         }
 
         #region ui creation
@@ -210,13 +284,13 @@ namespace MultitoolWinUI.Pages.Irc
                         }*/
                         text = PutHyperlink(paragraph, words[i]);
                     }
-                    else if (Emotes != null)
+                    else if (totalEmotes != null)
                     {
-                        for (int j = 0; j < Emotes.Count; j++)
+                        for (int j = 0; j < totalEmotes.Count; j++)
                         {
-                            if (Emotes[j].Name.Equals(words[i]))
+                            if (totalEmotes[j].NameRegex.IsMatch(words[i]))
                             {
-                                PutImage(paragraph, Emotes[j]);
+                                PutImage(paragraph, totalEmotes[j]);
                                 text = false;
                                 break;
                             }
@@ -261,6 +335,50 @@ namespace MultitoolWinUI.Pages.Irc
             }
         }
 
+        private Paragraph CreateMessage(string message)
+        {
+            Paragraph paragraph = CreateParagraph();
+            string[] words = message.ToString().Split(' ');
+            bool text = true;
+            for (int i = 0; i < words.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(words[i]))
+                {
+                    if (Tool.IsRelativeUrl(words[i]))
+                    {
+                        text = PutHyperlink(paragraph, words[i]);
+                    }
+                    else if (totalEmotes != null)
+                    {
+                        for (int j = 0; j < totalEmotes.Count; j++)
+                        {
+                            if (totalEmotes[j].NameRegex.IsMatch(words[i]))
+                            {
+                                PutImage(paragraph, totalEmotes[j]);
+                                text = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (text)
+                    {
+                        Run run = new()
+                        {
+                            Text = words[i] + ' '
+                        };
+                        if (words[i].Length > 0)
+                        {
+                            run.FontWeight = words[i][0] == '@' ? FontWeights.SemiBold : UserMessagesFontWeight;
+                        }
+                        paragraph.Inlines.Add(run);
+                    }
+                    text = true;
+                }
+            }
+            return paragraph;
+        }
+
         private Run CreateTimestamp()
         {
             return new()
@@ -275,29 +393,26 @@ namespace MultitoolWinUI.Pages.Irc
         {
             return new()
             {
-                LineHeight = EmoteSize,
-                CharacterSpacing = 15,
-                LineStackingStrategy = LineStackingStrategy.MaxHeight
+                LineStackingStrategy = LineStackingStrategy.BaselineToBaseline
             };
         }
 
-        private static RichTextBlock CreatePresenter()
+        private RichTextBlock CreatePresenter()
         {
             return new()
             {
                 TextWrapping = TextWrapping.WrapWholeWords,
-                IsTextSelectionEnabled = true
+                IsTextSelectionEnabled = true,
+                FontSize = FontSize
             };
         }
 
-        private static bool PutHyperlink(Paragraph paragraph, string text)
+        private bool PutHyperlink(Paragraph paragraph, string text)
         {
             try
             {
-                Hyperlink container = new()
-                {
-                    NavigateUri = new(text)
-                };
+                Hyperlink container = new();
+                container.Click += ChatHyperlink_Click;
                 container.Inlines.Add(new Run()
                 {
                     Text = $"{text} ",
@@ -349,7 +464,7 @@ namespace MultitoolWinUI.Pages.Irc
         {
             if (DispatcherQueue == null) return;
             
-            Chat_ListView.DispatcherQueue.TryEnqueue(() =>
+            chat_ListView.DispatcherQueue.TryEnqueue(() =>
             {
                 var content = CreateMessage(args);
 
@@ -361,18 +476,18 @@ namespace MultitoolWinUI.Pages.Irc
                 content.DoubleTapped += model.OnReply;
                 model.Reply += OnMessageReply;
 
-                if (Mention != null)
+                chat_ListView.Items.Add(new ListViewItem()
                 {
-                    model.Background = Mention.IsMatch(args.ActualMessage) ? mentionBrush : null;
-                }
-
-                Chat_ListView.Items.Add(model);
-                NumberOfMessages_TextBlock.Text = Chat_ListView.Items.Count.ToString();
+                    Content = content,
+                    Background = Mention != null ? (Mention.IsMatch(args.ActualMessage) ? mentionBrush : null) : null,
+                    CornerRadius = new(5)
+                });
+                NumberOfMessages_TextBlock.Text = chat_ListView.Items.Count.ToString();
             });
 
-            Chat_ListView.DispatcherQueue.TryEnqueue(() =>
+            chat_ListView.DispatcherQueue.TryEnqueue(() =>
             {
-                if (Chat_ListView.Items.Count > MaxMessages)
+                if (chat_ListView.Items.Count > MaxMessages)
                 {
                     for (int i = 0; i < 50; i++)
                     {
@@ -382,7 +497,7 @@ namespace MultitoolWinUI.Pages.Irc
                         }
                         try
                         {
-                            Chat_ListView.Items.RemoveAt(i);
+                            chat_ListView.Items.RemoveAt(i);
                         }
                         catch
                         {
@@ -459,7 +574,7 @@ namespace MultitoolWinUI.Pages.Irc
                 });
 
                 presenter.Blocks.Add(paragraph);
-                Chat_ListView.Items.Add(new MessageModel(null)
+                chat_ListView.Items.Add(new ListViewItem()
                 {
                     Content = presenter
                 });
@@ -476,134 +591,105 @@ namespace MultitoolWinUI.Pages.Irc
                 // timestamp
                 systemMessageParagraph.Inlines.Add(CreateTimestamp());
 
+                if (!string.IsNullOrEmpty(args.Message))
+                {
+                    presenter.Blocks.Add(CreateMessage(args.Message));
+                }
+
                 systemMessageParagraph.Inlines.Add(new Run()
                 {
                     Text = args.SystemMessage,
                     FontSize = 16,
                     FontWeight = FontWeights.SemiBold
                 });
-
                 presenter.Blocks.Add(systemMessageParagraph);
 
-                if (!string.IsNullOrEmpty(args.Message))
-                {
-                    Paragraph userMessageParagraph = CreateParagraph();
-                    userMessageParagraph.Inlines.Add(new Run()
-                    {
-                        Text = args.Message,
-                        FontWeight = UserMessagesFontWeight
-                    });
-                    presenter.Blocks.Add(userMessageParagraph);
-                }
-
-                Chat_ListView.Items.Add(new MessageModel(null)
+                chat_ListView.Items.Add(new ListViewItem()
                 {
                     Content = presenter,
-                    Background = userSubBackground
+                    Background = userSubBackground,
+                    Padding = new(5)
                 });
             });
         }
         #endregion
 
         #region ui events
-        private void OnMessageReply(MessageModel sender, Message args)
+        private void ListViewUpKeyboardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         {
-            ChatInput.Text += ReplyWithAt ? $"@{args.Author} " : $"{args.Author} ";
-            ChatInput.Focus(FocusState.Programmatic);
-            ChatInput.SelectionStart = ChatInput.Text.Length;
+            
         }
 
-        private async void OnLoaded(object sender, RoutedEventArgs e)
+        private void ChatHyperlink_Click(Hyperlink sender, HyperlinkClickEventArgs args)
         {
-            if (!loaded)
-            {
-                loaded = true;
-
-                #region ui/textbox update
-                TextBox header = new()
-                {
-                    PlaceholderText = Channel ?? "Select channel",
-                    BorderThickness = new(0),
-                    FontWeight = FontWeights.SemiLight
-                };
-                if (Tab != null)
-                {
-                    Tab.Header = header;
-                    Tab.CloseRequested += Tab_CloseRequested;
-                }
-                else
-                {
-                    Grid.SetColumnSpan(header, 2);
-                    Grid.SetRow(header, 0);
-                    ContentGrid.Children.Add(header);
-                }
-                header.KeyDown += Header_KeyDown; 
-                #endregion
-
-                if (!string.IsNullOrEmpty(Channel))
-                {
-                    try
-                    {
-                        await Join();
-                    }
-                    catch (Exception ex)
-                    {
-                        App.TraceError(ex, $"Failed to join {Channel}");
-                        return;
-                    }
-                }
-
-                try
-                {
-                    List<Emote> emotes = await EmoteFetcher.FetchGlobalEmotes();
-                    Emotes.AddRange(emotes);
-                }
-                catch (Exception ex)
-                {
-                    App.TraceError(ex, $"Failed to load emotes for {Channel}");
-                }
-            }
-        }
-
-        private async void Tab_CloseRequested(TabViewItem sender, TabViewTabCloseRequestedEventArgs args)
-        {
-            loaded = false;
             try
             {
-                await client.DisposeAsync();
+                InteropWrapper.GetFileAssociation(".html");
             }
-            catch (Exception ex)
+            catch
             {
-                Trace.TraceError(ex.ToString());
             }
-            Chat_ListView.Items.Clear();
         }
 
-        private async void MainWindow_Closed(object sender, WindowEventArgs args)
+        private void Flyout_Opening(object sender, object e)
         {
-            loaded = false;
-            delayedActionQueue.Clear();
-            if (client != null && client.IsConnected)
+            if (emoteGridView.ItemsSource == null)
             {
-                try
-                {
-                    await client.DisposeAsync();
-                }
-                catch (Exception)
-                {
+                emoteGridView.ItemsSource = GlobalEmotes;
+            }
 
-                }
+            if (channelEmoteGridView.ItemsSource == null)
+            {
+                channelEmoteGridView.ItemsSource = ChannelEmotes;
             }
         }
 
-        private void Header_KeyDown(object sender, KeyRoutedEventArgs e)
+        private void ZoomKeyboardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            FontSize++;
+        }
+
+        private void DezoomKeyboardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            if (FontSize > 1)
+            {
+                FontSize--;
+            }
+        }
+
+        private void OnMessageReply(MessageModel sender, Message args)
+        {
+            chatInput.Text += ReplyWithAt ? $"@{args.Author} " : $"{args.Author} ";
+            chatInput.Focus(FocusState.Programmatic);
+        }
+
+        private async void Header_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.Enter && sender is TextBox box)
             {
+                if (Tab != null)
+                {
+                    Tab.Header = null;
+                    StackPanel panel = new()
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Padding = new(0),
+                        Margin = new(0),
+                        Spacing = 2
+                    };
+                    ProgressRing ring = new()
+                    {
+                        IsIndeterminate = true
+                    };
+                    panel.Children.Add(ring);
+                    panel.Children.Add(box);
+                    Tab.Header = panel;
+                }
+
                 Channel = box.Text;
                 if (loaded)
                 {
-                    _ = Join();
+                    await Join();
                 }
 
                 if (Tab != null)
@@ -625,11 +711,29 @@ namespace MultitoolWinUI.Pages.Irc
         {
             if (e.ClickedItem is Emote emote)
             {
-                ChatInput.Text += $" {emote} ";
+                chatInput.Text += $" {emote} ";
             }
         }
 
-        private void ChatInput_PreviewKeyDown(object sender, KeyRoutedEventArgs e) => ctrlOn = e.Key == VirtualKey.LeftControl;
+        private void ChatInput_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            ctrlOn = e.Key == VirtualKey.LeftControl;
+
+            if (e.Key == VirtualKey.Tab)
+            {
+                StartCompletion();
+                e.Handled = true;
+            }
+            else
+            {
+                // reset emote completion
+                suggestions = null;
+                if (e.Key == VirtualKey.Up && MessageHistory.Count > 0)
+                {
+                    SetText(MessageHistory[historyIndex++]);
+                }
+            }
+        }
 
         private async void ChatInput_KeyDown(object sender, KeyRoutedEventArgs e)
         {
@@ -638,15 +742,19 @@ namespace MultitoolWinUI.Pages.Irc
                 e.Handled = true;
                 try
                 {
-                    await client.SendMessage(ChatInput.Text);
+                    await client.SendMessage(chatInput.Text);
+                    MessageHistory.Add(chatInput.Text);
+                    historyIndex = 0;
                 }
                 catch (Exception ex)
                 {
-                    Trace.TraceError(ex.ToString());
+                    Trace.TraceError($"Failed to send message \"{chatInput.Text}\", exception: {ex}");
+
                 }
+
                 if (!ctrlOn)
                 {
-                    ChatInput.Text = string.Empty;
+                    chatInput.Text = string.Empty;
                 }
             }
         }
@@ -654,6 +762,94 @@ namespace MultitoolWinUI.Pages.Irc
         private void ChatInput_KeyUp(object sender, KeyRoutedEventArgs e) => ctrlOn = e.Key != VirtualKey.LeftControl;
 
         private void DelayedActionQueue_QueueEmpty(DelayedActionQueue sender, System.Timers.ElapsedEventArgs args) => UpdateInfoBar.IsOpen = false;
+
+        private async void Tab_CloseRequested(TabViewItem sender, TabViewTabCloseRequestedEventArgs args)
+        {
+            loaded = false;
+            try
+            {
+                await client.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
+            chat_ListView.Items.Clear();
+        }
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            if (!loaded)
+            {
+                loaded = true;
+                #region ui/textbox update
+                TextBox header = new()
+                {
+                    PlaceholderText = Channel ?? "Select channel",
+                    BorderThickness = new(0),
+                    FontWeight = FontWeights.SemiLight
+                };
+                if (Tab != null)
+                {
+                    Tab.Header = header;
+                    Tab.CloseRequested += Tab_CloseRequested;
+                }
+                else
+                {
+                    Grid.SetColumnSpan(header, 2);
+                    Grid.SetRow(header, 0);
+                    ContentGrid.Children.Add(header);
+                }
+                header.KeyDown += Header_KeyDown; 
+                #endregion
+
+                try
+                {
+                    if (EmoteFetcher == null)
+                    {
+                        EmoteFetcher = EmoteProxy.Get();
+                    }
+                    GlobalEmotes = new(await EmoteFetcher.FetchGlobalEmotes());
+                    totalEmotes = new(GlobalEmotes.Count);
+                    totalEmotes.AddRange(GlobalEmotes);
+                }
+                catch (Exception ex)
+                {
+                    DisplayMessage("Failed to get global emotes.");
+                    //App.TraceError(ex, $"Failed to load global emotes for {Channel}.");
+                }
+
+                if (!string.IsNullOrEmpty(Channel))
+                {
+                    try
+                    {
+                        await Join();
+                    }
+                    catch (Exception ex)
+                    {
+                        App.TraceError(ex, $"Failed to join {Channel}.");
+                        return;
+                    }
+                }
+            }
+        }
+
+        private async void MainWindow_Closed(object sender, WindowEventArgs args)
+        {
+            loaded = false;
+            delayedActionQueue.Silence();
+            if (client != null && client.IsConnected)
+            {
+                try
+                {
+                    await client.DisposeAsync();
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError($"Exception disposing IIrcClient, exception : {ex}");
+                }
+            }
+        }
         #endregion
 
         #endregion

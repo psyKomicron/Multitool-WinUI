@@ -9,8 +9,6 @@ using Multitool.Net.Imaging;
 using Multitool.Net.Irc.Twitch;
 using Multitool.Net.Irc.Security;
 
-using MultitoolWinUI.Pages.Irc;
-
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,6 +17,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using MultitoolWinUI.Controls;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -185,7 +184,7 @@ namespace MultitoolWinUI.Pages
                     {
                         MaxWidth = 200
                     };
-                    ChatControl chat = new(client)
+                    ChatView chat = new(client)
                     {
                         Tab = tab
                     };

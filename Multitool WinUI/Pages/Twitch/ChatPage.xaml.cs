@@ -13,7 +13,6 @@ using Multitool.Net.Irc.Twitch;
 using Multitool.Net.Irc.Security;
 
 using MultitoolWinUI.Helpers;
-using MultitoolWinUI.Pages.Irc;
 
 using System;
 using System.Collections.Generic;
@@ -36,8 +35,6 @@ namespace MultitoolWinUI.Pages
     public sealed partial class ChatPage : Page
     {
         private readonly DelayedActionQueue queue = new(2_000);
-        private InfoBar infoBar;
-        private TabView tabView;
         private TwitchConnectionToken connectionToken;
 
         public ChatPage()
@@ -61,8 +58,6 @@ namespace MultitoolWinUI.Pages
         #region events handlers
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
-            infoBar = (InfoBar)FindName("InfoBar");
-            tabView = (TabView)FindName("ChatTabView");
             try
             {
                 string login = App.SecureSettings.Get<string>(null, "twitch-oauth-token");
@@ -71,24 +66,6 @@ namespace MultitoolWinUI.Pages
                 {
                     App.TraceWarning("The twitch connection token saved is not valid, please re-create one.");
                 }
-
-                BttvEmoteFetcher fetcher = new(connectionToken);
-                var emotes = await fetcher.FetchChannelEmotes("39daph");
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    EmoteDisplay display = new()
-                    {
-                        Emotes = new(emotes),
-                        EmoteProvider = fetcher.Provider
-                    };
-
-                    TabViewItem tab = new()
-                    {
-                        Header = "Better TTV emotes",
-                        Content = display
-                    };
-                    tabView.TabItems.Add(tab);
-                });
             }
             catch (Exception ex)
             {
@@ -112,7 +89,7 @@ namespace MultitoolWinUI.Pages
                 {
                     TwitchIrcClient client = new(connectionToken, true);
                     TabViewItem tab = new();
-                    ChatControl control = new(client)
+                    ChatView control = new(client)
                     {
                         Tab = tab,
                         EmoteFetcher = EmoteProxy.Get(connectionToken)
