@@ -34,6 +34,8 @@
     <None Remove="Controls\MainPageItem.xaml" />
     <None Remove="Controls\TimerPicker.xaml" />
     <None Remove="Controls\VideoEmbedView.xaml" />
+    <None Remove="Controls\WidgetSmallView.xaml" />
+    <None Remove="Controls\WidgetView.xaml" />
     <None Remove="Controls\YoutubeEmbedView.xaml" />
     <None Remove="Pages\ComputerDevicesPage.xaml" />
     <None Remove="Pages\ControlPanels\ControlPanelsFilePage.xaml" />
@@ -44,7 +46,7 @@
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
     <None Remove="Pages\IrcChatPage.xaml" />
-    <None Remove="Pages\Test\SpotlightImporter.xaml" />
+    <None Remove="Pages\Widgets\SpotlightImporter.xaml" />
     <None Remove="Pages\Twitch\ChatControl.xaml" />
     <None Remove="Pages\MusicPlayer\MusicFileView.xaml" />
     <None Remove="Pages\MusicPlayer\MusicPlayerPage.xaml" />
@@ -52,10 +54,11 @@
     <None Remove="Pages\MusicPlayer\PlaylistCreationPage.xaml" />
     <None Remove="Pages\Power\PowerPage.xaml" />
     <None Remove="Pages\Settings\SettingsPage.xaml" />
-    <None Remove="Pages\Test\EmbedFetcherControl.xaml" />
-    <None Remove="Pages\Test\ImageTester.xaml" />
-    <None Remove="Pages\Test\TestPage.xaml" />
+    <None Remove="Pages\Widgets\EmbedFetcherControl.xaml" />
+    <None Remove="Pages\Widgets\ImageTester.xaml" />
+    <None Remove="Pages\Widgets\TestPage.xaml" />
     <None Remove="Pages\Twitch\ChatPage.xaml" />
+    <None Remove="Pages\Widgets\WidgetSelectedPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
@@ -145,6 +148,9 @@
     <Page Update="Controls\VideoEmbedView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Update="Pages\Test\WidgetsPage - Copy.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Pages\Twitch\ChatPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -152,6 +158,15 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Controls\EmoteDisplay.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\WidgetView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Widgets\WidgetSelectedPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\WidgetSmallView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <None Update="Resources\Images\ico151.ico">
