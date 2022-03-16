@@ -8,17 +8,17 @@
       mc:Ignorable="d"
       NavigationCacheMode="Required">
 
-    <Grid x:Name="MainGrid"
-          RowSpacing="5"
-          ColumnSpacing="3"
-          HorizontalAlignment="Center">
+    <Grid 
+        x:Name="MainGrid"
+        RowSpacing="5"
+        ColumnSpacing="3"
+        HorizontalAlignment="Center">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="5*"/>
         </Grid.RowDefinitions>
 
         <ComboBox x:Name="SelectionComboBox"
-                  Height="50"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Bottom"
                   Grid.Row="0">
