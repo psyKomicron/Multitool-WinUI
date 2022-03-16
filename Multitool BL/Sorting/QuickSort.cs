@@ -102,12 +102,7 @@ namespace Multitool.Sorting
             return i + 1;
         }
 
-        /// <summary>
-        /// bounds checks && null array
-        /// </summary>
-        /// <param name="array"></param>
-        /// <param name="low"></param>
-        /// <param name="high"></param>
+        // bounds checks && null array
         private static void CheckParameters<T>(T[] array, ref int low, ref int high)
         {
             if (high >= array.Length)
