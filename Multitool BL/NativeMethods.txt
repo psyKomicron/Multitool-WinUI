@@ -1,3 +1,4 @@
 SetWindowPos
 GetWindowRect
 GetDpiForWindow
+AssocQueryString

@@ -1,5 +1,7 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.InteropServices;
+using Windows.Win32;
 
 namespace Multitool.Interop
 {
@@ -39,6 +41,33 @@ namespace Multitool.Interop
             }
             x = (int)(pos & 0x00000000FFFFFFFF);
             y = (int)((pos & 0xFFFFFFFF00000000) >> 32);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="extension">Extension to get the executables associated with.</param>
+        public static void GetFileAssociation(string extension)
+        {
+            uint size = 0;
+            var assoc = new Windows.Win32.Foundation.PWSTR();
+            var result = PInvoke.AssocQueryString(0, 
+                Windows.Win32.UI.Shell.ASSOCSTR.ASSOCSTR_EXECUTABLE, 
+                extension, 
+                null, 
+                assoc, 
+                ref size);
+
+            if (result.Failed)
+            {
+                
+                Trace.TraceError($"AssocQueryString call failed. {result.Value}");
+                throw InteropHelper.GetLastError($"Failed to get file associations for {extension} files.");
+            }
+            else
+            {
+                Debug.WriteLine(assoc.ToString());
+            }
         }
     }
 }
