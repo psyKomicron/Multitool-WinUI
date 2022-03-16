@@ -8,6 +8,8 @@ using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.Data.Settings;
 
+using MultitoolWinUI.Models;
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -31,21 +33,15 @@ using WinRT.Interop;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
-namespace MultitoolWinUI.Pages.Test
+namespace MultitoolWinUI.Controls
 {
     public sealed partial class SpotlightImporter : UserControl, INotifyPropertyChanged
     {
         private static bool handlerAttached;
-        private readonly FlipView flipView;
-        private readonly ProgressRing progressRing;
-        private readonly PipsPager pipsPager;
 
         public SpotlightImporter()
         {
             InitializeComponent();
-            flipView = (FlipView)FindName("ImageFlipView");
-            progressRing = (ProgressRing)FindName("ImportProgress");
-            pipsPager = (PipsPager)FindName("PipsPager");
 
             if (!handlerAttached)
             {
@@ -88,18 +84,19 @@ namespace MultitoolWinUI.Pages.Test
         [Setting(CommandBarDefaultLabelPosition.Right)]
         public CommandBarDefaultLabelPosition MenuBarLabelPosition { get; set; }
 
-        [Setting(true)]
-        public bool OpenTempFolder { get; set; } 
+        [Setting(false)]
+        public bool OpenTempFolder { get; set; }
         #endregion
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        #region private methods
         private async Task ImportFiles()
         {
             try
             {
-                progressRing.Visibility = Visibility.Visible;
-                progressRing.IsIndeterminate = true;
+                ImportProgress.Visibility = Visibility.Visible;
+                ImportProgress.IsIndeterminate = true;
                 List<SpotlightItem> files = new();
                 foreach (var item in Items)
                 {
@@ -124,20 +121,20 @@ namespace MultitoolWinUI.Pages.Test
                     StorageFolder folder = await picker.PickSingleFolderAsync();
                     if (folder != null)
                     {
-                        progressRing.IsIndeterminate = false;
-                        progressRing.Value = 0;
-                        progressRing.Maximum = files.Count;
-                        progressRing.Minimum = 0;
+                        ImportProgress.IsIndeterminate = false;
+                        ImportProgress.Value = 0;
+                        ImportProgress.Maximum = files.Count;
+                        ImportProgress.Minimum = 0;
                         // import files
                         for (int i = 0; i < files.Count; i++)
                         {
                             string newPath = Path.Combine(folder.Path, files[i].FileName);
                             File.Move(files[i].Path, newPath);
 
-                            DispatcherQueue.TryEnqueue(() =>
+                            DispatcherQueue.TryEnqueue((Microsoft.UI.Dispatching.DispatcherQueueHandler)(() =>
                             {
-                                progressRing.Value++;
-                            });
+                                this.ImportProgress.Value++;
+                            }));
                         }
                     }
                 }
@@ -148,11 +145,11 @@ namespace MultitoolWinUI.Pages.Test
             }
             finally
             {
-                DispatcherQueue.TryEnqueue(() =>
+                DispatcherQueue.TryEnqueue((Microsoft.UI.Dispatching.DispatcherQueueHandler)(() =>
                 {
-                    progressRing.IsEnabled = false;
-                    progressRing.Visibility = Visibility.Collapsed;
-                });
+                    this.ImportProgress.IsEnabled = false;
+                    this.ImportProgress.Visibility = Visibility.Collapsed;
+                }));
             }
         }
 
@@ -160,8 +157,8 @@ namespace MultitoolWinUI.Pages.Test
         {
             try
             {
-                progressRing.Visibility = Visibility.Visible;
-                progressRing.IsIndeterminate = true;
+                ImportProgress.Visibility = Visibility.Visible;
+                ImportProgress.IsIndeterminate = true;
                 var files = Directory.GetFiles(@$"{UserDataPaths.GetDefault().LocalAppData}\Packages\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy\LocalState\Assets");
                 if (files.Length == 0)
                 {
@@ -174,10 +171,10 @@ namespace MultitoolWinUI.Pages.Test
                 // import files
                 Regex regex = new(@"\.[A-z0-9]+$");
                 StorageFolder folder = await ApplicationData.Current.TemporaryFolder.CreateFolderAsync("spotlight", CreationCollisionOption.OpenIfExists);
-                progressRing.IsIndeterminate = false;
-                progressRing.Minimum = 0;
-                progressRing.Maximum = files.Length;
-                progressRing.Value = 0;
+                ImportProgress.IsIndeterminate = false;
+                ImportProgress.Minimum = 0;
+                ImportProgress.Maximum = files.Length;
+                ImportProgress.Value = 0;
                 for (int i = 0; i < files.Length; i++)
                 {
                     string fileName = Path.GetFileName(files[i]);
@@ -195,27 +192,27 @@ namespace MultitoolWinUI.Pages.Test
                     }
                     else
                     {
-                        Trace.TraceInformation($"{newPath} aldready exists, not overwriting.");
+                        Trace.TraceInformation($"{fileName} aldready exists, not overwriting.");
                     }
 
-                    DispatcherQueue.TryEnqueue(() =>
+                    DispatcherQueue.TryEnqueue((Microsoft.UI.Dispatching.DispatcherQueueHandler)(() =>
                     {
-                        progressRing.Value++;
-                    });
+                        this.ImportProgress.Value++;
+                    }));
                 }
 
                 // show files
-                DispatcherQueue.TryEnqueue(() =>
+                DispatcherQueue.TryEnqueue((Microsoft.UI.Dispatching.DispatcherQueueHandler)(() =>
                 {
                     for (int i = 0; i < newFiles.Count; i++)
                     {
                         Items.Add(new SpotlightItem(newFiles[i], Path.Combine(folder.Path, newFiles[i])));
-                        progressRing.Value++;
-                        pipsPager.NumberOfPages++;
+                        this.ImportProgress.Value++;
+                        PipsPager.NumberOfPages++;
                     }
-                    progressRing.IsEnabled = false;
-                    progressRing.Visibility = Visibility.Collapsed;
-                });
+                    this.ImportProgress.IsEnabled = false;
+                    this.ImportProgress.Visibility = Visibility.Collapsed;
+                }));
 
                 if (OpenTempFolder)
                 {
@@ -256,7 +253,17 @@ namespace MultitoolWinUI.Pages.Test
                     Trace.TraceWarning("Not deleting temp folder, it does not exists");
                 }
             }
+        } 
+
+        private void SelectImage()
+        {
+            if (ImageFlipView.SelectedItem is SpotlightItem item)
+            {
+                item.IsSelected = !item.IsSelected;
+                PropertyChanged?.Invoke(this, new(nameof(ImportButtonEnabled)));
+            }
         }
+        #endregion
 
         #region event handlers
         private async void ImportAllButton_Click(object sender, RoutedEventArgs e) => await ImportFiles();
@@ -291,25 +298,19 @@ namespace MultitoolWinUI.Pages.Test
 
         private void Image_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            if (flipView.SelectedItem is SpotlightItem item)
-            {
-                item.IsSelected = !item.IsSelected;
-                PropertyChanged?.Invoke(this, new(nameof(ImportButtonEnabled)));
-            }
+            SelectImage();
+            e.Handled = true;
         }
 
         private void ClearTempDataButton_Click(object sender, RoutedEventArgs e)
         {
-            pipsPager.NumberOfPages = 0;
+            PipsPager.NumberOfPages = 0;
             PropertyChanged?.Invoke(this, new(nameof(ImportButtonEnabled)));
             Items.Clear();
             _ = ClearTempData();
         }
+
+        //private void CheckBox_Checked(object sender, RoutedEventArgs e) => SelectImage();
         #endregion
-
-        private void AppBarButton_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }

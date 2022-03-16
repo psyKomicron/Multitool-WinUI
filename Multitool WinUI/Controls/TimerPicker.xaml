@@ -6,53 +6,49 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-
     <Grid 
         x:Name="ContentGrid"
-        Grid.Column="0"
-        Grid.Row="0"
-        VerticalAlignment="Stretch"
         BorderThickness="2"
         ColumnSpacing="5">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition />
-            <ColumnDefinition />
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="1*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.Resources>
-            <Style TargetType="TextBox">
-                <Setter Property="BorderThickness" Value="0"/>
+            <Style TargetType="TextBox" BasedOn="{x:Null}">
                 <Setter Property="TextWrapping" Value="Wrap"/>
-                <Setter Property="FontSize" Value="35"/>
-                <Setter Property="FontFamily" Value="Cascadia Code Light"/>
+                <Setter Property="FontSize" Value="20"/>
                 <Setter Property="TextAlignment" Value="Center"/>
-                <Setter Property="HorizontalAlignment" Value="Center"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
             </Style>
             <Style TargetType="RepeatButton">
-                <Setter Property="FontSize" Value="30"/>
                 <Setter Property="MaxHeight" Value="60"/>
                 <Setter Property="VerticalAlignment" Value="Stretch"/>
                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
             </Style>
+            <x:String x:Key="UpButtonsFontIcon">&#xE70E;</x:String>
+            <x:String x:Key="DownButtonsFontIcon">&#xE70D;</x:String>
         </Grid.Resources>
 
         <RepeatButton 
             x:Name="HoursUpButton"
-            Content="+"
             CornerRadius="5, 5, 0, 0"
             Click="HoursUpButton_Click"
             Grid.Column="0"
             Grid.Row="0"
-            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}"/>
+            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}">
+            <FontIcon Glyph="{StaticResource UpButtonsFontIcon}"/>
+        </RepeatButton>
         <TextBox 
             x:Name="HoursTextBox"
             HorizontalTextAlignment="Center"
@@ -64,21 +60,24 @@
             TextChanged="HoursTextBox_TextChanged"/>
         <RepeatButton 
             x:Name="HoursDownButton"
-            Content="-"
             CornerRadius="0, 0, 5, 5"
             Click="HoursDownButton_Click"
             Grid.Column="0"
             Grid.Row="2"
-            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}"/>
+            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}">
+            <FontIcon Glyph="{StaticResource DownButtonsFontIcon}"/>
+        </RepeatButton>
+
 
         <RepeatButton 
             x:Name="MinutesUpButton"
-            Content="+"
             CornerRadius="5, 5, 0, 0"
             Click="MinutesUpButton_Click"
             Grid.Column="1"
             Grid.Row="0"
-            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}"/>
+            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}">
+            <FontIcon Glyph="{StaticResource UpButtonsFontIcon}"/>
+        </RepeatButton>
         <TextBox 
             x:Name="MinutesTextBox"
             Grid.Column="1"
@@ -89,21 +88,23 @@
             TextChanged="MinutesTextBox_TextChanged"/>
         <RepeatButton 
             x:Name="MinutesDownButton"
-            Content="-"
             CornerRadius="0, 0, 5, 5"
             Click="MinutesDownButton_Click"
             Grid.Column="1"
             Grid.Row="2"
-            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}"/>
+            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}">
+            <FontIcon Glyph="{StaticResource DownButtonsFontIcon}"/>
+        </RepeatButton>
 
         <RepeatButton 
             x:Name="SecondsUpButton"
-            Content="+"
             CornerRadius="5, 5, 0, 0"
             Click="SecondsUpButton_Click"
             Grid.Column="2"
             Grid.Row="0"
-            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}"/>
+            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}">
+            <FontIcon Glyph="{StaticResource UpButtonsFontIcon}"/>
+        </RepeatButton>
         <TextBox 
             x:Name="SecondsTextBox"
             Grid.Column="2"
@@ -114,62 +115,89 @@
             TextChanged="SecondsTextBox_TextChanged"/>
         <RepeatButton 
             x:Name="SecondsDownButton"
-            Content="-"
             CornerRadius="0, 0, 5, 5"
             Click="SecondsDownButton_Click"
             Grid.Column="2"
             Grid.Row="2"
-            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}"/>
+            IsEnabled="{Binding ElementName=Control, Path=ButtonsEnabled}">
+            <FontIcon Glyph="{StaticResource DownButtonsFontIcon}"/>
+        </RepeatButton>
 
         <Border 
             Grid.Row="1"
             Grid.ColumnSpan="3"
             VerticalAlignment="Stretch"
             BorderBrush="{ThemeResource SystemAccentColorDark1}"
-            BorderThickness="3"
+            BorderThickness="2"
             CornerRadius="2"/>
 
-        <Grid 
-            Grid.ColumnSpan="3"
-            Grid.Row="3"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch">
-            <Grid.Resources>
-                <Style TargetType="Button">
-                    <Setter Property="HorizontalAlignment" Value="Center"/>
-                </Style>
-            </Grid.Resources>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
-
+        <StackPanel 
+            Grid.Column="4"
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            HorizontalAlignment="Center"
+            Spacing="{StaticResource StackPanelButtonSpacing}"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
             <Button 
-                x:Name="StartTimerButton"
-                Content="Start"
+                Name="startTimerButton"
+                Padding="2"
+                Height="39"
+                Width="39"
+                Style="{ThemeResource AccentButtonStyle}"
                 Grid.Column="0"
-                Click="StartTimerButton_Click"/>
+                Click="StartTimerButton_Click">
+                <SymbolIcon Symbol="Play"/>
+            </Button>
 
             <Button 
-                x:Name="RestartTimerButton"
+                Name="RestartTimerButton"
+                Padding="2"
+                Height="39"
+                Width="39"
                 Grid.Column="1"
-                Content="Restart"
-                Click="RestartTimerButton_Click"/>
+                Click="RestartTimerButton_Click">
+                <SymbolIcon Symbol="Refresh"/>
+            </Button>
+        </StackPanel>
 
-            <Button 
-                x:Name="StopTimerButton"
-                Grid.Column="2"
-                Content="Stop"
-                Click="StopTimerButton_Click"/>
-
-            <Button
-                x:Name="PauseTimerButton"
-                Content="Pause"
-                Click="PauseTimerButton_Click"
-                Grid.Column="3"/>
-
-        </Grid>
+        <ComboBox 
+            Name="SelectionComboBox"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Bottom"
+            Margin="0,10,0,10"
+            Grid.ColumnSpan="3"
+            Grid.Row="4">
+            <ComboBoxItem Tag="lock">
+                <StackPanel Spacing="{StaticResource StackPanelButtonSpacing}" Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE72E;" VerticalAlignment="Center"/>
+                    <TextBlock Text="Lock" VerticalAlignment="Center"/>
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="sleep">
+                <StackPanel Spacing="{StaticResource StackPanelButtonSpacing}" Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE708;" VerticalAlignment="Center"/>
+                    <TextBlock Text="Sleep" VerticalAlignment="Center"/>
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="restart">
+                <StackPanel Spacing="{StaticResource StackPanelButtonSpacing}" Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE777;" VerticalAlignment="Center"/>
+                    <TextBlock Text="Restart" VerticalAlignment="Center"/>
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="shut">
+                <StackPanel Spacing="{StaticResource StackPanelButtonSpacing}" Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE7E8;" VerticalAlignment="Center"/>
+                    <TextBlock Text="Shutdown" VerticalAlignment="Center"/>
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="hiber">
+                <StackPanel Spacing="{StaticResource StackPanelButtonSpacing}" Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE72E;" VerticalAlignment="Center"/>
+                    <TextBlock Text="Hibernate" VerticalAlignment="Center"/>
+                </StackPanel>
+            </ComboBoxItem>
+        </ComboBox>
     </Grid>
 </UserControl>

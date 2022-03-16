@@ -149,6 +149,63 @@ namespace MultitoolWinUI.Controls
             }
         }
 
+        private void PauseTimer()
+        {
+            if (timer != null)
+            {
+                timer.Stop();
+                animationTimer.Stop();
+
+                ButtonsEnabled = true;
+                IsReadOnly = false;
+
+                startTimerButton.Content = new SymbolIcon()
+                {
+                    Symbol = Symbol.Play
+                };
+            }
+        }
+
+        private void StartTimer()
+        {
+            ButtonsEnabled = false;
+            IsReadOnly = true;
+
+            remainingTimeSpan = GetValue();
+            // check value not empty
+            if (remainingTimeSpan.TotalMilliseconds == 0)
+            {
+                throw new FormatException("Input for power action cannot be empty");
+            }
+
+            originalTimeSpan = remainingTimeSpan;
+            timer.Interval = remainingTimeSpan.TotalMilliseconds;
+
+            timer.Start();
+            animationTimer.Start();
+            StatusChanged?.Invoke(this, true);
+
+            startTimerButton.Content = new SymbolIcon()
+            {
+                Symbol = Symbol.Pause
+            };
+        }
+
+        private void StopTimer()
+        {
+            timer.Stop();
+            animationTimer.Stop();
+
+            ButtonsEnabled = true;
+            IsReadOnly = false;
+            UpdateTimer(originalTimeSpan);
+            startTimerButton.Content = new SymbolIcon()
+            {
+                Symbol = Symbol.Play
+            };
+
+            StatusChanged?.Invoke(this, false);
+        }
         #endregion
 
         #region event handlers
@@ -295,19 +352,6 @@ namespace MultitoolWinUI.Controls
         #endregion
 
         #region timer buttons
-
-        private void StopTimerButton_Click(object sender, RoutedEventArgs e)
-        {
-            timer.Stop();
-            animationTimer.Stop();
-
-            ButtonsEnabled = true;
-            IsReadOnly = false;
-            UpdateTimer(originalTimeSpan);
-
-            StatusChanged?.Invoke(this, false);
-        }
-
         private void RestartTimerButton_Click(object sender, RoutedEventArgs e)
         {
             timer.Stop();
@@ -318,36 +362,15 @@ namespace MultitoolWinUI.Controls
 
         private void StartTimerButton_Click(object sender, RoutedEventArgs e)
         {
-            ButtonsEnabled = false;
-            IsReadOnly = true;
-
-            remainingTimeSpan = GetValue();
-            // check value not empty
-            if (remainingTimeSpan.TotalMilliseconds == 0)
+            if (timer.Enabled)
             {
-                throw new FormatException("Input for power action cannot be empty");
+                PauseTimer();
             }
-
-            originalTimeSpan = remainingTimeSpan;
-            timer.Interval = remainingTimeSpan.TotalMilliseconds;
-
-            timer.Start();
-            animationTimer.Start();
-            StatusChanged?.Invoke(this, true);
-        }
-
-        private void PauseTimerButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (timer != null)
+            else
             {
-                timer.Stop();
-                animationTimer.Stop();
-
-                ButtonsEnabled = true;
-                IsReadOnly = false;
+                StartTimer();
             }
         }
-
         #endregion
 
         #endregion
@@ -363,10 +386,8 @@ namespace MultitoolWinUI.Controls
         {
             _ = DispatcherQueue.TryEnqueue(() =>
             {
-                ButtonsEnabled = true;
-                UpdateTimer(originalTimeSpan);
+                StopTimer();
             });
-            animationTimer.Stop();
             Elapsed?.Invoke(this, e);
         }
 

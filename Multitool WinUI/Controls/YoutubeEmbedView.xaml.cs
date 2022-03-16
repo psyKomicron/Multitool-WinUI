@@ -77,7 +77,6 @@ namespace MultitoolWinUI.Controls
         {
             if (!loaded && ThumbnailUrl != null)
             {
-                downloadProgress = (ProgressRing)FindName("DownloadProgress");
                 BitmapImage source = new()
                 {
                     UriSource = ThumbnailUrl

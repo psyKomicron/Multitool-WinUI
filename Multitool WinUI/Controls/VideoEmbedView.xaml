@@ -19,7 +19,7 @@
             </Grid.RowDefinitions>
 
             <ProgressRing 
-                Name="DownloadProgress" 
+                Name="downloadProgress" 
                 HorizontalAlignment="Center" 
                 VerticalAlignment="Center" 
                 Visibility="Collapsed" 
