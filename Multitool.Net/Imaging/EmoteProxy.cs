@@ -21,6 +21,7 @@ using Windows.Security.Cryptography;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using Windows.Web.Http;
+using Multitool.Net.Irc;
 
 namespace Multitool.Net.Imaging
 {
@@ -29,18 +30,19 @@ namespace Multitool.Net.Imaging
         private static EmoteProxy instance;
         private const int timeout = 500; //ms
         private const int fileStreamBufferSize = 0x2000;
-
+        private readonly HashAlgorithm hasher = SHA256.Create();
         private readonly System.Timers.Timer cacheTimer;
+        private readonly string cacheFolderPath;
+
         // concurrent channel emote downloading
-        private readonly ConcurrentDictionary<string, SemaphoreSlim> semaphores = new();
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> channelDownloadsemaphores = new();
 
         private readonly SemaphoreSlim globalEmotesDownloadSemaphore = new(1);
-        private readonly SemaphoreSlim emoteCacheSemaphore = new(1);
+        //private readonly SemaphoreSlim emoteWriteCacheSemaphore = new(1);
 
         private readonly List<Emote> globalEmotesCache = new();
-        private readonly ConcurrentBag<Emote> emotesCache = new();
-        private readonly HashAlgorithm hasher = SHA256.Create();
-        private readonly string cacheFolderPath;
+        private readonly ConcurrentDictionary<string, Emote> emotesCache = new();
+
 
         private EmoteProxy()
         {
@@ -60,23 +62,6 @@ namespace Multitool.Net.Imaging
         public List<EmoteFetcher> EmoteFetchers { get; init; }
         public string Provider { get; }
 
-        public void Dispose()
-        {
-            cacheTimer.Elapsed -= OnCacheTimerElapsed;
-            cacheTimer.Dispose();
-
-            hasher.Dispose();
-
-            emotesCache.Clear();
-            globalEmotesCache.Clear();
-            semaphores.Clear();
-
-            for (int i = 0; i < EmoteFetchers.Count; i++)
-            {
-                EmoteFetchers[i].Dispose();
-            }
-        }
-
         public static EmoteProxy Get(TwitchConnectionToken token = null, bool ignoreValidation = false)
         {
             if (instance == null)
@@ -91,7 +76,7 @@ namespace Multitool.Net.Imaging
                 }
 
                 instance = new();
-                
+
                 instance.EmoteFetchers.Add(new FfzEmoteFetcher());
                 instance.EmoteFetchers.Add(new SevenTVEmoteFetcher());
                 instance.EmoteFetchers.Add(new TwitchEmoteFetcher(token));
@@ -100,18 +85,36 @@ namespace Multitool.Net.Imaging
             return instance;
         }
 
-        public async Task<List<Emote>> FetchGlobalEmotes()
+        public void Dispose()
         {
+            cacheTimer.Elapsed -= OnCacheTimerElapsed;
+            cacheTimer.Dispose();
+
+            hasher.Dispose();
+
+            emotesCache.Clear();
+            globalEmotesCache.Clear();
+            channelDownloadsemaphores.Clear();
+
+            for (int i = 0; i < EmoteFetchers.Count; i++)
+            {
+                EmoteFetchers[i].Dispose();
+            }
+        }
+
+        public async Task<Emote[]> FetchGlobalEmotes()
+        {
+            // is there a better way to do that ?
             if (globalEmotesCache.Count > 0)
             {
-                return globalEmotesCache;
+                return globalEmotesCache.ToArray();
             }
             else if (globalEmotesDownloadSemaphore.CurrentCount == 1)
             {
                 await globalEmotesDownloadSemaphore.WaitAsync();
                 Trace.TraceInformation("Downloading global emotes...");
 
-                List<Task<List<Emote>>> tasks = new(EmoteFetchers.Count);
+                List<Task<Emote[]>> tasks = new(EmoteFetchers.Count);
                 foreach (var fetcher in EmoteFetchers)
                 {
                     tasks.Add(fetcher.FetchGlobalEmotes());
@@ -121,12 +124,12 @@ namespace Multitool.Net.Imaging
                 Stopwatch watch = new();
                 while (tasks.Count > 0)
                 {
-                    Task<List<Emote>> completed = await Task.WhenAny(tasks);
+                    Task<Emote[]> completed = await Task.WhenAny(tasks);
                     tasks.Remove(completed);
                     try
                     {
                         var result = completed.Result;
-                        if (completed.IsCompletedSuccessfully && result.Count > 0)
+                        if (completed.IsCompletedSuccessfully && result.Length > 0)
                         {
                             globalEmotesCache.AddRange(result);
                             watch.Restart();
@@ -209,16 +212,15 @@ namespace Multitool.Net.Imaging
 
                 globalEmotesDownloadSemaphore.Release();
                 Trace.TraceInformation($"Downloaded and cached {globalEmotesCache.Count} emotes in {mean:T}.");
-                return globalEmotesCache;
+                return globalEmotesCache.ToArray();
             }
             else
             {
                 try
                 {
-                    // is there a better way to do that ?
                     await globalEmotesDownloadSemaphore.WaitAsync();
                     globalEmotesDownloadSemaphore.Release();
-                    return globalEmotesCache;
+                    return globalEmotesCache.ToArray();
                 }
                 catch
                 {
@@ -228,188 +230,194 @@ namespace Multitool.Net.Imaging
             }
         }
 
-        [Deprecated("Not stable", DeprecationType.Remove, 1)]
-        public async Task<List<Emote>> FetchChannelEmotes(string channel)
+        public async Task<Emote[]> FetchChannelEmotes(string channel)
         {
-            if (semaphores.TryGetValue(channel, out SemaphoreSlim semaphore))
+#if false
+            throw new NotImplementedException();
+#endif
+            if (channel == null)
             {
-                if (await semaphore.WaitAsync(60_000))
+                throw new ArgumentNullException(nameof(channel));
+            }
+            
+            if (channelDownloadsemaphores.TryGetValue(channel, out SemaphoreSlim semaphore))
+            {
+                if (semaphore != null)
                 {
-                    semaphore.Release();
-                    try
-                    {
-                    }
-                    catch
+                    if (await semaphore.WaitAsync(60_000)) // wait for the previous call to download emotes.
                     {
                         semaphore.Release();
-                        throw;
-                    }
-                }
-                else
-                {
-                    throw new OperationCanceledException("Operation cancelled after 60s timeout.");
-                }
-            }
-            else
-            {
-                Trace.TraceInformation("Checking cache for emotes");
-                List<string> ids = new();
-                List<Task<List<Emote>>> tasks = new();
-                for (int i = 0; i < EmoteFetchers.Count; i++)
-                {
-                    EmoteFetchers[i].
-                }
-
-                int count = ids.Count;
-                foreach (var emotes in emotesCache)
-                {
-                    ids.Remove(emotes.Id.Id);
-                    count--;
-                }
-
-                // download emotes
-                Trace.TraceInformation($"Downloading emotes for #{channel}... (skipping {ids.Count - count} emotes already in cache)");
-
-                SemaphoreSlim s = new(1);
-                semaphores.TryAdd(channel, s);
-                await s.WaitAsync();
-                try
-                {
-                    List<Task<List<Emote>>> tasks = new(EmoteFetchers.Count);
-                    foreach (var fetcher in EmoteFetchers)
-                    {
-                        try
-                        {
-                            if (ids.Count == count)
-                            {
-                                tasks.Add(fetcher.FetchChannelEmotes(channel));
-                            }
-                            else
-                            {
-                                tasks.Add(fetcher.FetchChannelEmotes(channel, ids));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Trace.TraceError(ex.ToString());
-                        }
-                    }
-                    try
-                    {
-                        await Task.WhenAll(tasks);
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.TraceError(ex.ToString());
-                    }
-
-                    List<Emote> channelEmotes = new();
-                    for (int i = 0; i < tasks.Count; i++)
-                    {
-                        if (tasks[i].IsCompletedSuccessfully)
-                        {
-                            channelEmotes.AddRange(tasks[i].Result);
-                        }
-                    }
-
-                    if (await emoteCacheSemaphore.WaitAsync(timeout))
-                    {
-                        try
-                        {
-                            Trace.TraceInformation($"Caching emotes from #{channel}...");
-                            for (int i = 0; i < channelEmotes.Count; i++)
-                            {
-                                emotesCache.Add(channelEmotes[i]);
-                            }
-                        }
-                        finally
-                        {
-                            emoteCacheSemaphore.Release();
-                        }
                     }
                     else
                     {
-                        Trace.TraceWarning($"Failed to get emote cache semaphore, not caching channel emotes (count: {channelEmotes.Count}, channel: #{channel})");
+                        throw new OperationCanceledException("Operation cancelled after 60s timeout.");
+                    }
+                }
+
+                List<Emote> channelEmotes = new();
+                List<Task<List<string>>> tasks = new();
+                foreach (EmoteFetcher fetcher in EmoteFetchers)
+                {
+                    tasks.Add(fetcher.FetchChannelEmotesIds(channel));
+                }
+
+                var result = await Task.WhenAll(tasks);
+                for (int i = 0; i < result.Length; i++)
+                {
+                    for (int j = 0; j < result[i].Count; j++)
+                    {
+                        string id = result[i][j];
+                        if (id != null)
+                        {
+                            if (emotesCache.TryGetValue(id, out Emote emote))
+                            {
+                                channelEmotes.Add(emote);
+                            } 
+                        }
+                        else
+                        {
+                            Trace.TraceWarning("Id is null.");
+                        }
+                    }
+                }
+
+                return channelEmotes.ToArray();
+            }
+            else
+            {
+                SemaphoreSlim s = new(0);
+                try
+                {
+                    if (channelDownloadsemaphores.TryAdd(channel, s))
+                    {
+                        Trace.TraceInformation($"Sucessfully created semaphore for #{channel}.");
+                    }
+                    else
+                    {
+                        Trace.TraceWarning($"Semaphore for #{channel} already exists.");
                     }
 
-                    s.Release();
-                    return channelEmotes;
+                    List<Task<Emote[]>> tasks = new();
+                    List<Emote> channelEmotes = new();
+                    for (int i = 0; i < EmoteFetchers.Count; i++)
+                    {
+                        try
+                        {
+                            Trace.TraceInformation($"Downloading {EmoteFetchers[i].Provider} emotes.");
+
+                            // emote fetching is fast since we only query the servers for the emote data without the image.
+                            tasks.Add(EmoteFetchers[i].FetchChannelEmotes(channel));
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.TraceError($"Failed to fetch {EmoteFetchers[i].Provider} channel emotes: {ex}");
+                        }
+                    }
+
+                    while (tasks.Count > 0)
+                    {
+                        Task<Emote[]> completed = await Task.WhenAny(tasks);
+                        tasks.Remove(completed);
+                        if (completed.IsCompletedSuccessfully)
+                        {
+                            var result = completed.Result;
+                            if (result.Length > 0)
+                            {
+                                channelEmotes.AddRange(result);
+                                for (int i = 0; i < result.Length; i++)
+                                {
+                                    emotesCache.TryAdd(result[i].Id, result[i]);
+                                }
+                                await CacheEmotes(result); 
+                            }
+                        }
+                        else
+                        {
+                            Trace.TraceError($"Emote fetching task failed with exception: {completed.Exception}");
+                        }
+                    }
+
+                    return channelEmotes.ToArray();
                 }
-                catch
+                finally
                 {
                     s.Release();
-                    throw;
                 }
             }
         }
 
-        public Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
+        public Task<Emote[]> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<Emote>> GetEmoteSets(string sets)
+        public Task<Emote[]> GetEmoteSets(string sets)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<List<string>> ListChannelEmotes(string channel)
+        #region private methods
+        private async Task CacheEmotes(Emote[] emotes)
         {
-            List<string> list = new(10 * EmoteFetchers.Count);
-            foreach (var fetcher in EmoteFetchers)
-            {
-                list.AddRange(await fetcher.ListChannelEmotes(channel));
-            }
-            return list;
-        }
+            Trace.TraceInformation($"Caching {emotes.Length} {emotes[0].Provider} emotes.");
 
-        private async Task CacheEmotes(List<Emote> emotes)
-        {
-            Trace.TraceInformation($"Caching {emotes.Count} emotes from {emotes[0].Provider}");
             using HttpClient client = new();
             Encoding encoding = Encoding.UTF8;
-            List<Task> cacheTask = new(emotes.Count);
-            for (int i = 0; i < emotes.Count; i++)
+            List<Task> cacheTask = new(emotes.Length);
+            for (int i = 0; i < emotes.Length; i++)
             {
                 Emote emote = emotes[i];
                 cacheTask.Add(CacheEmote(emote, encoding, client));
             }
             await Task.WhenAll(cacheTask);
+
+            Trace.TraceInformation($"Finished caching {emotes[0].Provider} emotes to disk.");
         }
 
         private async Task CacheEmote(Emote emote, Encoding encoding, HttpClient client)
         {
-            byte[] arr = await emote.GetHashCode(hasher, encoding);
-            string hash = CryptographicBuffer.EncodeToHexString(CryptographicBuffer.CreateFromByteArray(arr));
-            string path =  cacheFolderPath + hash;
-            if (!File.Exists(path))
+            try
             {
-                try
+                emote.SetSize(ImageSize.Big);
+                byte[] arr = await emote.GetHashCode(hasher, encoding);
+                string hash = CryptographicBuffer.EncodeToHexString(CryptographicBuffer.CreateFromByteArray(arr));
+                string path = cacheFolderPath + hash;
+                if (!File.Exists(path))
                 {
-                    // Check performance with File.Create(string path, int bufferSize)
-                    using FileStream stream = File.Create(path, fileStreamBufferSize, FileOptions.WriteThrough | FileOptions.SequentialScan);
-                    using BinaryWriter writer = new(stream);
-
-                    Task<byte[]> imageData = emote.GetImageAsync(client, ImageSize.Medium);
-                    writer.Write(await imageData);
-                    emote.SetImage(new(path));
-
-                    stream.Close();
-                }
-                catch (IOException ex)
-                {
-                    if (File.Exists(path))
+                    try
                     {
-                        File.Delete(path);
+                        Trace.TraceInformation($"{emote.Provider}.{emote.Name} does not exists, caching emote.");
+                        // Check performance with File.Create(string path, int bufferSize)
+                        using FileStream stream = File.Create(path, fileStreamBufferSize, FileOptions.WriteThrough | FileOptions.SequentialScan);
+                        using BinaryWriter writer = new(stream);
+
+                        Task<byte[]> imageData = emote.GetImageAsync(client, ImageSize.Medium);
+                        writer.Write(await imageData);
+                        emote.SetImage(new(path));
+
+                        stream.Close();
                     }
-                    Trace.TraceError($"{ex}");
+                    catch (IOException)
+                    {
+                        if (File.Exists(path))
+                        {
+                            File.Delete(path);
+                        }
+                        throw;
+                    }
+                }
+                else
+                {
+                    emote.SetImage(new(path));
                 }
             }
-            else
+            catch (Exception ex)
             {
-                emote.SetImage(new(path));
+                Trace.TraceError($"Error caching {emote.Provider}.{emote.Name} : {ex.Message}");
+                throw;
             }
-        }
+        } 
+        #endregion
 
         #region event handlers
         private void OnCacheTimerElapsed(object sender, ElapsedEventArgs e)

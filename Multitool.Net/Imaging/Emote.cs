@@ -30,7 +30,7 @@ namespace Multitool.Net.Imaging
         private Regex nameRegex;
         private byte[] hashCode;
 
-        public Emote(Identifier id, string name, Dictionary<Size, string> resourcesLinks, string mimeType = "gif")
+        public Emote(string id, string name, Dictionary<Size, string> resourcesLinks, string mimeType = "gif")
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -48,7 +48,7 @@ namespace Multitool.Net.Imaging
 
         public Size Size { get; private set; }
 
-        public Identifier Id { get; }
+        public string Id { get; }
 
 #if false
         // to support .webm animated images
@@ -65,7 +65,7 @@ namespace Multitool.Net.Imaging
             {
                 if (nameRegex == null)
                 {
-                    nameRegex = new($"^{Regex.Escape(Name)}", RegexOptions.Compiled);
+                    nameRegex = new($"^{Regex.Escape(Name)}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
                 }
                 return nameRegex;
             }
@@ -80,7 +80,9 @@ namespace Multitool.Net.Imaging
         {
             if (hashCode == null)
             {
-                using MemoryStream stream = new(encoding.GetBytes(urls[Size]));
+                string url = urls[Size];
+
+                using MemoryStream stream = new(encoding.GetBytes(url));
                 hashCode = await algo.ComputeHashAsync(stream);
             }
             return hashCode;
@@ -95,21 +97,7 @@ namespace Multitool.Net.Imaging
         {
             try
             {
-                Uri uri = null;
-                switch (size)
-                {
-                    case ImageSize.Small:
-                        
-                        break;
-                    case ImageSize.Medium:
-                        
-                        break;
-                    case ImageSize.Big:
-                        
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
+                Uri uri = GetImageUri(size);
 
                 using HttpResponseMessage reponse = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).AsTask(cancellationToken);
                 if (reponse.StatusCode == HttpStatusCode.BadRequest)
@@ -221,6 +209,121 @@ namespace Multitool.Net.Imaging
                 UriSource = uri
             };
 #endif
+        }
+
+        internal void SetSize(ImageSize size)
+        {
+            if (urls.Count == 0)
+            {
+                throw new InvalidOperationException("Cannot set image size with no urls.");
+            }
+
+            var keysEnumerable = urls.Keys;
+            Size[] sizes = new Size[keysEnumerable.Count];
+            int i = 0;
+            foreach (var key in keysEnumerable)
+            {
+                sizes[i] = key;
+                i++;
+            }
+
+            switch (size)
+            {
+                case ImageSize.Small:
+                    Size = sizes[0];
+                    break;
+                case ImageSize.Medium:
+                    if (sizes.Length > 2)
+                    {
+                        Size = sizes[1];
+                    }
+                    else
+                    {
+                        Size = sizes[0];
+                    }
+                    break;
+                case ImageSize.Big:
+                    if (sizes.Length > 3)
+                    {
+                        Size = sizes[2];
+                    }
+                    else if (sizes.Length > 2)
+                    {
+                        Size = sizes[1];
+                    }
+                    else
+                    {
+                        Size = sizes[0];
+                    }
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private Uri GetImageUri(ImageSize size)
+        {
+            Uri uri = null;
+
+            var keysEnumerable = urls.Keys;
+            Size[] sizes = new Size[keysEnumerable.Count];
+            int i = 0;
+            foreach (var key in keysEnumerable)
+            {
+                sizes[i] = key;
+                i++;
+            }
+
+            if (sizes.Length > 1)
+            {
+                bool sizeSet = false;
+                switch (size)
+                {
+                    case ImageSize.Small:
+                        if (urls.TryGetValue(sizes[0], out string value))
+                        {
+                            uri = new(value);
+                            Size = sizes[0];
+                            sizeSet = true;
+                        }
+                        break;
+                    case ImageSize.Medium:
+                        if (sizes.Length > 1 && urls.TryGetValue(sizes[1], out value))
+                        {
+                            uri = new(value);
+                            Size = sizes[1];
+                            sizeSet = true;
+                        }
+                        break;
+                    case ImageSize.Big:
+                        if (sizes.Length > 2 && urls.TryGetValue(sizes[2], out value))
+                        {
+                            uri = new(value);
+                            Size = sizes[2];
+                            sizeSet = true;
+                        }
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+
+                if (!sizeSet || Size == default)
+                {
+                    Trace.TraceWarning("Emote size not set.");
+                }
+            }
+            else
+            {
+                Size = sizes[0];
+                uri = new(urls.GetValueOrDefault(sizes[0]));
+            }
+
+            if (uri == null)
+            {
+                uri = new("");
+            }
+
+            return uri;
         }
     }
 }

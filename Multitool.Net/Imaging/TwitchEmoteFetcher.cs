@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Windows.Web.Http;
 using System.IO;
+using System.Drawing;
 
 namespace Multitool.Net.Imaging
 {
@@ -19,7 +20,6 @@ namespace Multitool.Net.Imaging
         private readonly TwitchApiHelper helper;
         private TwitchConnectionToken connectionToken;
 
-        #region constructors
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -43,38 +43,37 @@ namespace Multitool.Net.Imaging
                 Client.DefaultRequestHeaders.Authorization = new("Bearer", connectionToken.Token);
                 Client.DefaultRequestHeaders.Add(new("Client-Id", connectionToken.ClientId));
             }
-        } 
-        #endregion
+        }
 
         /// <inheritdoc/>
-        public override async Task<List<Emote>> FetchGlobalEmotes()
+        public override async Task<Emote[]> FetchGlobalEmotes()
         {
             CheckIfDisposed();
             CheckToken();
 
             TwitchJsonData data = await GetJsonAsync<TwitchJsonData>(Resources.TwitchApiGlobalEmotesEndPoint);
-            return GetEmotes(data, "Global");
+            return GetEmotes(data, "Global").ToArray();
         }
 
         /// <inheritdoc/>
-        public override async Task<List<Emote>> FetchChannelEmotes(string channel)
+        public override async Task<Emote[]> FetchChannelEmotes(string channel)
         {
             CheckIfDisposed();
             CheckToken();
 
             string url = string.Format(Resources.TwitchApiChannelEmoteEndPoint, await helper.GetUserId(channel));
             var data = await GetJsonAsync<TwitchJsonData>(url);
-            return GetEmotes(data, "Channel");
+            return GetEmotes(data, "Channel").ToArray();
         }
 
         /// <inheritdoc/>
-        public override Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
+        public override Task<Emote[]> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
-        public override async Task<List<string>> ListChannelEmotes(string channel)
+        public override async Task<List<string>> FetchChannelEmotesIds(string channel)
         {
             string url = string.Format(Resources.TwitchApiChannelEmoteEndPoint, await helper.GetUserId(channel));
             TwitchJsonData data = await GetJsonAsync<TwitchJsonData>(url);
@@ -96,10 +95,10 @@ namespace Multitool.Net.Imaging
             for (int i = 0; i < list.Count; i++)
             {
                 TwitchJsonEmote jsonEmote = list[i];
-                Dictionary<ImageSize, string> urls = new();
-                urls.Add(ImageSize.Small, jsonEmote.images.url_1x);
-                urls.Add(ImageSize.Medium, jsonEmote.images.url_2x);
-                urls.Add(ImageSize.Big, jsonEmote.images.url_4x);
+                Dictionary<Size, string> urls = new();
+                urls.Add(new(28, 28), jsonEmote.images.url_1x);
+                urls.Add(new(56, 56), jsonEmote.images.url_2x);
+                urls.Add(new(128, 128), jsonEmote.images.url_4x);
 
                 Emote emote = new(new(jsonEmote.id), jsonEmote.name, urls)
                 {

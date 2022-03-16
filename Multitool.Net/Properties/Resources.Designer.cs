@@ -97,16 +97,7 @@ namespace Multitool.Net.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to https://api.frankerfacez.com/v1/set/global.
-        /// </summary>
-        internal static string FfzApiGlobalEmotesEndPoint {
-            get {
-                return ResourceManager.GetString("FfzApiGlobalEmotesEndPoint", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to https://api.frankerfacez.com.
+        ///   Looks up a localized string similar to https://api.frankerfacez.com/v1/{0}.
         /// </summary>
         internal static string FfzApiServerUrl {
             get {

@@ -4,12 +4,8 @@ using Multitool.Net.Properties;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
+using System.Drawing;
 using System.Threading.Tasks;
-
-using Windows.Web.Http;
 
 namespace Multitool.Net.Imaging
 {
@@ -23,45 +19,49 @@ namespace Multitool.Net.Imaging
             helper = new(connectionToken);
         }
 
-        public override async Task<List<Emote>> FetchChannelEmotes(string channel)
+        public override async Task<Emote[]> FetchChannelEmotes(string channel)
         {
             CheckIfDisposed();
+            AssertChannelValid(channel);
 
             string channelId = await helper.GetUserId(channel);
             BttvChannelEmotes jsonData = await GetJsonAsync<BttvChannelEmotes>(string.Format(Resources.BttvChannelEmotesEndpoint, channelId));
 
             List<Emote> emotes = new();
-            for (int i = 0; i < jsonData.channelEmotes.Count; i++)
+            if (jsonData != null)
             {
-                Emote emote = new(new(jsonData.channelEmotes[i].id), jsonData.channelEmotes[i].code, CreateUrls(jsonData.channelEmotes[i].id), jsonData.channelEmotes[i].imageType)
+                for (int i = 0; i < jsonData.channelEmotes.Count; i++)
                 {
-                    CreatorId = jsonData.channelEmotes[i].userId,
-                    Provider = Provider,
-                    Type = "Channel"
-                };
-                emotes.Add(emote);
+                    Emote emote = new(new(jsonData.channelEmotes[i].id), jsonData.channelEmotes[i].code, CreateUrls(jsonData.channelEmotes[i].id), jsonData.channelEmotes[i].imageType)
+                    {
+                        CreatorId = jsonData.channelEmotes[i].userId,
+                        Provider = Provider,
+                        Type = "Channel"
+                    };
+                    emotes.Add(emote);
+                }
+
+                for (int i = 0; i < jsonData.sharedEmotes.Count; i++)
+                {
+                    Emote emote = new(new(jsonData.sharedEmotes[i].id), jsonData.sharedEmotes[i].code, CreateUrls(jsonData.sharedEmotes[i].id), jsonData.sharedEmotes[i].imageType)
+                    {
+                        CreatorId = jsonData.sharedEmotes[i].user.displayName,
+                        Provider = Provider,
+                        Type = "Shared"
+                    };
+                    emotes.Add(emote);
+                } 
             }
 
-            for (int i = 0; i < jsonData.sharedEmotes.Count; i++)
-            {
-                Emote emote = new(new(jsonData.sharedEmotes[i].id), jsonData.sharedEmotes[i].code, CreateUrls(jsonData.sharedEmotes[i].id), jsonData.sharedEmotes[i].imageType)
-                {
-                    CreatorId = jsonData.sharedEmotes[i].user.displayName,
-                    Provider = Provider,
-                    Type = "Shared"
-                };
-                emotes.Add(emote);
-            }
-
-            return emotes;
+            return emotes.ToArray();
         }
 
-        public override Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
+        public override Task<Emote[]> FetchChannelEmotes(string channel, IReadOnlyList<string> except)
         {
             throw new NotImplementedException();
         }
 
-        public override async Task<List<Emote>> FetchGlobalEmotes()
+        public override async Task<Emote[]> FetchGlobalEmotes()
         {
             CheckIfDisposed();
 
@@ -78,20 +78,20 @@ namespace Multitool.Net.Imaging
                 emotes.Add(emote);
             }
 
-            return emotes;
+            return emotes.ToArray();
         }
 
-        public override Task<List<string>> ListChannelEmotes(string channel)
+        public override Task<List<string>> FetchChannelEmotesIds(string channel)
         {
             throw new NotImplementedException();
         }
 
-        private Dictionary<ImageSize, string> CreateUrls(string id)
+        private static Dictionary<Size, string> CreateUrls(string id)
         {
-            Dictionary<ImageSize, string> urls = new();
-            urls.Add(ImageSize.Small, string.Format(Resources.BttvEmoteEndpoint, id, "1x"));
-            urls.Add(ImageSize.Medium, string.Format(Resources.BttvEmoteEndpoint, id, "2x"));
-            urls.Add(ImageSize.Big, string.Format(Resources.BttvEmoteEndpoint, id, "4x"));
+            Dictionary<Size, string> urls = new();
+            urls.Add(new(28, 28), string.Format(Resources.BttvEmoteEndpoint, id, "1x"));
+            urls.Add(new(56, 56), string.Format(Resources.BttvEmoteEndpoint, id, "2x"));
+            urls.Add(new(128, 128), string.Format(Resources.BttvEmoteEndpoint, id, "4x"));
             return urls;
         }
     }

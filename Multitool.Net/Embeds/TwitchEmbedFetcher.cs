@@ -34,11 +34,10 @@ namespace Multitool.Net.Embeds
                 response.EnsureSuccessStatusCode();
                 string raw = await response.Content.ReadAsStringAsync();
 
-                _ = EmbedFetcherHelper.DumpRaw(raw, true);
-
                 ReadOnlyMemory<char> memory = new(raw.ToCharArray());
                 List<Tag> tags = new();
 #if DEBUG
+                _ = EmbedFetcherHelper.DumpRaw(raw, true);
                 nint iterations = 0;
 #endif
                 int i = 0;
@@ -69,8 +68,8 @@ namespace Multitool.Net.Embeds
                 }
 #if DEBUG
                 Debug.WriteLine($"Iterations: {iterations} for {memory.Length} chars.");
-#endif
                 _ = EmbedFetcherHelper.DumpTags(tags);
+#endif
 
                 var embed = CreateEmbed(tags);
                 return embed;

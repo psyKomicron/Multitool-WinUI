@@ -129,11 +129,8 @@
   <data name="EmoteCacheFolder" xml:space="preserve">
     <value>{0}\emotes cache\</value>
   </data>
-  <data name="FfzApiGlobalEmotesEndPoint" xml:space="preserve">
-    <value>https://api.frankerfacez.com/v1/set/global</value>
-  </data>
   <data name="FfzApiServerUrl" xml:space="preserve">
-    <value>https://api.frankerfacez.com</value>
+    <value>https://api.frankerfacez.com/v1/{0}</value>
   </data>
   <data name="SevenTVApiChannelEmotesEndPoint" xml:space="preserve">
     <value>https://api.7tv.app/v2/users/{0}/emotes</value>

@@ -3,7 +3,7 @@
 namespace Multitool.Net.Imaging.Json.Ffz
 {
 #pragma warning disable IDE1006 // Naming Styles
-    internal class FfzJsonData
+    internal class FfzGlobalJsonData
     {
         public int[] default_sets { get; set; }
         public Dictionary<string, FfzJsonSet> sets { get; set; }

@@ -15,19 +15,13 @@ namespace Multitool.Net.Imaging
         /// </summary>
         /// <param name="channel">Channel to fetch the emotes from.</param>
         /// <returns>List of image download links.</returns>
-        Task<List<Emote>> FetchChannelEmotes(string channel);
-        Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except);
+        Task<Emote[]> FetchChannelEmotes(string channel);
+        Task<Emote[]> FetchChannelEmotes(string channel, IReadOnlyList<string> except);
 
         /// <summary>
         /// Fetches emotes download links from the implementation's provider.
         /// </summary>
         /// <returns>List of image download links.</returns>
-        Task<List<Emote>> FetchGlobalEmotes();
-        /// <summary>
-        /// List the channel's available emotes for the implementation's emote provider.
-        /// </summary>
-        /// <param name="channel"></param>
-        /// <returns></returns>
-        Task<List<string>> ListChannelEmotes(string channel);
+        Task<Emote[]> FetchGlobalEmotes();        
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Multitool.Net.Imaging.Json.Ffz;
+using Multitool.Net.Irc;
 using Multitool.Net.Properties;
 
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Windows.Storage.Streams;
@@ -23,22 +25,30 @@ namespace Multitool.Net.Imaging
             this.client = client;
         }
 
+        #region properties
         /// <inheritdoc/>
         public string Provider { get; protected set; }
 
-        protected HttpClient Client => client;
+        protected HttpClient Client => client; 
+        #endregion
+
+        #region abstract methods
+        /// <inheritdoc/>
+        public abstract Task<Emote[]> FetchGlobalEmotes();
 
         /// <inheritdoc/>
-        public abstract Task<List<Emote>> FetchGlobalEmotes();
+        public abstract Task<Emote[]> FetchChannelEmotes(string channel);
 
         /// <inheritdoc/>
-        public abstract Task<List<Emote>> FetchChannelEmotes(string channel);
+        public abstract Task<Emote[]> FetchChannelEmotes(string channel, IReadOnlyList<string> except);
 
-        /// <inheritdoc/>
-        public abstract Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except);
-
-        /// <inheritdoc/>
-        public abstract Task<List<string>> ListChannelEmotes(string channel);
+        /// <summary>
+        /// List the channel's available emotes for the implementation's emote provider.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
+        public abstract Task<List<string>> FetchChannelEmotesIds(string channel); 
+        #endregion
 
         /// <inheritdoc/>
         public void Dispose()
@@ -51,6 +61,18 @@ namespace Multitool.Net.Imaging
             GC.SuppressFinalize(this);
         }
 
+        protected static void AssertChannelValid(string channel)
+        {
+            if (channel == null)
+            {
+                throw new ArgumentNullException(nameof(channel));
+            }
+            if (string.IsNullOrWhiteSpace(channel) || !Regex.IsMatch(channel, @"^#*[A-z0-9_].{2,24}$"))
+            {
+                throw new ArgumentException($"Channel name is not valid. Value : {channel}.");
+            }
+        }
+
         protected void CheckIfDisposed()
         {
             if (disposed)
@@ -59,55 +81,32 @@ namespace Multitool.Net.Imaging
             }
         }
 
-        protected async Task<TJson> GetJsonAsync<TJson>(string fetchLink)
+#nullable enable
+        /// <summary>
+        /// Performs a GET request to <paramref name="fetchLink"/> and deserializes the JSON content received into <typeparamref name="TJson"/>.
+        /// <para/>
+        /// The method will return <see langword="null"/> if the server responds with 404/NotFound.
+        /// </summary>
+        /// <typeparam name="TJson">Type to deserialize the JSON to</typeparam>
+        /// <param name="fetchLink">Resource to GET</param>
+        /// <returns>The deserialized data, or <see langword="null"/> if the server responds with 404/NotFound.</returns>
+        protected async Task<TJson?> GetJsonAsync<TJson>(string fetchLink)
         {
             HttpRequestMessage requestMessage = new(HttpMethod.Get, new(fetchLink));
-            var httpResponse = await Client.SendRequestAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
-#if false
-            string s = await httpResponse.Content.ReadAsStringAsync();
-            TJson json = JsonSerializer.Deserialize<TJson>(s);
-            return json;
-#else
+            HttpResponseMessage httpResponse = await Client.SendRequestAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
+
+            if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+            {
+                return default;
+            }
+
+            httpResponse.EnsureSuccessStatusCode();
+
             var inputStream = await httpResponse.Content.ReadAsInputStreamAsync();
             using var stream = inputStream.AsStreamForRead();
-            TJson json = await JsonSerializer.DeserializeAsync<TJson>(stream);
+            TJson? json = await JsonSerializer.DeserializeAsync<TJson>(stream);
             return json;
-#endif
         }
-
-#if false
-        protected async Task DownloadEmoteAsync(Emote emote, Uri emoteUrl, string mimeType)
-        {
-            try
-            {
-                using HttpResponseMessage reponse = await client.GetAsync(emoteUrl, HttpCompletionOption.ResponseHeadersRead).AsTask();
-                if (reponse.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    Trace.TraceError($"Bad request:\n{await reponse.Content.ReadAsStringAsync()}\n{reponse.Headers}");
-                }
-                reponse.EnsureSuccessStatusCode();
-
-                // Can we use the already buffered data to build the image
-                IBuffer stream = await reponse.Content.ReadAsBufferAsync();
-                //var mem = Windows.Storage.Streams.Buffer.CreateMemoryBufferOverIBuffer(stream);
-                using DataReader dataReader = DataReader.FromBuffer(stream);
-
-                byte[] bytes = new byte[dataReader.UnconsumedBufferLength];
-                int pos = 0;
-                while (dataReader.UnconsumedBufferLength > 0)
-                {
-                    bytes[pos] = dataReader.ReadByte();
-                    pos++;
-                }
-
-                await emote.SetImageAsync(bytes, mimeType);
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError($"Failed to download/set emote '{emote.Name}': {ex.Message}");
-                throw;
-            }
-        } 
-#endif
+#nullable disable
     }
 }
