@@ -21,7 +21,7 @@
             ItemClick="EmoteGridView_ItemClick">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="imaging:Emote">
-                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="{x:Bind Height}">
+                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="{x:Bind Size.Height}">
                         <ToolTipService.ToolTip>
                             <ToolTip>
                                 <StackPanel Orientation="Vertical">
