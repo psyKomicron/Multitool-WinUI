@@ -17,14 +17,13 @@ using MultitoolWinUI.Pages.HashGenerator;
 using MultitoolWinUI.Pages.MusicPlayer;
 using MultitoolWinUI.Pages.Power;
 using MultitoolWinUI.Pages.Settings;
-using MultitoolWinUI.Pages.Test;
+using MultitoolWinUI.Pages.Widgets;
 
 using System;
 using System.Diagnostics;
 
 using Windows.Foundation;
 using Windows.UI;
-using Windows.UI.ViewManagement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -64,6 +63,7 @@ namespace MultitoolWinUI
             }
         }
 
+        #region properties
         //[Setting(ElementTheme.Default)]
         public ElementTheme CurrentTheme { get; set; }
 
@@ -82,7 +82,8 @@ namespace MultitoolWinUI
         public int TitleBarHeight { get; private set; }
 
         [Setting(typeof(SizeSettingConverter), 1000, 600)]
-        public Size WindowSize { get; set; }
+        public Size WindowSize { get; set; } 
+        #endregion
 
         public bool NavigateTo(Type pageType, params object[] navigationParameters)
         {
@@ -124,8 +125,8 @@ namespace MultitoolWinUI
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
             NavigateTo(LastPage, true);
-            string tag;
-            switch (LastPage.Name)
+            string tag = LastPage != null ? LastPage.Name : string.Empty;
+            /*switch (LastPage.Name)
             {
                 case nameof(MainPage):
                     tag = "home";
@@ -149,7 +150,7 @@ namespace MultitoolWinUI
                     tag = "hashgenerator";
                     break;
                 case nameof(TwitchPage):
-                    tag = "irc";
+                    tag = "TwitchChat";
                     break;
                 case nameof(SettingsPage):
                     tag = "Settings";
@@ -160,7 +161,7 @@ namespace MultitoolWinUI
                 default:
                     tag = string.Empty;
                     break;
-            }
+            }*/
             var items = WindowNavigationView.MenuItems;
             foreach (var item in items)
             {
@@ -178,40 +179,41 @@ namespace MultitoolWinUI
                 string tag = args.InvokedItemContainer.Tag.ToString();
                 switch (tag)
                 {
-                    case "home":
+                    case nameof(MainPage):
                         NavigateTo(typeof(MainPage), true);
                         break;
-                    case "devices":
+                    case nameof(ComputerDevicesPage):
                         NavigateTo(typeof(ComputerDevicesPage), true);
                         break;
-                    case "explorer":
+                    case nameof(ExplorerPage):
                         NavigateTo(typeof(ExplorerPage), true);
                         break;
-                    case "explorerhome":
+                    case nameof(ExplorerHomePage):
                         NavigateTo(typeof(ExplorerHomePage), true);
                         break;
-                    case "power":
+                    case nameof(PowerPage):
                         NavigateTo(typeof(PowerPage), true);
                         break;
-                    case "controlpanels":
+                    case nameof(ControlPanelsPage):
                         NavigateTo(typeof(ControlPanelsPage), true);
                         break;
-                    case "hashgenerator":
+                    case nameof(HashGeneratorPage):
                         NavigateTo(typeof(HashGeneratorPage), true);
                         break;
-                    case "irc":
+                    case nameof(TwitchPage):
                         NavigateTo(typeof(TwitchPage), true);
                         break;
-                    case "chat":
+                    case nameof(ChatPage):
                         NavigateTo(typeof(ChatPage), true);
                         break;
-                    case "test":
-                        NavigateTo(typeof(TestPage), true);
+                    case nameof(WidgetsPage):
+                        NavigateTo(typeof(WidgetsPage), true);
                         break;
+                    case nameof(SettingsPage):
                     case "Settings":
                         NavigateTo(typeof(SettingsPage), true);
                         break;
-                    case "music":
+                    case nameof(MusicPlayerPage):
                         NavigateTo(typeof(MusicPlayerPage), true);
                         break;
                     default:
@@ -258,6 +260,9 @@ namespace MultitoolWinUI
             else
             {
                 TitleBarGrid.Visibility = Visibility.Collapsed;
+                var row = ContentGrid.RowDefinitions[0];
+                row.MinHeight = 0;
+                row.Height = new(0);
             }
         }
 
