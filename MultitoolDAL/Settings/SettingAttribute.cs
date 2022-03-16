@@ -6,6 +6,9 @@ using System.Reflection;
 
 namespace Multitool.Data.Settings
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
     public class SettingAttribute : Attribute
     {
@@ -14,10 +17,10 @@ namespace Multitool.Data.Settings
         #region constructors
         /// <summary>
         /// <para>
-        /// Sets the property to be saved by a <see cref="SettingsManager"/>.
+        /// Sets the property to be saved by a <see cref="IUserSettingsManager"/>.
         /// </para>
         /// <para>
-        /// The class will create an instance of <see cref="SettingConverter"/> (<paramref name="converterType"/>) to convert saved value back and forth.
+        /// The class will create an instance of <see cref="IUserSettingsManager"/> (<paramref name="converterType"/>) to convert saved value back and forth.
         /// </para>
         /// </summary>
         /// <param name="converterType"></param>
@@ -42,16 +45,22 @@ namespace Multitool.Data.Settings
         }
 
         /// <summary>
-        /// Creates a 
+        /// Creates a setting attribute with the provided setting key.
         /// </summary>
-        /// <param name="memberType"></param>
-        /// <param name="settingName"></param>
+        /// <param name="memberType">Type to associate the setting with.</param>
+        /// <param name="settingName">Name of the setting (for this property).</param>
         public SettingAttribute(Type memberType, string settingName)
         {
             SettingKey = memberType.FullName;
             SettingName = settingName;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="memberType">Type to associate the setting with.</param>
+        /// <param name="settingName">Name of the setting (for this property).</param>
+        /// <param name="converterType"><see cref="ISettingConverter"/> to convert the setting with.</param>
         public SettingAttribute(Type memberType, string settingName, Type converterType) : this(converterType)
         {
             SettingKey = memberType.FullName;
@@ -107,7 +116,7 @@ namespace Multitool.Data.Settings
         ///         <see cref="SettingAttribute(Type, string)"/>
         ///     </item>
         ///     <item>
-        ///         <see cref="SettingAttribute(Type, params object[])"/>
+        ///         <see cref="SettingAttribute(Type, object[])"/>
         ///     </item>
         /// </list>
         /// </remarks>

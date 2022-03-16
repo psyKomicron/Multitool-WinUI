@@ -14,6 +14,9 @@ using Windows.Security.Cryptography;
 
 namespace Multitool.Data.Settings
 {
+    /// <summary>
+    /// Default implementation of <see cref="ISecureSettingsManager"/>.
+    /// </summary>
     public class SecureSettingsManager : ISecureSettingsManager
     {
         private static readonly string defaultResource = "MultitoolWinUI";
@@ -46,8 +49,7 @@ namespace Multitool.Data.Settings
         }
 
         /// <remarks>
-        /// If <paramref name="resource"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use
-        /// <see cref="defaultResource"/> as the default resource.
+        /// If <paramref name="globalKey"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use the default resource.
         /// </remarks>
         /// <inheritdoc/>
         public void Edit(string globalKey, string settingKey, object value)
@@ -56,8 +58,7 @@ namespace Multitool.Data.Settings
         }
 
         /// <remarks>
-        /// If <paramref name="resource"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use
-        /// <see cref="defaultResource"/> as the default resource.
+        /// If <paramref name="globalKey"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use the default resource.
         /// </remarks>
         /// <inheritdoc/>
         public T Get<T>(string globalKey, string settingKey)
@@ -76,8 +77,7 @@ namespace Multitool.Data.Settings
         public List<string> ListKeys() => ListKeys(defaultResource);
 
         /// <remarks>
-        /// If <paramref name="resource"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use
-        /// <see cref="defaultResource"/> as the default resource.
+        /// If <paramref name="globalKey"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use will use the default resource.
         /// </remarks>
         /// <inheritdoc/>
         public List<string> ListKeys(string globalKey)
@@ -100,12 +100,11 @@ namespace Multitool.Data.Settings
                 Trace.TraceError(ex.ToString());
             }
             return null;
-        } 
+        }
         #endregion
 
         /// <remarks>
-        /// If <paramref name="resource"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use
-        /// <see cref="defaultResource"/> as the default resource.
+        /// If <paramref name="globalKey"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use the default resource.
         /// </remarks>
         /// <inheritdoc/>
         public void Remove(string globalKey, string settingKey)
@@ -160,7 +159,7 @@ namespace Multitool.Data.Settings
             IReadOnlyList<PasswordCredential> credentials;
             try
             {
-#if DEBUG
+#if true
                 credentials = vault.RetrieveAll();
 #else
                 credentials = vault.FindAllByResource(DefaultResource); 
@@ -188,8 +187,7 @@ namespace Multitool.Data.Settings
         }
 
         /// <remarks>
-        /// If <paramref name="resource"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use
-        /// <see cref="defaultResource"/> as the default resource.
+        /// If <paramref name="globalKey"/> is not valued (null or empty), the <see cref="SecureSettingsManager"/> will use the default resource.
         /// </remarks>
         /// <inheritdoc/>
         public void Save(string globalKey, string key, object value)
@@ -230,7 +228,7 @@ namespace Multitool.Data.Settings
                 else
                 {
                     passwordCredential.Password = password;
-                    if (passwordCredential.Properties.TryGetValue("creation-timestamp", out object o))
+                    if (passwordCredential.Properties.ContainsKey("creation-timestamp"))
                     {
                         passwordCredential.Properties["creation-timestamp"] = DateTime.Now;
                     }
@@ -249,11 +247,13 @@ namespace Multitool.Data.Settings
             }
         }
 
+        /// <inheritdoc/>
         public bool TryGet<T>(string globalKey, string name, out T value)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public object TryGet(string globalKey, string settingKey)
         {
             throw new NotImplementedException();
