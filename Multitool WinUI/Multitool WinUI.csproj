@@ -13,7 +13,7 @@
     <Authors>psyKomicron</Authors>
     <PackageReleaseNotes>Continuing on fixing bugs and implementing new features. :)</PackageReleaseNotes>
     <ApplicationIcon>multitool.ico</ApplicationIcon>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <FileVersion>1.0.0</FileVersion>
     <PackageId>MultitoolWinUI</PackageId>
   </PropertyGroup>
@@ -32,7 +32,8 @@
     <None Remove="Controls\EmoteDisplay.xaml" />
     <None Remove="Controls\FileSystemEntryView.xaml" />
     <None Remove="Controls\MainPageItem.xaml" />
-    <None Remove="Controls\TimerPicker.xaml" />
+    <None Remove="Controls\PowerControllerView.xaml" />
+    <None Remove="Controls\TimerPickerView.xaml" />
     <None Remove="Controls\VideoEmbedView.xaml" />
     <None Remove="Controls\WidgetSmallView.xaml" />
     <None Remove="Controls\WidgetView.xaml" />
@@ -52,7 +53,6 @@
     <None Remove="Pages\MusicPlayer\MusicPlayerPage.xaml" />
     <None Remove="Pages\MusicPlayer\MusicSearchPage.xaml" />
     <None Remove="Pages\MusicPlayer\PlaylistCreationPage.xaml" />
-    <None Remove="Pages\Power\PowerPage.xaml" />
     <None Remove="Pages\Settings\SettingsPage.xaml" />
     <None Remove="Pages\Widgets\EmbedFetcherControl.xaml" />
     <None Remove="Pages\Widgets\ImageTester.xaml" />
@@ -169,6 +169,9 @@
     <Page Update="Controls\WidgetSmallView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Update="Controls\PowerControllerView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <None Update="Resources\Images\ico151.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -235,7 +238,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Controls\TimerPicker.xaml">
+    <Page Update="Controls\TimerPickerView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -272,12 +275,6 @@
 
   <ItemGroup>
     <Page Update="Pages\Explorer\ExplorerPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Update="Pages\Power\PowerPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
