@@ -83,6 +83,7 @@
             SelectionMode="None"
             Padding="0"
             Margin="0"
+            Transitions="{x:Null}"
             HorizontalAlignment="Stretch"
             Grid.ColumnSpan="2"
             Grid.Row="1">
