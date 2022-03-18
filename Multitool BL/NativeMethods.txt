@@ -2,3 +2,10 @@ SetWindowPos
 GetWindowRect
 GetDpiForWindow
 AssocQueryString
+InitiateShutdown
+SetSuspendState
+LockWorkStation
+ExitWindowsEx
+AdjustTokenPrivileges
+OpenProcessToken
+GetCurrentProcess
