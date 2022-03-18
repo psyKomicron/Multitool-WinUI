@@ -1,10 +1,14 @@
 ﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 using Windows.ApplicationModel;
+using Windows.Storage.Pickers;
+
+using WinRT.Interop;
 
 namespace MultitoolWinUI.Helpers
 {
@@ -88,6 +92,19 @@ namespace MultitoolWinUI.Helpers
         }
 
         public static bool IsRelativeUrl(string s) => absoluteUriRegex.IsMatch(s);
+
+        public static FolderPicker CreatePicker()
+        {
+            IntPtr hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            if (hwnd == IntPtr.Zero)
+            {
+                throw new ArgumentNullException(string.Empty, "Window handle was null.");
+            }
+            FolderPicker picker = new();
+            InitializeWithWindow.Initialize(picker, hwnd);
+
+            return picker;
+        }
 
         private static T GetValueFromDictionary<T, K>(IDictionary<K, object> dic, K key)
         {

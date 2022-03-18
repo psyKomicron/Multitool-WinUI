@@ -7,41 +7,43 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <UserControl.Resources>
-        <Style TargetType="TextBlock">
-            <Setter Property="FontSize" Value="20"/>
-            <Setter Property="TextWrapping" Value="WrapWholeWords"/>
-        </Style>
-
-        <Style TargetType="Button">
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="VerticalAlignment" Value="Stretch"/>
-            <Setter Property="CornerRadius" Value="5"/>
-            <Setter Property="Margin" Value="7"/>
-        </Style>
-        
-    </UserControl.Resources>
-
-    <Button 
-        x:Name="ControlButton"
-        Background="{Binding ElementName=Control, Path=Background}"
+    <Button
+        Margin="10,10"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        VerticalContentAlignment="Stretch"
+        HorizontalContentAlignment="Stretch"
         Click="ControlButton_Click">
         <Button.Content>
-            <TextBlock 
-                x:Name="ButtonNameTextBlock"
-                Text="{Binding ElementName=Control, Path=ButtonName}"/>
+            <Grid>
+                <Button 
+                    Style="{ThemeResource ButtonRevealStyle}"
+                    Padding="3" 
+                    HorizontalAlignment="Right" 
+                    VerticalAlignment="Top" 
+                    Click="PinButton_Click">
+                    <FontIcon x:Name="pinStatusIcon" FontSize="14"/>
+                </Button>
+                <TextBlock Text="{x:Bind ButtonName}" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
         </Button.Content>
 
         <Button.ContextFlyout>
             <MenuFlyout>
                 <MenuFlyoutItem 
-                    x:Name="DeleteButton" 
+                    x:Name="pinButton"
+                    Text="Pin" 
+                    Click="PinButton_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE840;"/>
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+
+                <MenuFlyoutItem 
+                    x:Name="deleteButton" 
+                    Icon="Delete"
                     Text="Delete" 
                     Click="DeleteButton_Click"/>
-                <MenuFlyoutItem 
-                    x:Name="PinButton" 
-                    Text="Pin" 
-                    Click="PinButton_Click"/>
             </MenuFlyout>
         </Button.ContextFlyout>
     </Button>

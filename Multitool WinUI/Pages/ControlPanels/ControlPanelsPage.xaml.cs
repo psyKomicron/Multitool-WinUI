@@ -4,8 +4,11 @@ using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.Data;
 
+using MultitoolWinUI.Helpers;
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -13,6 +16,7 @@ using System.Xml;
 
 using Windows.Storage;
 using Windows.System;
+using Windows.Web.Http;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -402,6 +406,54 @@ namespace MultitoolWinUI.Pages.ControlPanels
             if (pathes != null)
             {
                 LoadNewElements(pathes);
+            }
+        }
+
+        private void ResetSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private async void DownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            var result = await downloadDialog.ShowAsync();
+            switch (result)
+            {
+                case ContentDialogResult.None:
+                case ContentDialogResult.Secondary:
+                    App.TraceInformation("Download cancelled.");
+                    break;
+                case ContentDialogResult.Primary:
+                    try
+                    {
+                        Uri uri = new(downloadUriTextBox.Text);
+
+                        using HttpClient client = new();
+                        try
+                        {
+                            HttpResponseMessage response = await client.GetAsync(uri);
+                            response.EnsureSuccessStatusCode();
+                            string data = await response.Content.ReadAsStringAsync();
+
+                            XmlDocument doc = new();
+                            doc.LoadXml(data);
+                            doc.Save(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+
+                            _ = Frame.Navigate(typeof(ControlPanelsPage));
+                        }
+                        catch (Exception ex)
+                        {
+                            App.TraceError(ex);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        App.TraceError(ex, "Could not download setting file.");
+                    }
+                    break;
+                default:
+                    Trace.TraceWarning("Content dialog result not recognized");
+                    break;
             }
         }
         #endregion

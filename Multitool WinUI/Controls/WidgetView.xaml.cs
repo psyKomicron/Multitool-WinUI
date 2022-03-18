@@ -19,7 +19,7 @@ namespace MultitoolWinUI.Controls
 
         public string WidgetIcon { get; set; }
         public string WidgetName { get; set; }
-        public Control Widget { get; set; }
+        public FrameworkElement Widget { get; set; }
 
         public event TypedEventHandler<WidgetView, RoutedEventArgs> Opened;
         public event TypedEventHandler<WidgetView, RoutedEventArgs> Closed;
@@ -43,7 +43,7 @@ namespace MultitoolWinUI.Controls
             AddControl(Widget);
         }
 
-        public void AddControl(Control control)
+        public void AddControl(FrameworkElement control)
         {
             mainContentGrid.Visibility = Visibility.Collapsed;
             contentGrid.RowDefinitions[0].Height = new(0);

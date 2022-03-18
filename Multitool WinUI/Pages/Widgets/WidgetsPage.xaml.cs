@@ -21,7 +21,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using MultitoolWinUI.Controls;
-using MultitoolWinUI.Pages.Power;
 using Windows.Foundation;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -47,7 +46,7 @@ namespace MultitoolWinUI.Pages.Widgets
         [Setting(typeof(TypeSettingConverter), DefaultInstanciate = false)]
         public Type LastControl { get; set; }
 
-        private void OpenWidget(Control control, WidgetView widget, Size widgetSize, Size span, bool closeOthers)
+        private void OpenWidget(WidgetView widget, Size widgetSize, Size span, bool closeOthers)
         {
             if (closeOthers)
             {
@@ -62,37 +61,22 @@ namespace MultitoolWinUI.Pages.Widgets
 
             VariableSizedWrapGrid.SetColumnSpan(widget, (int)span.Width);
             VariableSizedWrapGrid.SetRowSpan(widget, (int)span.Height);
-            /*if (widgetSize.Height > 0)
-            {
-                widget.Height = widgetSize.Height; 
-            }
-            if (widgetSize.Width > 0)
-            {
-                widget.Width = widgetSize.Width; 
-            }*/
-            widget.Height = widgetSize.Height; 
-            widget.Width = widgetSize.Width;
-            if (control != null)
-            {
-                widget.AddControl(control); 
-                LastControl = control.GetType();
-            }
-            else
-            {
-                widget.Open();
-            }
+            widget.Height = widgetSize.Height == 0 ? double.NaN : widgetSize.Height; 
+            widget.Width = widgetSize.Width == 0 ? double.NaN : widgetSize.Width;
+
+            widget.Open();
 #if false
             WidgetsPageNavigationInfo navigationInfo = new(control, new(widget.WidgetName, widget.WidgetIcon));
             App.MainWindow.NavigateTo(typeof(WidgetSelectedPage), navigationInfo); 
 #endif
         }
 
-        private void CloseControl(WidgetView widget, Size widgetSize)
+        private void CloseWidget(WidgetView widget, RoutedEventArgs args)
         {
             VariableSizedWrapGrid.SetColumnSpan(widget, 1);
             VariableSizedWrapGrid.SetRowSpan(widget, 1);
-            widget.Width = widgetSize.Width;
-            widget.Height = widgetSize.Height;
+            widget.Width = double.NaN;
+            widget.Height = double.NaN;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -111,71 +95,26 @@ namespace MultitoolWinUI.Pages.Widgets
 
         private void MainWindow_Closed(object sender, WindowEventArgs args) => App.UserSettings.Save(this);
 
-        private void ColorsButton_Click(WidgetView widget, RoutedEventArgs e)
-        {
-            ColorBrowserControl control = new()
-            {
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
 
-            OpenWidget(control, widget, new(400, 400), new(2, 3), true);
-        }
+        private void ColorsButton_Click(WidgetView widget, RoutedEventArgs e) => OpenWidget(widget, new(400, 400), new(2, 3), true);
 
-        private void ColorSpectrumButton_Click(WidgetView widget, RoutedEventArgs e)
-        {
-            ColorPicker picker = new()
-            {
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Height = 400
-            };
-            OpenWidget(picker, widget, new(400, 400), new(2, 2), true);
-        }
+        private void ColorSpectrumWidgetView_Opened(WidgetView widget, RoutedEventArgs e) => OpenWidget(widget, default, new(2, 3), false);
 
         private void EmbedsButton_Click(WidgetView widget, RoutedEventArgs e)
         {
-#if true
+#if false
             VariableSizedWrapGrid.SetColumnSpan(widget, 2);
             VariableSizedWrapGrid.SetRowSpan(widget, 3);
             widget.Height = 400;
             widget.Width = 400;
-#else
-            SetControl(new EmbedFetcherControl(), sender as WidgetView);
 #endif
+            App.TraceWarning("Oops, this one is not done yet.");
         }
 
-        private void ImageButton_Click(WidgetView widget, RoutedEventArgs e)
-        {
-#if true
-            VariableSizedWrapGrid.SetColumnSpan(widget, 2);
-            VariableSizedWrapGrid.SetRowSpan(widget, 3);
-            widget.Height = 400;
-            widget.Width = 400;
-#else
-            SetControl(new ImageTester(), sender as WidgetView); 
-#endif
-        }
+        private void ImageViewerWidgetView_Opened(WidgetView widget, RoutedEventArgs e) => OpenWidget(widget, new(400, double.NaN), new(2, 1), false);
 
-        private void SpotlightButton_Click(WidgetView widget, RoutedEventArgs e)
-        {
-            OpenWidget(new SpotlightImporter(), widget, new(600, 400), new(3, 3), true);
-        }
+        private void SpotlightWidgetView_Opened(WidgetView widget, RoutedEventArgs e) => OpenWidget(widget, new(double.NaN, double.NaN), new(3, 2), true);
 
-        private void SpotlightWidgetView_Closed(WidgetView sender, RoutedEventArgs args)
-        {
-            CloseControl(sender, new(double.NaN, double.NaN));
-        }
-
-        private void PowerWidgetView_Clicked(WidgetView widget, RoutedEventArgs e)
-        {
-#if true
-            OpenWidget(null, widget, new(400, double.NaN), new(2, 1), false);
-#else
-            OpenWidget(new TimerPicker(), widget, new(400, double.NaN), new(2, 1), false); 
-#endif
-        }
-
-        private void PowerWidgetView_Close(WidgetView widget, RoutedEventArgs args) => CloseControl(widget, new(double.NaN, double.NaN));
+        private void PowerWidgetView_Opened(WidgetView widget, RoutedEventArgs e) => OpenWidget(widget, new(400, double.NaN), new(2, 1), false);
     }
 }

@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.Data.Settings;
 
+using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Models;
 
 using System;
@@ -107,35 +108,30 @@ namespace MultitoolWinUI.Controls
                 }
 
                 // show FilePicker dialog
-                IntPtr hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-                if (hwnd != IntPtr.Zero)
+                FolderPicker picker = Tool.CreatePicker();
+                picker.ViewMode = PickerViewMode.Thumbnail;
+                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                picker.FileTypeFilter.Add("*");
+                // I18N
+                picker.CommitButtonText = "Select folder to import to.";
+
+                StorageFolder folder = await picker.PickSingleFolderAsync();
+                if (folder != null)
                 {
-                    FolderPicker picker = new();
-                    InitializeWithWindow.Initialize(picker, hwnd);
-                    picker.ViewMode = PickerViewMode.Thumbnail;
-                    picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-                    picker.FileTypeFilter.Add("*");
-                    // I18N
-                    picker.CommitButtonText = "Select folder to import to.";
-
-                    StorageFolder folder = await picker.PickSingleFolderAsync();
-                    if (folder != null)
+                    ImportProgress.IsIndeterminate = false;
+                    ImportProgress.Value = 0;
+                    ImportProgress.Maximum = files.Count;
+                    ImportProgress.Minimum = 0;
+                    // import files
+                    for (int i = 0; i < files.Count; i++)
                     {
-                        ImportProgress.IsIndeterminate = false;
-                        ImportProgress.Value = 0;
-                        ImportProgress.Maximum = files.Count;
-                        ImportProgress.Minimum = 0;
-                        // import files
-                        for (int i = 0; i < files.Count; i++)
-                        {
-                            string newPath = Path.Combine(folder.Path, files[i].FileName);
-                            File.Move(files[i].Path, newPath);
+                        string newPath = Path.Combine(folder.Path, files[i].FileName);
+                        File.Move(files[i].Path, newPath);
 
-                            DispatcherQueue.TryEnqueue((Microsoft.UI.Dispatching.DispatcherQueueHandler)(() =>
-                            {
-                                this.ImportProgress.Value++;
-                            }));
-                        }
+                        DispatcherQueue.TryEnqueue((Microsoft.UI.Dispatching.DispatcherQueueHandler)(() =>
+                        {
+                            this.ImportProgress.Value++;
+                        }));
                     }
                 }
             }

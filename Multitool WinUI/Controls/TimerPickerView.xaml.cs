@@ -2,6 +2,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
+using Multitool.Interop.Power;
+
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -14,7 +16,7 @@ using Windows.Foundation;
 
 namespace MultitoolWinUI.Controls
 {
-    public sealed partial class TimerPicker : UserControl, INotifyPropertyChanged, IDisposable
+    public sealed partial class TimerPickerView : UserControl, INotifyPropertyChanged, IDisposable
     {
         private readonly Timer timer = new() { AutoReset = false };
         private readonly DispatcherQueueTimer animationTimer;
@@ -28,7 +30,7 @@ namespace MultitoolWinUI.Controls
         private int _minutes;
         private int _seconds;
 
-        public TimerPicker()
+        public TimerPickerView()
         {
             InitializeComponent();
             animationTimer = DispatcherQueue.CreateTimer();
@@ -37,23 +39,6 @@ namespace MultitoolWinUI.Controls
             animationTimer.Tick += AnimationTimer_Tick;
             timer.Elapsed += Timer_Elapsed;
         }
-
-        #region events
-
-        /// <inheritdoc/>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// Occurs when the timer status has changed (started: True, stopped: False).
-        /// </summary>
-        public event TypedEventHandler<TimerPicker, bool> StatusChanged;
-
-        /// <summary>
-        /// Routed elapsed event.
-        /// </summary>
-        public event ElapsedEventHandler Elapsed;
-
-        #endregion
 
         #region properties
 
@@ -118,6 +103,21 @@ namespace MultitoolWinUI.Controls
 
         #endregion
 
+        #region events
+        /// <inheritdoc/>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Occurs when the timer status has changed (started: True, stopped: False).
+        /// </summary>
+        public event TypedEventHandler<TimerPickerView, bool> StatusChanged;
+
+        /// <summary>
+        /// Routed elapsed event.
+        /// </summary>
+        public event ElapsedEventHandler Elapsed;
+        #endregion
+
         public TimeSpan GetValue()
         {
             if (timeSpan.Hours != Hours || timeSpan.Minutes != Minutes || timeSpan.Seconds != Seconds)
@@ -133,7 +133,6 @@ namespace MultitoolWinUI.Controls
         }
 
         #region private methods
-
         private void NotifyPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new(name));
@@ -206,14 +205,34 @@ namespace MultitoolWinUI.Controls
 
             StatusChanged?.Invoke(this, false);
         }
+
+        private void RestartTimer()
+        {
+            bool wasRunning = false;
+            if (timer.Enabled)
+            {
+                wasRunning = true;
+                timer.Stop();
+                animationTimer.Stop();
+            }
+
+            timer.Interval = originalTimeSpan.TotalMilliseconds;
+            remainingTimeSpan = originalTimeSpan;
+            UpdateTimer(remainingTimeSpan);
+
+            if (wasRunning)
+            {
+                timer.Start();
+                animationTimer.Start(); 
+            }
+        }
         #endregion
 
         #region event handlers
 
         #region timer control
 
-        #region textboxs
-
+        #region textboxes
         private void HoursTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (int.TryParse(HoursTextBox.Text, out int res) && res > 0)
@@ -352,13 +371,7 @@ namespace MultitoolWinUI.Controls
         #endregion
 
         #region timer buttons
-        private void RestartTimerButton_Click(object sender, RoutedEventArgs e)
-        {
-            timer.Stop();
-            animationTimer.Stop();
-            timer.Start();
-            animationTimer.Start();
-        }
+        private void RestartTimerButton_Click(object sender, RoutedEventArgs e) => RestartTimer();
 
         private void StartTimerButton_Click(object sender, RoutedEventArgs e)
         {
@@ -387,10 +400,9 @@ namespace MultitoolWinUI.Controls
             _ = DispatcherQueue.TryEnqueue(() =>
             {
                 StopTimer();
+                Elapsed?.Invoke(this, e);
             });
-            Elapsed?.Invoke(this, e);
         }
-
         #endregion
     }
 }
