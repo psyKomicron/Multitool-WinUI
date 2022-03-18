@@ -6,7 +6,10 @@
     xmlns:controls="using:MultitoolWinUI.Controls"
     Closed="Window_Closed"
     Activated="Window_Activated">
-    <Grid>
+    <Grid Background="{ThemeResource SystemControlAcrylicWindowBrush}" x:Name="ContentGrid">
+        <!--<Grid.Background>
+            <AcrylicBrush TintOpacity="0.7" TintColor="{ThemeResource SystemAccentColor}" FallbackColor="{ThemeResource SystemAccentColor}" TintLuminosityOpacity="0.2"/>
+        </Grid.Background>-->
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
@@ -14,7 +17,7 @@
             <RowDefinition Height="32" MinHeight="32"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Grid x:Name="MyTitleBar" Grid.Row="0" Background="{StaticResource DarkBlack}">
+        <Grid x:Name="TitleBarGrid" Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -34,72 +37,61 @@
                 VerticalAlignment="Center"
                 Grid.Column="1"/>
         </Grid>
+        <!--Background="{StaticResource NavigationViewDefaultPaneBackground}"-->
         <NavigationView
             x:Name="WindowNavigationView"
             IsPaneOpen="{Binding ElementName=Window, Path=IsPaneOpen, Mode=TwoWay}"
             IsBackEnabled="{Binding ElementName=ContentFrame, Path=CanGoBack}"
-            Background="{StaticResource NavigationViewDefaultPaneBackground}"
+            
             Grid.Row="1"
             Loaded="NavigationView_Loaded"
             BackRequested="NavigationView_BackRequested"
             ItemInvoked="NavigationView_ItemInvoked">
             <NavigationView.MenuItems>
-                <NavigationViewItem Tag="home" 
+                <NavigationViewItem Tag="MainPage" 
                                     Icon="Home" 
                                     Content="Home">
                 </NavigationViewItem>
 
                 <NavigationViewItemHeader Content="Explorer"/>
-                <NavigationViewItem Tag="explorer" Content="File view">
+                <NavigationViewItem Tag="ExplorerPage" Content="File view">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE838;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Disks overview" Tag="explorerhome">
+
+                <NavigationViewItem Content="Disks overview" Tag="ExplorerHomePage">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEDA2;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <NavigationViewItemHeader Content="Web"/>
-                <NavigationViewItem Tag="irc"
-                                     Content="Twitch">
+                <!--#region Twitch -->
+                <NavigationViewItemHeader Content="Twitch"/>
+                <NavigationViewItem Tag="TwitchPage" Content="Twitch">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8AA;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                
+                <NavigationViewItem Tag="ChatPage" Content="Chat">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F2;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <!--#endregion-->
 
-                <!--#region utilities -->
+                <!--#region Utilities -->
                 <NavigationViewItemHeader Content="Utilities"/>
 
-                <NavigationViewItem Tag="devices" 
-                                    Content="Windows devices">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE950;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-
-                <NavigationViewItem Tag="power" Content="Power">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE7E8;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-
-                <NavigationViewItem Tag="controlpanels"
+                <NavigationViewItem Tag="ControlPanelsPage"
                                      Content="Control panels">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE770;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <NavigationViewItem Tag="hashgenerator"
-                                     Content="Hash generator">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xEA18;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-
-                <NavigationViewItem Tag="music"
+                <NavigationViewItem Tag="MusicPlayerPage"
                                      Content="Music library">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEC4F;"/>
@@ -107,13 +99,21 @@
                 </NavigationViewItem>
                 <!--#endregion-->
 
-                <NavigationViewItemHeader Content="Debug"/>
-                <NavigationViewItem Tag="test"
-                                     Content="Test page">
+                <!--#region Widgets -->
+                <NavigationViewItem Tag="WidgetsPage"
+                                     Content="Widgets">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE7BA;"/>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE74C;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
+                <NavigationViewItem Tag="ComputerDevicesPage" 
+                                    Content="Windows devices">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE950;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <!--#endregion-->
             </NavigationView.MenuItems>
             <Frame x:Name="ContentFrame"></Frame>
         </NavigationView>

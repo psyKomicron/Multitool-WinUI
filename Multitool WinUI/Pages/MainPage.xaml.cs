@@ -46,7 +46,7 @@ namespace MultitoolWinUI.Pages
 
         private void InitializeWindow()
         {
-            App.Settings.Load(this);
+            App.UserSettings.Load(this);
             if (LoadShortcuts)
             {
                 XmlDocument doc = new();

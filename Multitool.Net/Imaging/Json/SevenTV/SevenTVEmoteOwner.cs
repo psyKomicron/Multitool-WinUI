@@ -1,6 +1,6 @@
 ﻿namespace Multitool.Net.Imaging.Json.SevenTV
 {
-#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable IDE1006 // Naming Styles for json deserialization
     internal class SevenTVEmoteOwner
     {
         public string id { get; set; }

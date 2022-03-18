@@ -61,16 +61,43 @@ namespace Multitool.Net.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to https://api.frankerfacez.com/v1/set/global.
+        ///   Looks up a localized string similar to https://api.betterttv.net/3/cached/users/twitch/{0}.
         /// </summary>
-        internal static string FfzApiGlobalEmotesEndPoint {
+        internal static string BttvChannelEmotesEndpoint {
             get {
-                return ResourceManager.GetString("FfzApiGlobalEmotesEndPoint", resourceCulture);
+                return ResourceManager.GetString("BttvChannelEmotesEndpoint", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to https://api.frankerfacez.com.
+        ///   Looks up a localized string similar to https://cdn.betterttv.net/emote/{0}/{1}.
+        /// </summary>
+        internal static string BttvEmoteEndpoint {
+            get {
+                return ResourceManager.GetString("BttvEmoteEndpoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to https://api.betterttv.net/3/cached/emotes/global.
+        /// </summary>
+        internal static string BttvGlobalEmotesEndpoint {
+            get {
+                return ResourceManager.GetString("BttvGlobalEmotesEndpoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}\emotes cache\.
+        /// </summary>
+        internal static string EmoteCacheFolder {
+            get {
+                return ResourceManager.GetString("EmoteCacheFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to https://api.frankerfacez.com/v1/{0}.
         /// </summary>
         internal static string FfzApiServerUrl {
             get {

@@ -117,11 +117,20 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="FfzApiGlobalEmotesEndPoint" xml:space="preserve">
-    <value>https://api.frankerfacez.com/v1/set/global</value>
+  <data name="BttvChannelEmotesEndpoint" xml:space="preserve">
+    <value>https://api.betterttv.net/3/cached/users/twitch/{0}</value>
+  </data>
+  <data name="BttvEmoteEndpoint" xml:space="preserve">
+    <value>https://cdn.betterttv.net/emote/{0}/{1}</value>
+  </data>
+  <data name="BttvGlobalEmotesEndpoint" xml:space="preserve">
+    <value>https://api.betterttv.net/3/cached/emotes/global</value>
+  </data>
+  <data name="EmoteCacheFolder" xml:space="preserve">
+    <value>{0}\emotes cache\</value>
   </data>
   <data name="FfzApiServerUrl" xml:space="preserve">
-    <value>https://api.frankerfacez.com</value>
+    <value>https://api.frankerfacez.com/v1/{0}</value>
   </data>
   <data name="SevenTVApiChannelEmotesEndPoint" xml:space="preserve">
     <value>https://api.7tv.app/v2/users/{0}/emotes</value>

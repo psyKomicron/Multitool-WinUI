@@ -1,6 +1,13 @@
-﻿using System;
+﻿using Multitool.Net.Imaging.Json.Ffz;
+using Multitool.Net.Irc;
+using Multitool.Net.Properties;
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Windows.Storage.Streams;
@@ -18,18 +25,32 @@ namespace Multitool.Net.Imaging
             this.client = client;
         }
 
-        public ImageSize DefaultImageSize { get; set; } = ImageSize.Medium;
+        #region properties
+        /// <inheritdoc/>
+        public string Provider { get; protected set; }
 
-        protected HttpClient Client => client;
+        protected HttpClient Client => client; 
+        #endregion
 
-        public abstract Task<List<Emote>> FetchGlobalEmotes();
+        #region abstract methods
+        /// <inheritdoc/>
+        public abstract Task<Emote[]> FetchGlobalEmotes();
 
-        public abstract Task<List<Emote>> FetchChannelEmotes(string channel);
+        /// <inheritdoc/>
+        public abstract Task<Emote[]> FetchChannelEmotes(string channel);
 
-        public abstract Task<List<Emote>> FetchChannelEmotes(string channel, IReadOnlyList<string> except);
+        /// <inheritdoc/>
+        public abstract Task<Emote[]> FetchChannelEmotes(string channel, IReadOnlyList<string> except);
 
-        public abstract Task<List<string>> ListChannelEmotes(string channel);
+        /// <summary>
+        /// List the channel's available emotes for the implementation's emote provider.
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
+        public abstract Task<List<string>> FetchChannelEmotesIds(string channel); 
+        #endregion
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (client != null)
@@ -40,6 +61,18 @@ namespace Multitool.Net.Imaging
             GC.SuppressFinalize(this);
         }
 
+        protected static void AssertChannelValid(string channel)
+        {
+            if (channel == null)
+            {
+                throw new ArgumentNullException(nameof(channel));
+            }
+            if (string.IsNullOrWhiteSpace(channel) || !Regex.IsMatch(channel, @"^#*[A-z0-9_].{2,24}$"))
+            {
+                throw new ArgumentException($"Channel name is not valid. Value : {channel}.");
+            }
+        }
+
         protected void CheckIfDisposed()
         {
             if (disposed)
@@ -48,43 +81,32 @@ namespace Multitool.Net.Imaging
             }
         }
 
-        protected async Task DownloadEmoteAsync(Emote emote, Uri emoteUrl, string mimeType)
+#nullable enable
+        /// <summary>
+        /// Performs a GET request to <paramref name="fetchLink"/> and deserializes the JSON content received into <typeparamref name="TJson"/>.
+        /// <para/>
+        /// The method will return <see langword="null"/> if the server responds with 404/NotFound.
+        /// </summary>
+        /// <typeparam name="TJson">Type to deserialize the JSON to</typeparam>
+        /// <param name="fetchLink">Resource to GET</param>
+        /// <returns>The deserialized data, or <see langword="null"/> if the server responds with 404/NotFound.</returns>
+        protected async Task<TJson?> GetJsonAsync<TJson>(string fetchLink)
         {
-            try
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, new(fetchLink));
+            HttpResponseMessage httpResponse = await Client.SendRequestAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
+
+            if (httpResponse.StatusCode == HttpStatusCode.NotFound)
             {
-                using HttpResponseMessage reponse = await client.GetAsync(emoteUrl, HttpCompletionOption.ResponseHeadersRead).AsTask();
-                if (reponse.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    Trace.TraceError($"Bad request:\n{await reponse.Content.ReadAsStringAsync()}\n{reponse.Headers}");
-                }
-                reponse.EnsureSuccessStatusCode();
-
-                // Can we use the already buffered data to build the image
-                IBuffer stream = await reponse.Content.ReadAsBufferAsync();
-                //var mem = Windows.Storage.Streams.Buffer.CreateMemoryBufferOverIBuffer(stream);
-                using DataReader dataReader = DataReader.FromBuffer(stream);
-
-                byte[] bytes = new byte[dataReader.UnconsumedBufferLength];
-                int pos = 0;
-                while (dataReader.UnconsumedBufferLength > 0)
-                {
-                    if (pos >= bytes.Length)
-                    {
-                        Trace.TraceWarning("Index out of bounds");
-                        break;
-                    }
-                    bytes[pos] = dataReader.ReadByte();
-                    pos++;
-                }
-
-                await emote.SetImage(bytes, mimeType);
+                return default;
             }
-            catch (Exception ex)
-            {
-                Trace.TraceError($"Failed to download and set emote '{emote.Name}'. Exception:\n{ex}");
-                throw;
-            }
+
+            httpResponse.EnsureSuccessStatusCode();
+
+            var inputStream = await httpResponse.Content.ReadAsInputStreamAsync();
+            using var stream = inputStream.AsStreamForRead();
+            TJson? json = await JsonSerializer.DeserializeAsync<TJson>(stream);
+            return json;
         }
-
+#nullable disable
     }
 }

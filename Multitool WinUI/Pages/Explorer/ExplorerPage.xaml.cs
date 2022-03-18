@@ -27,7 +27,11 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
 using Windows.System;
+
+using FileAttributes = System.IO.FileAttributes;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -41,16 +45,17 @@ namespace MultitoolWinUI.Pages.Explorer
     {
         private static readonly SolidColorBrush RED = new(Colors.Red);
         private static readonly SolidColorBrush WHITE = new(Colors.White);
-        private readonly IPathCompletor pathCompletor = new PathCompletor();
+
         private readonly IFileSystemManager fileSystemManager = new FileSystemManager() { Notify = true };
         private readonly Stopwatch managerEventStopwatch = new();
+        private readonly IPathCompletor pathCompletor = new PathCompletor();
         private readonly Stopwatch sortEventStopwatch = new();
         private readonly Stack<string> previousStackPath = new(10);
         private readonly Stack<string> nextPathStack = new(10);
         private readonly Stopwatch taskStopwatch = new();
         private readonly object sortingLock = new();
-        private ListenableCancellationTokenSource fsCancellationTokenSource;
 
+        private ListenableCancellationTokenSource fsCancellationTokenSource;
         private string _currentPath;
 
         public ExplorerPage()
@@ -64,7 +69,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
             try
             {
-                App.Settings.Load(this);
+                App.UserSettings.Load(this);
                 foreach (var item in History)
                 {
                     item.DispatcherQueue = DispatcherQueue;
@@ -79,11 +84,6 @@ namespace MultitoolWinUI.Pages.Explorer
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
-        public ObservableCollection<FileSystemEntryView> CurrentFiles { get; } = new();
-
-        [Setting(typeof(PathHistoryItemSettingConverter))]
-        public ObservableCollection<PathHistoryItem> History { get; set; }
-
         [Setting("C:\\")]
         public string CurrentPath
         {
@@ -94,6 +94,17 @@ namespace MultitoolWinUI.Pages.Explorer
                 PropertyChanged?.Invoke(this, new(nameof(CurrentPath)));
             }
         }
+
+        public ObservableCollection<FileSystemEntryView> CurrentFiles { get; } = new();
+
+        [Setting(typeof(PathHistoryItemSettingConverter))]
+        public ObservableCollection<PathHistoryItem> History { get; set; }
+
+        [Setting(true)]
+        public bool KeepHistory { get; set; }
+
+        [Setting(true)]
+        public bool LoadLastPath { get; set; }
         #endregion
 
         #region private methods
@@ -144,10 +155,10 @@ namespace MultitoolWinUI.Pages.Explorer
                 }
                 CurrentPath = realPath;
                 CurrentFiles.Clear();
-                Progress_TextBox.Text = string.Empty;
+                progress_TextBox.Text = string.Empty;
 
-                Files_ProgressBar.IsIndeterminate = true;
-                CancelAction_Button.IsEnabled = true;
+                files_ProgressBar.IsIndeterminate = true;
+                cancelAction_Button.IsEnabled = true;
 
                 managerEventStopwatch.Restart();
                 sortEventStopwatch.Restart();
@@ -164,18 +175,18 @@ namespace MultitoolWinUI.Pages.Explorer
                     managerEventStopwatch.Reset();
                     sortEventStopwatch.Reset();
 
-                    CancelAction_Button.IsEnabled = false;
+                    cancelAction_Button.IsEnabled = false;
                     SortList();
-                    Files_ProgressBar.IsIndeterminate = false;
-                    Progress_TextBox.Foreground = new SolidColorBrush(Colors.White);
+                    files_ProgressBar.IsIndeterminate = false;
+                    progress_TextBox.Foreground = new SolidColorBrush(Colors.White);
                     if (taskStopwatch.Elapsed.TotalSeconds < 1)
                     {
-                        Progress_TextBox.Text = "Task successfully completed (in " + taskStopwatch.ElapsedMilliseconds.ToString() + "ms)";
+                        progress_TextBox.Text = "Task successfully completed (in " + taskStopwatch.ElapsedMilliseconds.ToString() + "ms)";
                     }
                     else
                     {
                         TimeSpan elapsed = taskStopwatch.Elapsed;
-                        Progress_TextBox.Text = "Task successfully completed (in " + elapsed.ToString("mm\\:ss") + ")";
+                        progress_TextBox.Text = "Task successfully completed (in " + elapsed.ToString("mm\\:ss") + ")";
                     }
 
                     for (int i = 0; i < CurrentFiles.Count; i++)
@@ -190,35 +201,35 @@ namespace MultitoolWinUI.Pages.Explorer
                 catch (OperationCanceledException)
                 {
                     managerEventStopwatch.Reset();
-                    CancelAction_Button.IsEnabled = false;
-                    Files_ProgressBar.IsIndeterminate = false;
+                    cancelAction_Button.IsEnabled = false;
+                    files_ProgressBar.IsIndeterminate = false;
 
                     fsCancellationTokenSource.InvokeCancel();
                     fsCancellationTokenSource = null;
                     App.TraceWarning("Operation cancelled, loading path : " + path);
-                    Progress_TextBox.Text = "Operation cancelled";
+                    progress_TextBox.Text = "Operation cancelled";
                     DispatcherQueue.TryEnqueue(() => SortList());
                 }
                 catch (Exception ex) // we catch everything, and display it to the trace and UI
                 {
                     managerEventStopwatch.Reset();
-                    CancelAction_Button.IsEnabled = false;
-                    Files_ProgressBar.IsIndeterminate = false;
+                    cancelAction_Button.IsEnabled = false;
+                    files_ProgressBar.IsIndeterminate = false;
 
                     App.TraceError(ex);
-                    Progress_TextBox.Text = ex.ToString();
+                    progress_TextBox.Text = ex.ToString();
                 }
             }
             catch (DirectoryNotFoundException ex)
             {
                 fsCancellationTokenSource = null;
                 managerEventStopwatch.Reset();
-                CancelAction_Button.IsEnabled = false;
-                Files_ProgressBar.IsIndeterminate = false;
+                cancelAction_Button.IsEnabled = false;
+                files_ProgressBar.IsIndeterminate = false;
 
                 App.TraceError(ex);
                 CurrentPath = string.Empty;
-                Progress_TextBox.Text = "Directory not found : '" + path + "'";
+                progress_TextBox.Text = "Directory not found : '" + path + "'";
             }
         }
 
@@ -228,7 +239,7 @@ namespace MultitoolWinUI.Pages.Explorer
             {
                 FileSystemEntryView view = new(item)
                 {
-                    ListView = MainListView,
+                    ListView = mainListView,
                     Page = this
                 };
                 view.SizedChanged += View_SizeChanged;
@@ -285,13 +296,13 @@ namespace MultitoolWinUI.Pages.Explorer
                 {
                     if (error)
                     {
-                        Progress_TextBox.Foreground = RED;
-                        Progress_TextBox.Text = message;
+                        progress_TextBox.Foreground = RED;
+                        progress_TextBox.Text = message;
                     }
                     else
                     {
-                        Progress_TextBox.Foreground = WHITE;
-                        Progress_TextBox.Text = message;
+                        progress_TextBox.Foreground = WHITE;
+                        progress_TextBox.Text = message;
                     }
                     managerEventStopwatch.Restart();
                 }
@@ -333,7 +344,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void CompletePath()
         {
-            string path = PathInput.Text;
+            string path = pathInput.Text;
             try
             {
                 Regex regex = new(@"^[A-z]:(\\|\/).*", RegexOptions.IgnoreCase & RegexOptions.Compiled);
@@ -345,11 +356,11 @@ namespace MultitoolWinUI.Pages.Explorer
                     {
                         items.Add(driveInfos[i].Name);
                     }
-                    PathInput.ItemsSource = items;
+                    pathInput.ItemsSource = items;
                 }
                 else
                 {
-                    PathInput.ItemsSource = pathCompletor.Complete(path);
+                    pathInput.ItemsSource = pathCompletor.Complete(path);
                 }
             }
             catch (UnauthorizedAccessException e)
@@ -360,7 +371,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void SavePage()
         {
-            App.Settings.Save(this);
+            App.UserSettings.Save(this);
         }
         #endregion
 
@@ -408,7 +419,7 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private async void MainListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            if (MainListView.SelectedItem is IFileSystemEntry item)
+            if (mainListView.SelectedItem is IFileSystemEntry item)
             {
                 if (item.IsDirectory)
                 {
@@ -429,7 +440,7 @@ namespace MultitoolWinUI.Pages.Explorer
                 char keyPressed = (char)e.Key;
                 if (!keyPressed.Equals(default))
                 {
-                    int selectIndex = MainListView.SelectedIndex;
+                    int selectIndex = mainListView.SelectedIndex;
                     char charIndex = CurrentFiles[selectIndex].Name[0];
                     if (charIndex == keyPressed)
                     {
@@ -437,7 +448,7 @@ namespace MultitoolWinUI.Pages.Explorer
                         {
                             if (CurrentFiles[i].Name[0] == keyPressed && i < selectIndex)
                             {
-                                MainListView.SelectedIndex = i;
+                                mainListView.SelectedIndex = i;
                                 return;
                             }
                         }
@@ -451,7 +462,7 @@ namespace MultitoolWinUI.Pages.Explorer
                             {
                                 if (i != selectIndex)// no unnecessary actions
                                 {
-                                    MainListView.SelectedIndex = i;
+                                    mainListView.SelectedIndex = i;
                                     return;
                                 }
                             }
@@ -476,10 +487,10 @@ namespace MultitoolWinUI.Pages.Explorer
                         Debug.WriteLine("XButton2 pressed");
                         break;
                     case VirtualKey.Enter:
-                        if (MainListView.SelectedItem != null)
+                        if (mainListView.SelectedItem != null)
                         {
-                            Debug.WriteLine("Enter pressed, loading: " + CurrentFiles[MainListView.SelectedIndex].Path);
-                            DisplayFiles(CurrentFiles[MainListView.SelectedIndex].Path);
+                            Debug.WriteLine("Enter pressed, loading: " + CurrentFiles[mainListView.SelectedIndex].Path);
+                            DisplayFiles(CurrentFiles[mainListView.SelectedIndex].Path);
                         }
                         return;
                     case VirtualKey.GoBack:
@@ -510,25 +521,13 @@ namespace MultitoolWinUI.Pages.Explorer
             // TODO : 
         }
 
-        private void RefreshFileList_Click(object sender, RoutedEventArgs e)
-        {
-            DisplayFiles(CurrentPath);
-        }
+        private void RefreshFileList_Click(object sender, RoutedEventArgs e) => DisplayFiles(CurrentPath);
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            CancelFileTask();
-        }
+        private void CancelButton_Click(object sender, RoutedEventArgs e) => CancelFileTask();
 
-        private void Previous_Click(object sender, RoutedEventArgs e)
-        {
-            Back();
-        }
+        private void Previous_Click(object sender, RoutedEventArgs e) => Back();
 
-        private void Next_Click(object sender, RoutedEventArgs e)
-        {
-            Next();
-        }
+        private void Next_Click(object sender, RoutedEventArgs e) => Next();
 
         private void PathInput_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
@@ -553,10 +552,7 @@ namespace MultitoolWinUI.Pages.Explorer
 #endif
         }
 
-        private void PathInput_GotFocus(object sender, RoutedEventArgs e)
-        {
-            CompletePath();
-        }
+        private void PathInput_GotFocus(object sender, RoutedEventArgs e) => CompletePath();
 
         private void Page_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
@@ -581,7 +577,8 @@ namespace MultitoolWinUI.Pages.Explorer
 
         private void OnMainWindowClosed(object sender, WindowEventArgs args)
         {
-            Task.Run(() => CancelFileTask());
+            CancelFileTask();
+            App.MainWindow.Closed -= OnMainWindowClosed;
             // saving when the mainwindow is closed because this page is cached and thus never unloaded
             SavePage();
         }
@@ -589,6 +586,126 @@ namespace MultitoolWinUI.Pages.Explorer
         private void History_ListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
 
+        }
+
+        private void MenuFlyout_Opening(object sender, object e)
+        {
+            var selection = mainListView.SelectedItems;
+            bool canObfuscate = false;
+            bool canDelete = false;
+            bool canCopy = false;
+            foreach (var o in selection)
+            {
+                if (o is IFileSystemEntry entry)
+                {
+                    if (!canObfuscate && !entry.IsDirectory && !entry.Attributes.HasFlag(FileAttributes.System | FileAttributes.Device))
+                    {
+                        canObfuscate = true;
+                    }
+
+                    if (!entry.IsSystem && !entry.IsDevice)
+                    {
+                        canCopy = true;
+                        canDelete = true;
+                    }
+
+                    if (canCopy && canDelete && canObfuscate)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            deleteFileMenuItem.IsEnabled = canDelete;
+            copyFileMenuItem.IsEnabled = canCopy;
+            obfuscateFileMenuItem.IsEnabled = canObfuscate;
+        }
+
+        private void DeleteFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var selection = mainListView.SelectedItems;
+            foreach (var o in selection)
+            {
+                if (o is IFileSystemEntry entry)
+                {
+                    try
+                    {
+                        entry.Delete();
+                    }
+                    catch (IOException ex)
+                    {
+                        App.TraceError(ex, $"Cannot delete {entry.Name}");
+                    } 
+                }
+            }
+        }
+
+        private async void CopyFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var selection = mainListView.SelectedItems;
+
+            DataPackage dataPackage = new();
+            dataPackage.RequestedOperation = DataPackageOperation.Copy;
+
+            List<IStorageItem> items = new(selection.Count);
+            List<Task<IStorageItem>> tasks = new(selection.Count);
+            foreach (var o in selection)
+            {
+                if (o is IFileSystemEntry entry)
+                {
+                    try
+                    {
+                        tasks.Add(entry.AsIStorageItem());
+                    }
+                    catch (IOException ex)
+                    {
+                        App.TraceError(ex, $"Cannot copy {entry.Name}");
+                    } 
+                }
+            }
+
+            while (tasks.Count > 0)
+            {
+                Task<IStorageItem> completed = await Task.WhenAny(tasks);
+                if (completed.IsCompletedSuccessfully)
+                {
+                    items.Add(completed.Result);
+                }
+                else
+                {
+                    App.TraceError(completed.Exception, $"Could not copy item to clipboard.");
+                }
+                tasks.Remove(completed);
+            }
+
+            dataPackage.SetStorageItems(items);
+            Clipboard.SetContent(dataPackage);
+        }
+
+        private async void ObfuscateFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var selection = mainListView.SelectedItems;
+                List<IFileSystemEntry> entries = new(selection.Count);
+                foreach (var o in selection)
+                {
+                    if (o is IFileSystemEntry entry)
+                    {
+                        entries.Add(entry);
+                    }
+                }
+
+                if (entries.Count == 1)
+                {
+                    FileObfuscator fileObfuscator = new(0);
+                    string newPath = await fileObfuscator.Obfuscate(entries[0].Path);
+                }
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex, "Failed to obfuscate files.");
+            }
         }
         #endregion
 

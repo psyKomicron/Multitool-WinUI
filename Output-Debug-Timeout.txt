@@ -1,0 +1,29 @@
+﻿Multitool WinUI Information: 0 : Application starting...
+onecore\com\combase\objact\objact.cxx(4080)\combase.dll!00007FF836035105: (caller: 00007FF836031B12) ReturnHr(1) tid(2874) 80040154 Class not registered
+onecore\com\combase\objact\objact.cxx(4080)\combase.dll!00007FF836035105: (caller: 00007FF836031B12) ReturnHr(2) tid(2874) 80040154 Class not registered
+onecore\com\combase\objact\objact.cxx(4080)\combase.dll!00007FF836035105: (caller: 00007FF836031B12) ReturnHr(3) tid(2874) 80040154 Class not registered
+Microsoft.ui.xaml.dll!00007FFF6C877A75: (caller: 00007FFF97F3AEAB) ReturnHr(1) tid(904) 80070057 The parameter is incorrect.
+Microsoft.ui.xaml.dll!00007FFF6C877A75: (caller: 00007FFF97F3AEAB) ReturnHr(2) tid(904) 80070057 The parameter is incorrect.
+Microsoft.ui.xaml.dll!00007FFF6C877A75: (caller: 00007FFF97F3AEAB) ReturnHr(3) tid(904) 80070057 The parameter is incorrect.
+onecore\com\combase\objact\objact.cxx(4080)\combase.dll!00007FF836035105: (caller: 00007FF836031B12) ReturnHr(4) tid(2874) 80040154 Class not registered
+onecore\com\combase\winrt\error\restrictederror.cpp(1017)\combase.dll!00007FF83612A47E: (caller: 00007FF83601A2F3) ReturnHr(5) tid(904) 8007007E The specified module could not be found.
+onecore\com\combase\winrt\error\restrictederror.cpp(1017)\combase.dll!00007FF83612A47E: (caller: 00007FF83601A2F3) ReturnHr(6) tid(904) 8007007E The specified module could not be found.
+onecoreuap\windows\frameworkudk\dxprivatescommon.cpp(53)\Microsoft.Internal.FrameworkUdk.System.dll!00007FF81A624989: (caller: 00007FF81068966D) ReturnHr(1) tid(904) 80004002 No such interface supported
+onecoreuap\windows\frameworkudk\dxprivatescommon.cpp(53)\Microsoft.Internal.FrameworkUdk.System.dll!00007FF81A624989: (caller: 00007FF81068966D) ReturnHr(2) tid(904) 80004002 No such interface supported
+onecore\com\combase\objact\objact.cxx(4080)\combase.dll!00007FF836035105: (caller: 00007FF836031B12) ReturnHr(7) tid(2874) 80040154 Class not registered
+onecoreuap\windows\frameworkudk\dxprivatescommon.cpp(53)\Microsoft.Internal.FrameworkUdk.System.dll!00007FF81A624989: (caller: 00007FF81068966D) ReturnHr(3) tid(49a4) 80004002 No such interface supported
+Multitool WinUI Information: 0 : Downloading global emotes...
+Multitool WinUI Information: 0 : Downloaded 334 emotes.
+mincore\com\oleaut32\dispatch\ups.cpp(2126)\OLEAUT32.dll!00007FF835F01924: (caller: 00007FF835F01A5A) ReturnHr(1) tid(904) 8002801D Library not registered.
+onecore\net\netprofiles\service\src\nsp\dll\namespaceserviceprovider.cpp(550)\nlansp_c.dll!00007FF809F4C759: (caller: 00007FF835A2388E) LogHr(1) tid(904) 8007277C No such service is known. The service cannot be found in the specified name space.
+onecore\net\netprofiles\service\src\nsp\dll\namespaceserviceprovider.cpp(550)\nlansp_c.dll!00007FF809F4C759: (caller: 00007FF835A2388E) LogHr(2) tid(3b74) 8007277C No such service is known. The service cannot be found in the specified name space.
+:psykomicron!psykomicron@psykomicron.tmi.twitch.tv JOIN #dwjft
+@badge-info=;badges=glhf-pledge/1;color=#FF7300;display-name=psykomicron;emote-sets=0,105,19194,19503,300374282,300831449,301592777,332632197,359369083,406404867,477339272,564265402,592920959,610186276,c4e00f1e-e100-4f31-83f3-d40a81f29abe;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #dwjft
+@emote-only=0;followers-only=10;r9k=0;rituals=0;room-id=535682849;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #dwjft
+
+Multitool WinUI Information: 0 : NAMES command: :psykomicron.tmi.twitch.tv 353 psykomicron = #dwjft :psykomicron
+Multitool WinUI Information: 0 : Checking cache for emotes
+Dropping : :psykomicron.tmi.twitch.tv 366 psykomicron #dwjft :End of /NAMES list
+Multitool WinUI Information: 0 : Downloading emotes for #dwjft... (skipping 0 emotes already in cache)
+Multitool WinUI Information: 0 : Caching emotes from #dwjft...
+Dropping : @msg-id=msg_timedout :tmi.twitch.tv NOTICE #dwjft :You are timed out for 3447 more seconds.

@@ -2,21 +2,23 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.Data.Settings;
 using Multitool.Data.Settings.Converters;
-using Multitool.Net.Twitch.Security;
+using Multitool.Net.Irc.Security;
 
+using MultitoolWinUI.Controls;
 using MultitoolWinUI.Pages.Explorer;
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 using Windows.Storage;
 using Windows.System;
@@ -29,33 +31,37 @@ namespace MultitoolWinUI.Pages.Settings
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SettingsPage : Page, INotifyPropertyChanged
+    internal sealed partial class SettingsPage : Page, INotifyPropertyChanged
     {
-        private readonly ISettingsManager settingsManager = App.Settings;
+        private readonly IUserSettingsManager settingsManager = App.UserSettings;
+        private readonly List<string> headers = new()/* { "General", "Explorer", "Home", "Twitch", "Spotlight", "Miscallenous" }*/;
         private string typeToNavigateTo;
 
         public SettingsPage()
         {
             InitializeComponent();
             Loaded += OnPageLoaded;
+
+            foreach (var listItem in SettingsListView.Items)
+            {
+                if (listItem is ListViewHeaderItem header && header.Content is TextBlock headerBlock)
+                {
+                    headers.Add(headerBlock.Text);
+                }
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region properties
-        #region settings
         [Setting(true)]
         public bool AutoLoadPageSetting { get; set; }
-        #endregion
 
-        public bool LoadWebView { get; set; }
-        public string Login { get; set; }
-        public int ChatMaxNumberOfMessages { get; set; }
-        public Uri GithubUri { get; set; } = new(Properties.Resources.GithubUri);
-        public bool LoadLastPath { get; set; }
-        public bool KeepHistory { get; set; }
+        public Uri GithubUri { get; } = new(Properties.Resources.GithubUri);
+
+        public SettingsHolder Holder { get; set; }
+
         public bool ClearHistoryButtonEnabled { get; set; }
-        public bool MainPageLoadShortcuts { get; set; }
         #endregion
 
         private bool NavigateTo(string tag)
@@ -66,16 +72,36 @@ namespace MultitoolWinUI.Pages.Settings
                 switch (tag)
                 {
                     case "ExplorerPage":
-                        ExplorerHeader.StartBringIntoView();
+                    case "Explorer":
+                        SettingsListView.ScrollIntoView(ExplorerHeader);
                         success = true;
                         break;
+
                     case "TwitchPage":
-                        TwitchHeader.StartBringIntoView();
+                    case "Twitch":
+                        SettingsListView.ScrollIntoView(TwitchHeader);
                         success = true;
                         break;
-                    case "General":
+
+                    case "MainPage":
+                    case "Home":
+                        SettingsListView.ScrollIntoView(MainPageHeader);
+                        success = true;
+                        break;
+
+                    case "Spotlight":
+                        SettingsListView.ScrollIntoView(SpotlightHeader);
+                        success = true;
+                        break;
+
+                    case "Miscellaneous":
+                        MiscellaneousHeader.Focus(FocusState.Programmatic);
+                        //SettingsListView.ScrollIntoView(MiscellaneousHeader);
+                        success = true;
+                        break;
+
                     default:
-                        GeneralHeader.StartBringIntoView();
+                        SettingsListView.ScrollIntoView(GeneralHeader);
                         success = true;
                         break;
                 }
@@ -84,49 +110,44 @@ namespace MultitoolWinUI.Pages.Settings
             {
                 success = false;
             }
+
             return success;
         }
 
         private void LoadSettings()
         {
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.LoadWebView), out bool loadWebView))
-            {
-                LoadWebView = loadWebView;
-            }
+            Holder = new();
+            settingsManager.Load(Holder);
+            PropertyChanged?.Invoke(this, new(string.Empty));
+        }
 
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.Login), out string login))
+        private List<string> GetSuggestions(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
             {
-                Login = login;
-            }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMaxNumberOfMessages), out int n))
-            {
-                ChatMaxNumberOfMessages = n;
-            }
-
-            if (settingsManager.TryGetSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMentionRegex), out login))
-            {
-                MentionsTextBox.Text = login;
-            }
-
-            if (settingsManager.TryGetSetting(typeof(MainPage).FullName, "LoadShortcuts", out bool loadShortcuts))
-            {
-                MainPageLoadShortcuts = loadShortcuts;
+                return headers;
             }
             else
             {
-                MainPageLoadShortcuts = true;
-                settingsManager.SaveSetting(typeof(MainPage).FullName, "LoadShortcuts", true);
-            }
+                List<string> suggestions = new();
+                Regex queryRegex = new(Regex.Escape(query), RegexOptions.IgnoreCase | RegexOptions.Multiline);
+                for (int i = 0; i < headers.Count; i++)
+                {
+                    if (queryRegex.IsMatch(headers[i]))
+                    {
+                        suggestions.Add(headers[i]);
+                    }
+                }
 
-            PropertyChanged?.Invoke(this, new(string.Empty));
+                return suggestions;
+            }
         }
 
         #region navigation events
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            App.Settings.Load(this);
+            App.UserSettings.Load(this);
             #region navigation
             if (e.Parameter is string page)
             {
@@ -161,18 +182,46 @@ namespace MultitoolWinUI.Pages.Settings
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            App.Settings.Save(this);
+            App.UserSettings.Save(this);
         }
         #endregion
 
         #region page event handlers
+        private void SettingSearch_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            string query = sender.Text;
+            if (!NavigateTo(query))
+            {
+                App.TraceWarning("Setting not found.");
+            }
+        }
+
+        private void SettingSearch_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            sender.ItemsSource = GetSuggestions(sender.Text);
+        }
+
+        private void SettingSearch_GotFocus(object sender, RoutedEventArgs e)
+        {
+            settingSearch.ItemsSource = GetSuggestions(string.Empty);
+        }
+
+        private void SettingSearch_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            string query = (string)args.SelectedItem;
+            if (!NavigateTo(query))
+            {
+                App.TraceWarning("Setting not found.");
+            }
+        }
+
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             if (typeToNavigateTo != null)
             {
                 if (!NavigateTo(typeToNavigateTo))
                 {
-                    App.TraceWarning($"Setting page not found for {typeToNavigateTo}");
+                    App.TraceWarning($"Setting page not found for {typeToNavigateTo}.");
                 }
             }
             typeToNavigateTo = null;
@@ -180,38 +229,19 @@ namespace MultitoolWinUI.Pages.Settings
 
         private void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            // i can use a flag to not save already saved values
-#if DEBUG
-            settingsManager.SaveSetting(typeof(MainPage).FullName, "LoadShortcuts", LoadShortcutsToggleSwitch.IsOn);
-
-            settingsManager.SaveSetting(typeof(ExplorerPage).FullName, nameof(LoadLastPath), LoadLastPath);
-            settingsManager.SaveSetting(typeof(ExplorerPage).FullName, nameof(KeepHistory), KeepHistory);
-
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.LoadWebView), LoadWebView);
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.Login), Login);
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMaxNumberOfMessages), ChatMaxNumberOfMessages);
-
-            Regex reg = new(MentionsTextBox.Text);
-            settingsManager.SaveSetting(typeof(TwitchPage).FullName, nameof(TwitchPage.ChatMentionRegex), new RegexSettingConverter().Convert(reg));
-#else
-            settingsManager.EditSetting(typeof(MainPage).FullName, "LoadShortcuts", LoadShortcutsToggleSwitch.IsOn);
-
-            settingsManager.EditSetting(typeof(ExplorerPage).FullName, nameof(LoadLastPath), LoadLastPath);
-            settingsManager.EditSetting(typeof(ExplorerPage).FullName, nameof(KeepHistory), KeepHistory);
-
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(LoadWebView), LoadWebView);
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(Login), Login);
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, nameof(ChatMaxNumberOfMessages), ChatMaxNumberOfMessages);
-
-            settingsManager.Commit(); 
-#endif
+            try
+            {
+                settingsManager.Save(Holder);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex, "Error occured when saving settings.");
+            }
         }
 
-        private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e)
-        {
-            await Windows.System.Launcher.LaunchUriAsync(new(App.Settings.SettingFilePath));
-        }
+        private async void OpenSettingsFile_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(App.UserSettings.SettingFilePath));
 
+        #region Theme buttons
         private void DarkThemeButton_Click(object sender, RoutedEventArgs e)
         {
             Grid main = App.MainWindow.Content as Grid;
@@ -235,6 +265,8 @@ namespace MultitoolWinUI.Pages.Settings
                         DefaultThemeButton.IsChecked = false;
                     }
                 }
+
+                Holder.ApplicationTheme = main.RequestedTheme;
             }
         }
 
@@ -261,6 +293,7 @@ namespace MultitoolWinUI.Pages.Settings
                         DefaultThemeButton.IsChecked = false;
                     }
                 }
+                Holder.ApplicationTheme = main.RequestedTheme;
             }
         }
 
@@ -282,12 +315,15 @@ namespace MultitoolWinUI.Pages.Settings
                 {
                     LightThemeButton.IsChecked = false;
                 }
+
+                Holder.ApplicationTheme = ElementTheme.Default;
             }
-        }
+        } 
+        #endregion
 
         private async void ValidateTokenButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(Login))
+            if (string.IsNullOrEmpty(LoginPasswordBox.Password))
             {
                 App.TraceWarning("Login is empty");
                 return;
@@ -295,7 +331,7 @@ namespace MultitoolWinUI.Pages.Settings
 
             try
             {
-                TwitchConnectionToken token = new(Login);
+                TwitchConnectionToken token = new(LoginPasswordBox.Password);
 
                 TokenValidationProgressRing.IsIndeterminate = true;
                 TokenValidationProgressRing.Visibility = Visibility.Visible;
@@ -307,14 +343,18 @@ namespace MultitoolWinUI.Pages.Settings
                 timer.Interval = TimeSpan.FromMilliseconds(3_000);
                 timer.IsRepeating = false;
                 timer.Tick += (s, e) => LoginPasswordBox.BorderBrush = null;
-                timer.Start();
-
+                
                 if (valid)
                 {
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.Green);
+                        timer.Start();
                     });
+
+                    // SECURE_SETTINGS
+                    App.SecureSettings.Save(null, "twitch-oauth-token", token.Token);
+                    App.TraceInformation("Login saved into windows credential manager.");
                 }
                 else
                 {
@@ -322,6 +362,7 @@ namespace MultitoolWinUI.Pages.Settings
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         LoginPasswordBox.BorderBrush = new SolidColorBrush(Colors.IndianRed);
+                        timer.Start();
                     });
                 }
             }
@@ -329,18 +370,6 @@ namespace MultitoolWinUI.Pages.Settings
             {
                 Trace.TraceError(ex.ToString());
             }
-        }
-
-        private void ChatEmoteSize_Slider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-        {
-            //int value = (int)e.NewValue;
-            //settingsManager.EditSetting(typeof(TwitchPage).FullName, , value);
-        }
-
-        private void PasswordBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            /*string value = LoginPasswordBox.Password;
-            settingsManager.EditSetting(typeof(TwitchPage).FullName, "ChatMaxNumberOfMessages", value);*/
         }
 
         private void LoadOAuth_Click(object sender, RoutedEventArgs e)
@@ -352,34 +381,134 @@ namespace MultitoolWinUI.Pages.Settings
             }*/
         }
 
-        private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
+        private void ClearHistoryButton_Click(object sender, RoutedEventArgs e) => settingsManager.Remove(typeof(ExplorerPage).FullName, "History");
+
+        private void ResetSettingsFile_Click(object sender, RoutedEventArgs e) => settingsManager.Reset();
+
+        private void ShowMentionsHelp_Click(object sender, RoutedEventArgs e) => MentionsTeachingTip.IsOpen = !MentionsTeachingTip.IsOpen;
+
+        private void MentionsTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            settingsManager.RemoveSetting(typeof(ExplorerPage).FullName, "History");
+            if (e.Key == VirtualKey.Enter)
+            {
+                e.Handled = true;
+                try
+                {
+                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex, "Regex is not valid.");
+                }
+            }
         }
 
-        private void ResetSettingsFile_Click(object sender, RoutedEventArgs e)
+        private void MentionsTextBox_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
         {
-            settingsManager.Reset();
+            if (e.Key == VirtualKey.Enter)
+            {
+                e.Handled = true;
+                try
+                {
+                    Holder.ChatMentionRegex = new(((TextBox)sender).Text);
+                }
+                catch (Exception ex)
+                {
+                    App.TraceError(ex, "Regex is not valid.");
+                }
+            }
         }
 
-        private void ShowMentionsHelp_Click(object sender, RoutedEventArgs e)
-        {
-            MentionsTeachingTip.IsOpen = !MentionsTeachingTip.IsOpen;
-        }
+        private async void TempDataFolderHyperlink_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(ApplicationData.Current.TemporaryFolder.Path));
 
-        private void TempDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
-        {
-            _ = Launcher.LaunchUriAsync(new(ApplicationData.Current.TemporaryFolder.Path));
-        }
-
-        private void AppDataFolderHyperlink_Click(object sender, RoutedEventArgs e)
-        {
-            _ = Launcher.LaunchUriAsync(new(ApplicationData.Current.LocalFolder.Path));
-        }
+        private async void AppDataFolderHyperlink_Click(object sender, RoutedEventArgs e) => await Launcher.LaunchUriAsync(new(ApplicationData.Current.LocalFolder.Path));
 
         private void AppSettingsFolderHyperlink_Click(object sender, RoutedEventArgs e)
         {
         }
+
+        private async void ClearTempFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var files = await ApplicationData.Current.TemporaryFolder.GetFilesAsync();
+                List<Task> tasks = new();
+                foreach (var file in files)
+                {
+                    tasks.Add(file.DeleteAsync().AsTask());
+                }
+                var folders = await ApplicationData.Current.TemporaryFolder.GetFoldersAsync();
+                foreach (var folder in folders)
+                {
+                    tasks.Add(folder.DeleteAsync().AsTask());
+                }
+                await Task.WhenAll(tasks);
+                App.TraceInformation($"Cleared temporary folder ({files.Count} files, {folders.Count} folders).");
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+            }
+        }
+
+        private void ClearSecureSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            App.SecureSettings.Reset();
+            App.TraceInformation("Cleared passwords.");
+        }
+        #endregion
+    }
+
+    internal record SettingsHolder
+    {
+        #region Twitch
+        [Setting(typeof(ChatView), nameof(ChatView.MaxMessages))]
+        public int ChatMaxNumberOfMessages { get; set; }
+
+        [Setting(typeof(ChatView), nameof(ChatView.Mention), typeof(RegexSettingConverter))]
+        public Regex ChatMentionRegex { get; set; }
+
+        [Setting(typeof(ChatView), nameof(ChatView.EmoteSize))]
+        public int EmoteSize { get; set; }
+
+        [Setting(typeof(TwitchPage), nameof(TwitchPage.LoadWebView))]
+        public bool LoadWebView { get; set; }
+
+        [Setting(typeof(ChatView), nameof(ChatView.TimestampFormat))]
+        public string MessageTimestampFormat { get; set; } 
+        #endregion
+
+        #region Explorer
+        [Setting(typeof(ExplorerPage), nameof(ExplorerPage.LoadLastPath))]
+        public bool LoadLastPath { get; set; }
+
+        [Setting(typeof(ExplorerPage), nameof(ExplorerPage.KeepHistory))]
+        public bool KeepHistory { get; set; }
+        #endregion
+
+        #region Main page
+        // Main page
+        [Setting(typeof(MainPage), nameof(MainPage.LoadShortcuts))]
+        public bool MainPageLoadShortcuts { get; set; }
+        #endregion
+
+        #region Main window
+        [Setting(typeof(MainWindow), nameof(MainWindow.CurrentTheme))]
+        public ElementTheme ApplicationTheme { get; set; }
+        #endregion
+
+        #region Spotlight importer
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.CollisionOption))]    
+        public CreationCollisionOption SpotlightCollisionOption { get; set; }
+
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.MenuBarLabelPosition))]
+        public bool SpotlightDeleteTempData { get; set; }
+
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.MenuBarLabelPosition))]
+        public CommandBarDefaultLabelPosition SpotlightMenuBarLabelPosition { get; set; }
+
+        [Setting(typeof(SpotlightImporter), nameof(SpotlightImporter.OpenTempFolder))]
+        public bool SpotlightOpenTempFolder { get; set; } 
         #endregion
     }
 }

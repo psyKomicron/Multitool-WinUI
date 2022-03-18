@@ -1,0 +1,242 @@
+﻿<UserControl
+    x:Class="MultitoolWinUI.Controls.ChatView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:models="using:MultitoolWinUI.Models"
+    xmlns:controls="using:MultitoolWinUI.Controls" 
+    xmlns:imaging="using:Multitool.Net.Imaging"
+    Background="#1A1C1C"
+    mc:Ignorable="d">
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="ZoomKeyboardAccelerator_Invoked"/>
+        <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="DezoomKeyboardAccelerator_Invoked"/>
+    </UserControl.KeyboardAccelerators>
+    <Grid 
+        x:Name="ContentGrid"
+        Background="{x:Bind Background}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition MaxWidth="50"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <InfoBar
+            x:Name="UpdateInfoBar"
+            Severity="Informational"
+            Opacity="1"
+            Grid.ColumnSpan="2"
+            Grid.Row="0">
+            <InfoBar.Background>
+                <SolidColorBrush Color="MediumPurple" Opacity="1"/>
+            </InfoBar.Background>
+        </InfoBar>
+
+        <!--<Popup
+            x:Name="UpdateInfoBar"
+            MinHeight="50" 
+            Width="220"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Center"
+            Grid.ColumnSpan="2"
+            Grid.Row="0">
+            <Grid Padding="7,10" CornerRadius="{ThemeResource AppDefaultCornerRadius}" ColumnSpacing="20" >
+                <Grid.Background>
+                    <AcrylicBrush FallbackColor="MediumPurple" Opacity="0.9" TintOpacity="0.6" TintColor="White"/>
+                </Grid.Background>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon Glyph="&#xE946;" VerticalAlignment="Center" Grid.Column="0"/>
+                <TextBlock x:Name="TitleTextBlock" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1"/>
+                <Button 
+                    x:Name="DismissPopupButton" 
+                    VerticalAlignment="Center" 
+                    Background="Transparent" 
+                    BorderThickness="0"
+                    Height="25"
+                    Width="25"
+                    Padding="0"
+                    Click="DismissPopupButton_Click" 
+                    Grid.Column="2">
+                    <FontIcon Glyph="&#xE8BB;" FontSize="10"/>
+                </Button>
+            </Grid>
+        </Popup>-->
+
+        <TextBlock 
+            x:Name="NumberOfMessages_TextBlock" 
+            Grid.Column="1"
+            Grid.Row="0"
+            HorizontalAlignment="Right" 
+            FontWeight="Bold" 
+            FontFamily="Roboto"/>
+
+        <ListView
+            x:Name="chat_ListView"
+            SelectionMode="None"
+            Padding="0"
+            Margin="0"
+            Transitions="{x:Null}"
+            HorizontalAlignment="Stretch"
+            Grid.ColumnSpan="2"
+            Grid.Row="1">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel Margin="0" VerticalAlignment="Bottom" ItemsUpdatingScrollMode="KeepLastItemInView"/>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+        </ListView>
+
+        <TextBox
+            x:Name="chatInput"
+            PlaceholderText="Send message."
+            TextWrapping="Wrap"
+            MaxLength="500"
+            MinHeight="40"
+            Grid.Row="2"
+            PreviewKeyDown="ChatInput_PreviewKeyDown"
+            KeyUp="ChatInput_KeyUp"
+            KeyDown="ChatInput_KeyDown"/>
+        <Button
+            x:Name="ChatEmotesButton"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Stretch"
+            Background="Transparent"
+            BorderThickness="0"
+            Grid.Row="2"
+            Grid.Column="1">
+            <Button.KeyboardAccelerators>
+                <KeyboardAccelerator Key="E" Modifiers="Menu"/>
+            </Button.KeyboardAccelerators>
+            
+            <Button.Content>
+                <FontIcon Glyph="&#xED54;" FontSize="16"/>
+            </Button.Content>
+            
+            <Button.Flyout>
+                <Flyout Placement="TopEdgeAlignedLeft" Opening="Flyout_Opening">
+                    <Flyout.FlyoutPresenterStyle>
+                        <Style TargetType="FlyoutPresenter">
+                            <Setter Property="Opacity" Value="1"/>
+                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                        </Style>
+                    </Flyout.FlyoutPresenterStyle>
+                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MaxWidth="400">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="50"/>
+                            <RowDefinition />
+                            <RowDefinition Height="50"/>
+                            <RowDefinition />
+                            <RowDefinition Height="50"/>
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Global emotes" FontSize="18" Grid.Row="0"/>
+                        <GridView
+                            x:Name="emoteGridView"
+                            MaxHeight="300"
+                            IsItemClickEnabled="True"
+                            BorderBrush="{ThemeResource LightBlack}"
+                            CornerRadius="3"
+                            BorderThickness="1"
+                            Grid.Row="1"
+                            ItemClick="EmoteGridView_ItemClick">
+                            <GridView.ItemTemplate>
+                                <DataTemplate x:DataType="imaging:Emote">
+                                    <Image Stretch="Uniform" Source="{x:Bind Image, Mode=OneWay}" Height="30">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip>
+                                                <StackPanel Orientation="Vertical">
+                                                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="70"/>
+                                                    <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{x:Bind Provider}" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </ToolTip>
+                                        </ToolTipService.ToolTip>
+                                    </Image>
+                                </DataTemplate>
+                            </GridView.ItemTemplate>
+                            <GridView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid MinHeight="300" Orientation="Horizontal" MaximumRowsOrColumns="10"/>
+                                </ItemsPanelTemplate>
+                            </GridView.ItemsPanel>
+                        </GridView>
+
+                        <TextBlock Text="Channel emotes" FontSize="18" Grid.Row="2"/>
+                        <GridView
+                            x:Name="channelEmoteGridView"
+                            IsItemClickEnabled="True"
+                            Grid.Row="3"
+                            ItemClick="EmoteGridView_ItemClick">
+                            <GridView.ItemTemplate>
+                                <DataTemplate x:DataType="imaging:Emote">
+                                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="30">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip>
+                                                <StackPanel Orientation="Vertical">
+                                                    <Image Stretch="Uniform" Source="{x:Bind Image}" Height="70"/>
+                                                    <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{x:Bind Provider}" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </ToolTip>
+                                        </ToolTipService.ToolTip>
+                                    </Image>
+                                </DataTemplate>
+                            </GridView.ItemTemplate>
+                            <GridView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="10"/>
+                                </ItemsPanelTemplate>
+                            </GridView.ItemsPanel>
+                        </GridView>
+
+                        <TextBlock Text="Animated emotes" FontSize="18" Grid.Row="4"/>
+                        <GridView
+                            IsItemClickEnabled="True"
+                            Grid.Row="5"
+                            ItemClick="EmoteGridView_ItemClick">
+                            <GridView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid CanBeScrollAnchor="False" Orientation="Horizontal" MaximumRowsOrColumns="10"/>
+                                </ItemsPanelTemplate>
+                            </GridView.ItemsPanel>
+
+                            <GridViewItem>
+                                <Image Stretch="Uniform" Source="D:\Videos\.gallery\361003.jpg" Height="30">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip>
+                                            <StackPanel Orientation="Vertical">
+                                                <Image Stretch="Uniform" Source="E:\\julie\\Pictures\\bttv\\pepeMeltdown.gif" Height="70"/>
+                                                <TextBlock Text="pepeMeltdown" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>
+                                </Image>
+                            </GridViewItem>
+                            <GridViewItem>
+                                <Image Stretch="Uniform" Source="E:\julie\Pictures\bttv\KissaHomie.gif" Height="30">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip>
+                                            <StackPanel Orientation="Vertical">
+                                                <Image Stretch="Uniform" Source="E:\julie\Pictures\bttv\KissaHomie.gif" Height="70"/>
+                                                <TextBlock Text="KissaHomie" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>
+                                </Image>
+                            </GridViewItem>
+                        </GridView>
+                    </Grid>
+                </Flyout>
+            </Button.Flyout>
+        </Button>
+    </Grid>
+</UserControl>

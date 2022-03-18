@@ -5,19 +5,10 @@
     <RootNamespace>Multitool.Net</RootNamespace>
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
-    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>AnyCPU;x64</Platforms>
-    <Version>2.0.1</Version>
+    <Version>3.0.0</Version>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="Twitch\Parsers\**" />
-    <Content Remove="Twitch\Parsers\**" />
-    <EmbeddedResource Remove="Twitch\Parsers\**" />
-    <None Remove="Twitch\Parsers\**" />
-    <Page Remove="Twitch\Parsers\**" />
-    <PRIResource Remove="Twitch\Parsers\**" />
-  </ItemGroup>
 
   <ItemGroup>
 	  <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.0.0" />

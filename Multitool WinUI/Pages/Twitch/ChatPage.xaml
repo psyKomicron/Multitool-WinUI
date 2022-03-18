@@ -1,0 +1,25 @@
+﻿<Page
+    x:Class="MultitoolWinUI.Pages.ChatPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource PageBackgroundBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <InfoBar x:Name="infoBar" Grid.Row="0" HorizontalAlignment="Center"/>
+
+        <TabView 
+            Name="ChatTabView"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            AddTabButtonClick="ChatTabView_AddTabButtonClick" 
+            TabCloseRequested="ChatTabView_TabCloseRequested" 
+            Grid.Row="1"/>
+    </Grid>
+</Page>

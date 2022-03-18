@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
+using Multitool.Collections;
 using Multitool.Data.Settings;
 
 using MultitoolWinUI.Helpers;
@@ -53,7 +54,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             InitializeComponent();
             try
             {
-                App.Settings.Load(this);
+                App.UserSettings.Load(this);
                 player.Volume = Volume / 100d;
             }
             catch (Exception ex)
@@ -152,7 +153,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            App.Settings.Save(this);
+            App.UserSettings.Save(this);
             MusicListView.Items.Clear();
             base.OnNavigatedFrom(e);
         }
@@ -413,7 +414,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
         #region ui events
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
-            App.Settings.Save(this);
+            App.UserSettings.Save(this);
         }
 
         private async void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
