@@ -15,7 +15,6 @@ using MultitoolWinUI.Pages.ControlPanels;
 using MultitoolWinUI.Pages.Explorer;
 using MultitoolWinUI.Pages.HashGenerator;
 using MultitoolWinUI.Pages.MusicPlayer;
-using MultitoolWinUI.Pages.Power;
 using MultitoolWinUI.Pages.Settings;
 using MultitoolWinUI.Pages.Widgets;
 
@@ -190,9 +189,6 @@ namespace MultitoolWinUI
                         break;
                     case nameof(ExplorerHomePage):
                         NavigateTo(typeof(ExplorerHomePage), true);
-                        break;
-                    case nameof(PowerPage):
-                        NavigateTo(typeof(PowerPage), true);
                         break;
                     case nameof(ControlPanelsPage):
                         NavigateTo(typeof(ControlPanelsPage), true);
