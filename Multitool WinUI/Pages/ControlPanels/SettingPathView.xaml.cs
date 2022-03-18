@@ -12,6 +12,8 @@ namespace MultitoolWinUI.Pages.ControlPanels
 {
     public sealed partial class SettingPathView : UserControl
     {
+        private bool isPinned;
+
         public SettingPathView()
         {
             InitializeComponent();
@@ -23,7 +25,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
             SettingUri = uri;
             ButtonName = name;
             IsPinned = isPinned;
-            PinButton.Text = IsPinned ? "Unpin" : "Pin";
         }
 
         #region events
@@ -46,17 +47,23 @@ namespace MultitoolWinUI.Pages.ControlPanels
         #endregion
 
         #region properties
-
         public string ButtonName { get; set; }
 
         public Uri SettingUri { get; set; }
 
-        public bool IsPinned { get; set; }
-
+        public bool IsPinned 
+        { 
+            get => isPinned;
+            set
+            {
+                isPinned = value;
+                pinButton.Text = isPinned ? "Unpin" : "Pin";
+                pinStatusIcon.Glyph = isPinned ? "\uE842" : "\uE840";
+            }
+        }
         #endregion
 
         #region event handlers
-
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
             Deleted?.Invoke(this, e);
@@ -65,7 +72,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
         private void PinButton_Click(object sender, RoutedEventArgs e)
         {
             IsPinned = !IsPinned;
-            PinButton.Text = IsPinned ? "Unpin" : "Pin";
+            pinButton.Text = IsPinned ? "Unpin" : "Pin";
             Pinned?.Invoke(this, IsPinned);
         }
 
@@ -73,7 +80,6 @@ namespace MultitoolWinUI.Pages.ControlPanels
         {
             Clicked?.Invoke(this, e);
         }
-
         #endregion
     }
 }

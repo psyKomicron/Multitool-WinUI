@@ -9,12 +9,12 @@
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <Configurations>Debug;Release;Release (opti)</Configurations>
-    <AssemblyVersion>1.0.15.0</AssemblyVersion>
+    <AssemblyVersion>2.0.0</AssemblyVersion>
     <Authors>psyKomicron</Authors>
     <PackageReleaseNotes>Continuing on fixing bugs and implementing new features. :)</PackageReleaseNotes>
     <ApplicationIcon>multitool.ico</ApplicationIcon>
-    <Version>1.0.16</Version>
-    <FileVersion>1.0.15.0</FileVersion>
+    <Version>2.1.0</Version>
+    <FileVersion>1.0.0</FileVersion>
     <PackageId>MultitoolWinUI</PackageId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -29,9 +29,15 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Controls\AppMessageControl.xaml" />
+    <None Remove="Controls\EmoteDisplay.xaml" />
     <None Remove="Controls\FileSystemEntryView.xaml" />
     <None Remove="Controls\MainPageItem.xaml" />
-    <None Remove="Controls\TimerPicker.xaml" />
+    <None Remove="Controls\PowerControllerView.xaml" />
+    <None Remove="Controls\TimerPickerView.xaml" />
+    <None Remove="Controls\VideoEmbedView.xaml" />
+    <None Remove="Controls\WidgetSmallView.xaml" />
+    <None Remove="Controls\WidgetView.xaml" />
+    <None Remove="Controls\YoutubeEmbedView.xaml" />
     <None Remove="Pages\ComputerDevicesPage.xaml" />
     <None Remove="Pages\ControlPanels\ControlPanelsFilePage.xaml" />
     <None Remove="Pages\ControlPanels\ControlPanelsPage.xaml" />
@@ -41,10 +47,18 @@
     <None Remove="Pages\Explorer\ExplorerPage.xaml" />
     <None Remove="Pages\HashGenerator\HashGeneratorPage.xaml" />
     <None Remove="Pages\IrcChatPage.xaml" />
-    <None Remove="Pages\Irc\ChatControl.xaml" />
-    <None Remove="Pages\Power\PowerPage.xaml" />
+    <None Remove="Pages\Widgets\SpotlightImporter.xaml" />
+    <None Remove="Pages\Twitch\ChatControl.xaml" />
+    <None Remove="Pages\MusicPlayer\MusicFileView.xaml" />
+    <None Remove="Pages\MusicPlayer\MusicPlayerPage.xaml" />
+    <None Remove="Pages\MusicPlayer\MusicSearchPage.xaml" />
+    <None Remove="Pages\MusicPlayer\PlaylistCreationPage.xaml" />
     <None Remove="Pages\Settings\SettingsPage.xaml" />
-    <None Remove="Pages\Test\TestPage.xaml" />
+    <None Remove="Pages\Widgets\EmbedFetcherControl.xaml" />
+    <None Remove="Pages\Widgets\ImageTester.xaml" />
+    <None Remove="Pages\Widgets\TestPage.xaml" />
+    <None Remove="Pages\Twitch\ChatPage.xaml" />
+    <None Remove="Pages\Widgets\WidgetSelectedPage.xaml" />
     <None Remove="Themes\Animations.xaml" />
     <None Remove="Themes\ColorsDictionary.xaml" />
   </ItemGroup>
@@ -59,9 +73,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Multitool BL\Multitool.BL.csproj" />
+    <ProjectReference Include="..\Multitool BL\Multitool.csproj" />
     <ProjectReference Include="..\Multitool.Net\Multitool.Net.csproj" />
-    <ProjectReference Include="..\MultitoolDAL\Multitool.DAL.csproj" />
+    <ProjectReference Include="..\MultitoolDAL\Multitool.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -85,7 +99,13 @@
     <Content Update="Resources\Images\lock_ico.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Update="Resources\Images\peepoPoopoo.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Update="Resources\Images\power_ico.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Resources\Images\pugPls.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Update="Resources\Images\restart_ico.png">
@@ -104,6 +124,54 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Update="Pages\Librairies\LibrairyPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Librairies\MusicFileView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\MusicPlayer\PlaylistCreationPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\MusicPlayer\MusicSearchPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\EmbedFetcherControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\ImageTester.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\YoutubeEmbedView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\VideoEmbedView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Test\WidgetsPage - Copy.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Twitch\ChatPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\SpotlightImporter.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\EmoteDisplay.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\WidgetView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Widgets\WidgetSelectedPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\WidgetSmallView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\PowerControllerView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <None Update="Resources\Images\ico151.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -158,6 +226,9 @@
     <Page Update="Pages\ControlPanels\SettingPathView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Update="Controls\ColorBrowserControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>
@@ -167,7 +238,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Controls\TimerPicker.xaml">
+    <Page Update="Controls\TimerPickerView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -197,19 +268,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Pages\ComputerDevicesPage.xaml">
+    <Page Update="Pages\ControlPanels\ComputerDevicesPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
 
   <ItemGroup>
     <Page Update="Pages\Explorer\ExplorerPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Update="Pages\Power\PowerPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

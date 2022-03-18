@@ -5,30 +5,332 @@
     xmlns:local="using:MultitoolWinUI.Pages.Settings"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Background="{ThemeResource PageBackgroundBrush}">
+    <Page.Resources>
+        <x:Double x:Key="SettingTitleFontSize">25</x:Double>
+        <x:Double x:Key="StackPanelDefaultSpacing">15</x:Double>
+        <FontWeight x:Key="SettingTitleFontWeight">SemiBold</FontWeight>
+    </Page.Resources>
 
-    <Grid>
+    <Grid ColumnSpacing="5" RowSpacing="10" Margin="10,10,10,0">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" MaxWidth="300"/>
-            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition MinHeight="30" Height="40" MaxHeight="100"/>
-            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition />
         </Grid.RowDefinitions>
-
         <AutoSuggestBox
-            x:Name="SettingSearch"
+            Name="settingSearch"
+            PlaceholderText="Search settings"
+            QueryIcon="Zoom"
+            VerticalContentAlignment="Center"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Stretch"
+            MaxWidth="500"
+            QuerySubmitted="SettingSearch_QuerySubmitted"
+            SuggestionChosen="SettingSearch_SuggestionChosen"
+            TextChanged="SettingSearch_TextChanged"
+            GotFocus="SettingSearch_GotFocus"
             Grid.Row="0"
-            Grid.Column="0"/>
-        <NavigationView
-            x:Name="PagesNavigationView"
-            Loaded="NavigationView_Loaded"
-            ItemInvoked="NavigationView_ItemInvoked"
-            IsBackEnabled="False"
-            IsBackButtonVisible="Collapsed"
+            Grid.ColumnSpan="2"/>
+
+        <Button
+            Name="SaveSettingsButton"
+            Grid.Row="0"
+            Grid.Column="1"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Click="SaveSettingsButton_Click">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                <SymbolIcon Symbol="Save"/>
+                <TextBlock Text="Save"/>
+            </StackPanel>
+        </Button>
+
+        <ListView
+            x:Name="SettingsListView"
+            IsItemClickEnabled="False"
+            SelectionMode="None"
             Grid.Row="1"
-            Grid.Column="0">
-        </NavigationView>
+            Grid.RowSpan="2"
+            Grid.ColumnSpan="2">
+            <!--#region General settings -->
+            <ListViewHeaderItem x:Name="GeneralHeader">
+                <TextBlock 
+                    Text="General" 
+                    FontSize="{StaticResource SettingTitleFontSize}"
+                    FontWeight="{StaticResource SettingTitleFontWeight}"/>
+            </ListViewHeaderItem>
+            <ListViewItem Margin="0,0,0,30">
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}">
+                    <Button
+                        Name="OpenSettingsFile"
+                        Click="OpenSettingsFile_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                            <FontIcon Glyph="&#xE8A7;"/>
+                            <TextBlock Text="Open setting file (default editor)"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Name="ResetSettingsFile"
+                        Click="ResetSettingsFile_Click"
+                        Content="Reset/clear settings file"/>
+
+                    <StackPanel Spacing="15">
+                        <TextBlock Text="Select application theme"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ToggleButton x:Name="DarkThemeButton" Click="DarkThemeButton_Click" Content="Dark" CornerRadius="5,0,0,5" />
+                            <ToggleButton x:Name="LightThemeButton" Click="LightThemeButton_Click" Content="Light" CornerRadius="0" />
+                            <ToggleButton x:Name="DefaultThemeButton" Click="DefaultThemeButton_Click" Content="Default" CornerRadius="0,5,5,0" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ToggleSwitch
+                        Header="Auto-load setting page"
+                        IsOn="{x:Bind AutoLoadPageSetting}"
+                        ToolTipService.ToolTip="Load corresponding setting page when navigating from a page"/>
+                </StackPanel>
+            </ListViewItem>
+            <!--#endregion-->
+
+            <!--#region Explorer -->
+            <ListViewHeaderItem x:Name="ExplorerHeader">
+                <TextBlock 
+                    Text="Explorer" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"/>
+            </ListViewHeaderItem>
+            <ListViewItem Margin="0,0,0,30">
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}">
+                    <ToggleSwitch
+                        Header="Load last path on start"
+                        IsOn="{x:Bind Holder.LoadLastPath}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+
+                    <ToggleSwitch
+                        Header="Keep history"
+                        IsOn="{x:Bind Holder.KeepHistory}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+
+                    <Button
+                        Name="ClearHistoryButton"
+                        IsEnabled="{x:Bind ClearHistoryButtonEnabled}"
+                        Click="ClearHistoryButton_Click"
+                        Content="Clear path history"/>
+                </StackPanel>
+            </ListViewItem>
+            <!--#endregion-->
+
+            <!--#region Home settings -->
+            <ListViewHeaderItem x:Name="MainPageHeader">
+                <TextBlock 
+                    Text="Home" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"/>
+            </ListViewHeaderItem>
+            <ListViewItem Margin="0,0,0,30">
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}">
+                    <ToggleSwitch
+                        Name="LoadShortcutsToggleSwitch"
+                        Header="Load saved shortcuts on start-up"
+                        IsOn="{x:Bind Holder.MainPageLoadShortcuts}"
+                        OnContent="Yes"
+                        OffContent="No"/>
+                </StackPanel>
+            </ListViewItem>
+            <!--#endregion-->
+
+            <!--#region Twitch settings -->
+            <ListViewHeaderItem x:Name="TwitchHeader">
+                <TextBlock 
+                    Text="Twitch" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"/>
+            </ListViewHeaderItem>
+            <ListViewItem Margin="0,0,0,30">
+                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" HorizontalAlignment="Left">
+                    <ToggleSwitch
+                        Name="LoadWebViewButton"
+                        IsOn="{x:Bind Holder.LoadWebView, Mode=TwoWay}"
+                        OffContent="Webview off"
+                        OnContent="Webview on"
+                        VerticalAlignment="Center"/>
+
+                    <StackPanel Orientation="Vertical" Spacing="{StaticResource StackPanelDefaultSpacing}" Padding="0">
+                        <PasswordBox
+                            Name="LoginPasswordBox"
+                            Header="Twitch login"
+                            PlaceholderText="Login"
+                            HorizontalAlignment="Stretch"
+                            Grid.Row="0"/>
+                        <Button
+                            Name="ValidateTokenButton"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
+                            Click="ValidateTokenButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                                <FontIcon Glyph="&#xE73E;"/>
+                                <TextBlock Text="Validate token"/>
+                            </StackPanel>
+                        </Button>
+                        <ProgressRing
+                            Name="TokenValidationProgressRing"
+                            IsIndeterminate="False"
+                            Height="20"
+                            Width="20"
+                            Visibility="Collapsed"/>
+                    </StackPanel>
+                    <Button
+                        Name="LoadOAuth"
+                        Click="LoadOAuth_Click"
+                        VerticalContentAlignment="Center">
+                        <TextBlock Text="OAuth2 page" TextWrapping="WrapWholeWords"/>
+                    </Button>
+
+                    <Slider 
+                        Name="ChatEmoteSize_Slider"
+                        Header="Emote size"
+                        Value="{x:Bind Holder.EmoteSize, Mode=TwoWay}"
+                        Minimum="30"
+                        Maximum="90"
+                        StepFrequency="30"
+                        TickPlacement="Outside"
+                        TickFrequency="30"
+                        MaxWidth="350"
+                        Margin="3,0"/>
+
+                    <Slider 
+                        Name="ChatHistorySize_Slider"
+                        Header="Maximum number of messages"
+                        Value="{x:Bind Holder.ChatMaxNumberOfMessages, Mode=TwoWay}"
+                        Minimum="50"
+                        Maximum="2000"
+                        MaxWidth="350"
+                        StepFrequency="10"
+                        Margin="3,0"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource StackPanelButtonSpacing}">
+                        <TextBox
+                            Name="MentionsTextBox"
+                            HorizontalAlignment="Stretch"
+                            KeyDown="MentionsTextBox_KeyDown"
+                            PreviewKeyDown="MentionsTextBox_PreviewKeyDown"
+                            AcceptsReturn="True"
+                            Header="Chat mentions"
+                            PlaceholderText="Set how you will be mentionned in chat"/>
+                        <TeachingTip 
+                            Name="MentionsTeachingTip" 
+                            Target="{x:Bind MentionsTextBox}"
+                            Title="How to create mentions"
+                            IsLightDismissEnabled="True">
+                            <TeachingTip.Content>
+                                <RichTextBlock TextWrapping="Wrap" HorizontalAlignment="Stretch">
+                                    <Paragraph Margin="0,0,0,10">
+                                        <Run>
+                                            Mentions are made with Regex, so if you are familiar with them it should not be a problem. If you are not here's a quick help (for more in-depth i invite you to use your favorite browser 🙂).
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,10">
+                                        <Run>
+                                            To use the classic
+                                        </Run>
+                                        <Run FontStyle="Italic">
+                                            @user,
+                                        </Run>
+                                        <Run>
+                                            just set the mention to @your username. This will ping you whenever a user types @[your username] in his message.
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,10" FontStyle="Italic">
+                                        Example: @psykomicron, my username being 'psykomicron'
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,5">
+                                        <Run>
+                                            If you want multiple choices to be pinged, like your alias or a cute name, set to ([cute name]|[normal username]|[another username]).
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph FontStyle="Italic">
+                                        Example:
+                                    </Paragraph>
+                                    <Paragraph Margin="0,0,0,15">
+                                        <Run FontFamily="Cascadia Code" FontWeight="Light" FontSize="12">
+                                            (psykomicron|psyko|degenerate chatter)
+                                        </Run>
+                                    </Paragraph>
+                                    <Paragraph Foreground="MediumPurple">
+                                        <Run>
+                                            Have fun 💜
+                                        </Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </TeachingTip.Content>
+                        </TeachingTip>
+                        <Button
+                            Name="ShowMentionsHelp"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="ShowMentionsHelp_Click">
+                            <SymbolIcon Symbol="Help"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </ListViewItem>
+            <!--#endregion-->
+
+            <!--#region Spotlight -->
+            <ListViewHeaderItem x:Name="SpotlightHeader">
+                <TextBlock
+                    Text="Spotlight importer" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"/>
+            </ListViewHeaderItem>
+            <ListViewItem  Margin="0,0,0,30">
+                <StackPanel Orientation="Vertical" Spacing="{StaticResource StackPanelButtonSpacing}">
+                    <ToggleSwitch Header="Delete data on unload" IsOn="{x:Bind Holder.SpotlightDeleteTempData, Mode=TwoWay}"/>
+                    <ToggleSwitch Header="Delete temporary data" IsOn="{x:Bind Holder.SpotlightDeleteTempData, Mode=TwoWay}"/>
+                    <ComboBox Header="Command bar style" IsEnabled="False">
+                        <ComboBoxItem Content="Bottom" Tag="Bottom"/>
+                        <ComboBoxItem Content="Right" Tag="Right"/>
+                        <ComboBoxItem Content="Collapsed" Tag="Collapsed"/>
+                    </ComboBox>
+                    <ToggleSwitch Header="Open temporary folder" IsOn="{x:Bind Holder.SpotlightOpenTempFolder, Mode=TwoWay}"/>
+                </StackPanel>
+            </ListViewItem>
+            <!--#endregion-->
+
+            <!--#region Miscallenous -->
+            <ListViewHeaderItem x:Name="MiscellaneousHeader">
+                <TextBlock
+                    Text="Miscellaneous" 
+                    FontSize="{StaticResource SettingTitleFontSize}" 
+                    FontWeight="{StaticResource SettingTitleFontWeight}"/>
+            </ListViewHeaderItem>
+            <ListViewItem  Margin="0,0,0,30">
+                <StackPanel Orientation="Vertical" Spacing="{StaticResource StackPanelButtonSpacing}">
+                    <HyperlinkButton
+                        Content="Go to project repository (GitHub)"
+                        NavigateUri="{x:Bind GithubUri}"/>
+                    <HyperlinkButton
+                        Content="Open application folder (File explorer)"
+                        Click="AppDataFolderHyperlink_Click"/>
+                    <HyperlinkButton
+                        Content="Open application settings folder (File explorer)"
+                        Click="AppSettingsFolderHyperlink_Click"/>
+                    <HyperlinkButton
+                        Content="Open temporary folder (File explorer)"
+                        Click="TempDataFolderHyperlink_Click"/>
+                    <Button Margin="0,15,0,0" Content="Clear temporary folder" Click="ClearTempFolderButton_Click"/>
+
+                    <Button Margin="0,0,0,15" Content="Clear saved passwords" Click="ClearSecureSettingsButton_Click"/>
+                </StackPanel>
+            </ListViewItem>
+            <!--#endregion-->
+        </ListView>
     </Grid>
 </Page>

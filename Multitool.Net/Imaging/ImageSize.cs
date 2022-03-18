@@ -2,6 +2,8 @@
 {
     public enum ImageSize
     {
-        Small, Medium, Big
+        Small, 
+        Medium, 
+        Big
     }
 }

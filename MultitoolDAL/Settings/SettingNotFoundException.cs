@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     public class SettingNotFoundException : Exception
     {

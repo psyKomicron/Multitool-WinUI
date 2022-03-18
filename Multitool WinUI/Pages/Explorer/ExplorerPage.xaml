@@ -5,13 +5,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:MultitoolWinUI.Pages.Explorer"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:controls="using:MultitoolWinUI.Controls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:controls="using:MultitoolWinUI.Controls" xmlns:models="using:MultitoolWinUI.Models"
     mc:Ignorable="d"
     NavigationCacheMode="Required"
     ScrollViewer.VerticalScrollMode="Disabled"
     CharacterReceived="Page_CharacterReceived"
     PointerPressed="Page_PointerPressed">
-    
     <Grid VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
@@ -22,36 +21,36 @@
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center">
+        <Grid Grid.Row="0" Grid.ColumnSpan="2" ColumnSpacing="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
             <Button 
-                x:Name="PreviousButton"
+                x:Name="previousButton"
                 Click="Previous_Click"
-                FontSize="30">
+                Grid.Column="0">
                 <Button.Content>
                     <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE830;"/>
                 </Button.Content>
             </Button>
             <Button 
-                x:Name="NextButton"
+                x:Name="nextButton"
                 Click="Next_Click" 
-                FontSize="30"
-                Margin="30,0,0,0">
+                Grid.Column="1">
                 <Button.Content>
                     <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xEA47;"/>
                 </Button.Content>
             </Button>
-        </StackPanel>
-
-        <Grid Grid.Row="0" Grid.Column="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="10*"/>
-                <ColumnDefinition Width="2*"/>
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Grid.Column="0">
+            
+            <StackPanel Grid.Column="2">
                 <AutoSuggestBox 
-                    x:Name="PathInput"
-                    Text="{Binding ElementName=Page, Path=CurrentPath, Mode=TwoWay}"
+                    x:Name="pathInput"
+                    Text="{x:Bind CurrentPath, Mode=TwoWay}"
                     HorizontalAlignment="Stretch"
                     MinHeight="25"
                     MaxHeight="50"
@@ -59,19 +58,13 @@
                     GotFocus="PathInput_GotFocus"
                     TextChanged="PathInput_TextChanged"
                     QuerySubmitted="PathInput_QuerySubmitted"/>
-
-                <TextBox
-                    x:Name="Progress_TextBox"
-                    Background="Transparent"
-                    Foreground="White"
-                    BorderThickness="0"
-                    IsReadOnly="True"
+                <TextBlock
+                    x:Name="progress_TextBox"
                     TextAlignment="Left"
-                    VerticalContentAlignment="Center"
                     MinHeight="25"
                     MaxHeight="50"/>
                 <ProgressBar 
-                    x:Name="Files_ProgressBar"
+                    x:Name="files_ProgressBar"
                     Background="Transparent"
                     IsIndeterminate="False"
                     Height="10"
@@ -80,53 +73,64 @@
                     HorizontalAlignment="Stretch"/>
             </StackPanel>
 
-            <StackPanel 
-                x:Name="ButtonsStackPanel"
-                Grid.Column="1" 
-                Orientation="Horizontal" 
-                HorizontalAlignment="Center">
-                <Button 
-                    x:Name="RefreshFileList"
-                    Content="🔄"
-                    FontSize="20"
-                    Click="RefreshFileList_Click"/>
-                <Button
-                    x:Name="CancelAction_Button"
-                    Content="✖"
-                    FontSize="20"
-                    Click="CancelButton_Click"
-                    IsEnabled="False"/>
-            </StackPanel>
+            <Button 
+                x:Name="refreshFileList"
+                FontSize="20"
+                Click="RefreshFileList_Click"
+                Grid.Column="3">
+                <FontIcon Glyph="&#xE72C;"/>
+            </Button>
+            <Button
+                x:Name="cancelAction_Button"
+                FontSize="20"
+                Click="CancelButton_Click"
+                IsEnabled="False"
+                Grid.Column="4">
+                <FontIcon Glyph="&#xE711;"/>
+            </Button>
         </Grid>
-        
+
         <ListView 
-            x:Name="History_ListView"
-            Grid.Row="1" 
-            Grid.Column="0" 
-            ItemsSource="{Binding History, ElementName=Page}"
+            x:Name="historyListView"
+            ItemsSource="{x:Bind History, Mode=OneWay}"
+            BorderBrush="{StaticResource LightBlack}"
+            IsRightTapEnabled="True"
+            RightTapped="History_ListView_RightTapped"
+            BorderThickness="0,0,4,0"
             MinWidth="50"
+            Grid.Row="1"
+            Grid.Column="0" 
             ItemClick="HistoryListView_ItemClick">
             <ListView.ItemTemplate>
-                <DataTemplate>
-
-                    <Grid>
+                <DataTemplate x:DataType="models:PathHistoryItem">
+                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                         <Grid.RowDefinitions>
-                            <RowDefinition/>
-                            <RowDefinition/>
+                            <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="40" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock 
-                            Text="{Binding ShortPath}" 
+                            Text="{x:Bind ShortPath}" 
                             Margin="7"
-                            Grid.Row="0"/>
+                            Grid.Row="0"
+                            Grid.Column="0" />
                         <TextBlock 
-                            Text="{Binding FullPath}"
+                            Text="{x:Bind FullPath}"
                             FontSize="8"
                             FontFamily="Cascadia Code"
                             FontWeight="Light"
                             Margin="3"
-                            Grid.Row="1"/>
+                            Grid.Row="1"
+                            Grid.Column="0" />
+                        <Grid.ContextFlyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Remove" />
+                            </MenuFlyout>
+                        </Grid.ContextFlyout>
                     </Grid>
-                    
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
@@ -138,15 +142,46 @@
             VerticalScrollMode="Enabled">
 
             <ListView
-                x:Name="MainListView"
+                x:Name="mainListView"
                 VerticalAlignment="Stretch"
-                ItemsSource="{Binding ElementName=Page, Path=CurrentFiles}"
+                ItemsSource="{x:Bind CurrentFiles}"
                 IsItemClickEnabled="True"
+                SelectionMode="Extended"
+                Margin="0,0,0,20"
                 Grid.Row="1"
                 Grid.Column="1"
                 SelectionChanged="MainListView_SelectionChanged"
+                IsRightTapEnabled="True"
                 DoubleTapped="MainListView_DoubleTapped"
                 KeyDown="MainListView_KeyDown">
+                <ListView.ContextFlyout>
+                    <MenuFlyout Opening="MenuFlyout_Opening">
+                        <MenuFlyoutItem 
+                            x:Name="deleteFileMenuItem" 
+                            Text="Delete" IsEnabled="False" 
+                            Click="DeleteFileMenuItem_Click">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Delete"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutItem
+                            x:Name="copyFileMenuItem"
+                            Text="Copy"
+                            IsEnabled="False"
+                            Click="CopyFileMenuItem_Click">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="C" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutSubItem x:Name="obfuscateFileMenuItem" Text="Obfuscate" IsEnabled="False">
+                            <MenuFlyoutItem 
+                                Text="Change name, remove extension" 
+                                Click="ObfuscateFileMenuItem_Click"/>
+                        </MenuFlyoutSubItem>
+                    </MenuFlyout>
+                </ListView.ContextFlyout>
             </ListView>
 
         </ScrollViewer>

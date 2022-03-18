@@ -1,16 +1,13 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
-using Multitool.DAL;
-using Multitool.DAL.Settings;
+using Multitool.Data;
+using Multitool.Data.Settings;
 
 using MultitoolWinUI.Helpers;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
 
 using Windows.Storage;
 using Windows.UI;
@@ -40,21 +37,29 @@ namespace MultitoolWinUI
 
         public static MainWindow MainWindow { get; private set; }
 
-        public static ISettingsManager Settings { get; private set; }
+        public static IUserSettingsManager UserSettings { get; private set; }
+        public static ISecureSettingsManager SecureSettings { get; private set; }
 
         public static void TraceInformation(string info)
         {
+            Trace.TraceInformation(info);
             TraceMessage("Information", info, infoBrush);
         }
 
         public static void TraceWarning(string warning)
         {
+            Trace.TraceWarning(warning);
             TraceMessage("Warning", warning, warningBrush);
         }
 
-        public static void TraceError(string error)
+        public static void TraceError(Exception error, string additionalMessage = null)
         {
-            TraceMessage("Error", error, errorBrush);
+            Trace.TraceError($"{additionalMessage} : {error}");
+#if DEBUG
+            TraceMessage("Error", error.ToString(), errorBrush);
+#else
+            TraceMessage("Error", error.Message, errorBrush);
+#endif
         }
 
         /// <summary>
@@ -62,18 +67,23 @@ namespace MultitoolWinUI
         /// will be used such as when the application is launched to open a specific file.
         /// </summary>
         /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs args)
+        protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             Trace.TraceInformation("Application starting...");
-#if DEBUG
-            Test(); 
+            UserSettings =
+#if true
+                await XmlSettingManager.Get();
+#else
+        new SettingsManager(ApplicationData.Current.LocalSettings)
+        {
+            SettingFormat = "{0}/{1}"
+        }; 
 #endif
-            Settings = new SettingsManager(ApplicationData.Current.LocalSettings)
+            SecureSettings = new SecureSettingsManager()
             {
-                SettingFormat = "{0}/{1}"
-            };
-
-            Debug.WriteLine(ApplicationData.Current.LocalFolder.Path);
+                HashKey = true,
+                HashAlgorithm = System.Security.Cryptography.SHA512.Create()
+            };            
 
             try
             {
@@ -93,51 +103,16 @@ namespace MultitoolWinUI
 
 
             MainWindow = new MainWindow();
-            Trace.Listeners.Add(new WindowTrace(MainWindow));
+            //Trace.Listeners.Add(new WindowTrace(MainWindow));
             MainWindow.Activate();
         }
 
         private static void TraceMessage(string title, string message, Brush background)
         {
-            if (MainWindow != null)
+            if (MainWindow != null && MainWindow.MessageDisplay != null)
             {
                 MainWindow.MessageDisplay.QueueMessage(title, message, background);
             }
         }
-
-#if DEBUG
-        private async void Test()
-        {
-            try
-            {
-                await ApplicationData.Current.LocalFolder.CreateFileAsync("settings.xml", CreationCollisionOption.OpenIfExists);
-                var settingManager = new XmlSettingManager();
-                settingManager.Save(new Test());
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.ToString());
-            }
-        } 
-#endif
     }
-
-#if DEBUG
-    class Test
-    {
-        public Test()
-        {
-            String = "flkdsnfeifslkn";
-            Number = 1298;
-            List = new List<int> { 1, 2, 4, 8, 213, 234, 234235, 23, 12, 667, 43358 };
-        }
-
-        [Setting]
-        public string String { get; set; }
-        [Setting]
-        public int Number { get; set; }
-        [Setting]
-        public List<int> List { get; set; }
-    } 
-#endif
 }

@@ -1,11 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security.AccessControl;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace Multitool.DAL
+using Windows.Storage;
+
+namespace Multitool.Data
 {
     internal class DirectoryEntry : FileSystemEntry
     {
@@ -42,6 +44,10 @@ namespace Multitool.DAL
         }
 
         #region public methods
+        public override async Task<IStorageItem> AsIStorageItem()
+        {
+            return await StorageFolder.GetFolderFromPathAsync(Path);
+        }
 
         /// <inheritdoc/>
         public override void CopyTo(string newPath)
@@ -72,6 +78,7 @@ namespace Multitool.DAL
             }
         }
 
+        /// <inheritdoc/>
         public override FileSystemSecurity GetAccessControl()
         {
             return dirInfo.GetAccessControl();
@@ -98,6 +105,7 @@ namespace Multitool.DAL
             }
         }
 
+        /// <inheritdoc/>
         public override void Rename(string newName)
         {
             if (CanRename(newName))
@@ -106,9 +114,10 @@ namespace Multitool.DAL
             }
         }
 
+        /// <inheritdoc/>
         public override void RefreshInfos()
         {
-            RefreshInfosAsync();
+            _ = RefreshInfosAsync();
         }
         #endregion
 
@@ -170,7 +179,7 @@ namespace Multitool.DAL
             }
         }
 
-        private async void RefreshInfosAsync()
+        private async Task RefreshInfosAsync()
         {
             string oldPath = Path;
             dirInfo.Refresh();

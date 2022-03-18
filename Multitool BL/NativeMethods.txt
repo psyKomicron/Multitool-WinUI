@@ -1,4 +1,11 @@
 SetWindowPos
 GetWindowRect
-CreateFile
-GetFileSizeEx
+GetDpiForWindow
+AssocQueryString
+InitiateShutdown
+SetSuspendState
+LockWorkStation
+ExitWindowsEx
+AdjustTokenPrivileges
+OpenProcessToken
+GetCurrentProcess

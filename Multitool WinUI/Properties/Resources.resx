@@ -121,7 +121,9 @@
     <value>https://github.com/psyKomicron/multitool/tree/main</value>
   </data>
   <data name="ReleaseNotes" xml:space="preserve">
-    <value />
+    <value>- NEW - release notes (as you can see) !
+- The application is now using .XML type file to save it's settings. You can find it in the app's package folder.
+- The file page code has been updated to fix the sorting problems</value>
   </data>
   <data name="TwitchUrl" xml:space="preserve">
     <value>https://twitch.tv/</value>

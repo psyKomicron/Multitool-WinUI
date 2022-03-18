@@ -3,7 +3,9 @@ using System.IO;
 using System.Security.AccessControl;
 using System.Threading.Tasks;
 
-namespace Multitool.DAL
+using Windows.Storage;
+
+namespace Multitool.Data
 {
     internal class FileEntry : FileSystemEntry
     {
@@ -24,7 +26,13 @@ namespace Multitool.DAL
         }
 
         #region public methods
+        /// <inheritdoc/>
+        public override async Task<IStorageItem> AsIStorageItem()
+        {
+            return await StorageFile.GetFileFromPathAsync(Path);
+        }
 
+        /// <inheritdoc/>
         public override void Rename(string newName)
         {
             if (CanRename(newName))
@@ -55,6 +63,7 @@ namespace Multitool.DAL
             }
         }
 
+        /// <inheritdoc/>
         public override void RefreshInfos()
         {
             string oldPath = Path;
@@ -66,6 +75,7 @@ namespace Multitool.DAL
             SetInfos(fileInfo);
         }
 
+        /// <inheritdoc/>
         public override FileSystemSecurity GetAccessControl()
         {
             return fileInfo.GetAccessControl();

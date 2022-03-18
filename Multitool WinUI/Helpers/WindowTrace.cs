@@ -1,9 +1,8 @@
 ﻿using Microsoft.UI.Xaml.Media;
 
-using Multitool.DAL;
+using Multitool.Data;
 
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -48,7 +47,7 @@ namespace MultitoolWinUI.Helpers
         /// <inheritdoc />
         public override void Write(string message)
         {
-            
+
         }
 
         /// <inheritdoc />

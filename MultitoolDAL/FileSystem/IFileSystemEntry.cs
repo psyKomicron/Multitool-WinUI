@@ -1,57 +1,56 @@
-﻿using Multitool.DAL.FileSystem.Events;
+﻿using Multitool.Data.FileSystem.Events;
 
 using System;
 using System.IO;
 using System.Security.AccessControl;
+using System.Threading.Tasks;
 
 using Windows.Foundation;
+using Windows.Storage;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
-    /// <summary>
-    /// Defines a <see cref="FileSystemInfo"/> decorator.
-    /// </summary>
     public interface IFileSystemEntry : IComparable, IComparable<IFileSystemEntry>, IEquatable<IFileSystemEntry>
     {
         #region properties
         /// <summary>
-        /// Attributes
+        /// Attributes.
         /// </summary>
-        FileAttributes Attributes { get; }
+        System.IO.FileAttributes Attributes { get; }
         /// <summary>
-        /// The underlying <see cref="FileSystemInfo"/> decorated by <see cref="IFileSystemEntry"/>
+        /// The underlying <see cref="FileSystemInfo"/> decorated by <see cref="IFileSystemEntry"/>.
         /// </summary>
         FileSystemInfo Info { get; }
         /// <summary>
-        /// <see langword="true"/> if the file is compressed
+        /// <see langword="true"/> if the file is compressed.
         /// </summary>
         bool IsCompressed { get; }
         /// <summary>
-        /// <see langword="true"/> is the file is considered device
+        /// <see langword="true"/> is the file is considered device.
         /// </summary>
         bool IsDevice { get; }
         /// <summary>
-        /// <see langword="true"/> if the file is a directory
+        /// <see langword="true"/> if the file is a directory.
         /// </summary>
         bool IsDirectory { get; }
         /// <summary>
-        /// <see langword="true"/> if the file is encrypted
+        /// <see langword="true"/> if the file is encrypted.
         /// </summary>
         bool IsEncrypted { get; }
         /// <summary>
-        /// <see langword="true"/> if the file is hidden
+        /// <see langword="true"/> if the file is hidden.
         /// </summary>
         bool IsHidden { get; set; }
         /// <summary>
-        /// <see langword="true"/> if the file is readonly
+        /// <see langword="true"/> if the file is readonly.
         /// </summary>
         bool IsReadOnly { get; set; }
         /// <summary>
-        /// <see langword="true"/> if the file belongs to the system
+        /// <see langword="true"/> if the file belongs to the system.
         /// </summary>
         bool IsSystem { get; }
         /// <summary>
-        /// Name of the file (not the path)
+        /// Name of the file (not the path).
         /// </summary>
         string Name { get; }
         /// <summary>
@@ -59,11 +58,11 @@ namespace Multitool.DAL
         /// </summary>
         bool Partial { get; }
         /// <summary>
-        /// Path of the file (system full path)
+        /// Path of the file (system full path).
         /// </summary>
         string Path { get; }
         /// <summary>
-        /// Size of the entry on the disk
+        /// Size of the entry on the disk.
         /// </summary>
         long Size { get; }
         #endregion
@@ -72,7 +71,7 @@ namespace Multitool.DAL
         /// <summary>
         /// Raises when the attributes are changed (IsCompressed, IsDevice, IsDirectory, ...);
         /// </summary>
-        event TypedEventHandler<IFileSystemEntry, FileAttributes> AttributesChanged;
+        event TypedEventHandler<IFileSystemEntry, System.IO.FileAttributes> AttributesChanged;
         /// <summary>
         /// Raised when the entry no longer exists on the disk (has been moved or deleted)
         /// </summary>
@@ -92,6 +91,8 @@ namespace Multitool.DAL
         #endregion
 
         #region methods
+        Task<IStorageItem> AsIStorageItem();
+
         /// <summary>
         /// Copy the file to a new directory.
         /// </summary>
@@ -101,6 +102,7 @@ namespace Multitool.DAL
         /// <summary>
         /// Deletes the file.
         /// </summary>
+        /// <exception cref="IOException">Thrown if the file cannot be deleted.</exception>
         void Delete();
 
         /// <summary>
@@ -120,6 +122,7 @@ namespace Multitool.DAL
         /// Renames the file.
         /// </summary>
         /// <param name="newName">The new name of the file</param>
+        /// <exception cref="IOException">Thrown if the file cannot be renamed.</exception>
         void Rename(string newName);
 
         /// <summary>

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Xml;
-
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-using Multitool.Net;
+using System;
+using System.IO;
+using System.Xml;
 
 using Windows.Storage;
 using Windows.Web.Http;
@@ -44,7 +41,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                     }
                     catch (XmlException ex)
                     {
-                        App.TraceError(ex.ToString());
+                        App.TraceError(ex);
                     }
                 }
             }
@@ -69,7 +66,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 }
                 catch (Exception ex)
                 {
-                    App.TraceError(ex.ToString());
+                    App.TraceError(ex);
                 }
             }
         }

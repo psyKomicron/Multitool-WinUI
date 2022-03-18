@@ -1,4 +1,4 @@
-﻿using Multitool.DAL.FileSystem.Events;
+﻿using Multitool.Data.FileSystem.Events;
 using Multitool.Optimisation;
 
 using System;
@@ -12,7 +12,7 @@ using System.Timers;
 
 using Windows.Foundation;
 
-namespace Multitool.DAL.FileSystem
+namespace Multitool.Data.FileSystem
 {
     /// <summary>
     /// Provides logic to cache and watch a directory for changes, and to signal the changes.
@@ -22,7 +22,7 @@ namespace Multitool.DAL.FileSystem
         private static readonly object _lock = new();
         private static readonly List<string> watchedPaths = new();
 
-        private readonly DirectorySizeCalculator calculator = new();
+        //private readonly DirectorySizeCalculator calculator = new();
         private readonly List<FileSystemEntry> watchedItems;
         private readonly FileSystemWatcher watcher;
         private readonly ObjectPool<CacheChangedEventArgs> cacheChangedPool = new(7);
@@ -337,17 +337,11 @@ namespace Multitool.DAL.FileSystem
             {
                 ResetTimer();
                 FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
-                item.RefreshInfos();
-                if (timer != null)
-                {
-                    timer.Start();
-                }
-                FileSystemEntry item = watchedItems.Find(v => v.Path == e.FullPath);
-                if (item is not null)
+                if (item != null)
                 {
                     item.RefreshInfos();
                 }
-                
+
                 if (timer != null)
                 {
                     timer.Start();

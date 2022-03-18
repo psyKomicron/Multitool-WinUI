@@ -1,4 +1,4 @@
-﻿namespace Multitool.DAL.FileSystem.Events
+﻿namespace Multitool.Data.FileSystem.Events
 {
     /// <summary>
     /// Lists types of <see cref="System.IO.FileSystemWatcher"/> errors.

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     public class WatcherDelegates
     {

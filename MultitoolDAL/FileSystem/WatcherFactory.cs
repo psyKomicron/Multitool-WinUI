@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     public static class WatcherFactory
     {
@@ -13,7 +13,7 @@ namespace Multitool.DAL
         /// <returns>The created watcher</returns>
         public static FileSystemWatcher CreateWatcher(string path, NotifyFilters filters, WatcherDelegates delegates)
         {
-            FileSystemWatcher watcher = new FileSystemWatcher(path)
+            FileSystemWatcher watcher = new(path)
             {
                 NotifyFilter = filters
             };

@@ -1,4 +1,4 @@
-﻿namespace Multitool.DAL
+﻿namespace Multitool.Data
 {
     /// <summary>
     /// Should be internal but <see langword="protected internal"/> method does not work.

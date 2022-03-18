@@ -1,7 +1,10 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 
-using Multitool.DAL;
+using Multitool.Data;
+
+using MultitoolWinUI.Helpers;
 
 using System;
 using System.Collections.Generic;
@@ -11,14 +14,9 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 
-using WinRT;
-
 using Windows.Storage;
 using Windows.System;
-using Multitool.NTInterop;
-using System.Runtime.InteropServices;
-using Microsoft.UI.Xaml.Navigation;
-using System.Runtime.CompilerServices;
+using Windows.Web.Http;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -61,7 +59,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             }
             catch (XmlException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e);
                 //App.MainWindow.DisplayMessage("Error", "Control panels", "Unable to load custom settings pathes. " + e.Message);
                 return;
             }
@@ -178,7 +176,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
                         }
                         catch (UriFormatException ex)
                         {
-                            App.TraceError(ex.ToString());
+                            App.TraceError(ex);
                         }
                     }
                 }
@@ -258,12 +256,12 @@ namespace MultitoolWinUI.Pages.ControlPanels
 
             catch (XmlException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e);
                 App.TraceInformation("Importing settings failed");
             }
             catch (NullReferenceException e)
             {
-                App.TraceError(e.ToString());
+                App.TraceError(e);
                 App.TraceWarning("NullReferenceException in " + nameof(CopySettingFile));
             }
         }
@@ -321,7 +319,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             {
                 doc.Load(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
                 XmlElement root = doc.DocumentElement;
-                
+
                 foreach (XmlNode node in root)
                 {
                     if (node.Name == "path" && node.Attributes != null && node.Attributes["name"]?.Value == sender.ButtonName)
@@ -410,6 +408,54 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 LoadNewElements(pathes);
             }
         }
+
+        private void ResetSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private async void DownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            var result = await downloadDialog.ShowAsync();
+            switch (result)
+            {
+                case ContentDialogResult.None:
+                case ContentDialogResult.Secondary:
+                    App.TraceInformation("Download cancelled.");
+                    break;
+                case ContentDialogResult.Primary:
+                    try
+                    {
+                        Uri uri = new(downloadUriTextBox.Text);
+
+                        using HttpClient client = new();
+                        try
+                        {
+                            HttpResponseMessage response = await client.GetAsync(uri);
+                            response.EnsureSuccessStatusCode();
+                            string data = await response.Content.ReadAsStringAsync();
+
+                            XmlDocument doc = new();
+                            doc.LoadXml(data);
+                            doc.Save(Path.Combine(ApplicationData.Current.LocalFolder.Path, customSettingsPathFileName));
+
+                            _ = Frame.Navigate(typeof(ControlPanelsPage));
+                        }
+                        catch (Exception ex)
+                        {
+                            App.TraceError(ex);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        App.TraceError(ex, "Could not download setting file.");
+                    }
+                    break;
+                default:
+                    Trace.TraceWarning("Content dialog result not recognized");
+                    break;
+            }
+        }
         #endregion
 
         #region file change
@@ -432,15 +478,19 @@ namespace MultitoolWinUI.Pages.ControlPanels
                 }
                 catch (XmlException ex)
                 {
-                    App.TraceError("XmlException: Unable to parse changes from the .XML settings file.\n" + ex);
+                    App.TraceWarning("XmlException: Unable to parse changes from the .XML settings file.");
+                    App.TraceError(ex);
                 }
                 catch (IOException ex)
                 {
-                    App.TraceError("IOException: Unable to parse changes from the .XML settings file.\n" + ex);
-                    
                     if (ex.HResult != -0x7FF8FFE0)
                     {
-                        App.TraceError("Unable to parse changes from the .XML settings file.");
+                        App.TraceWarning("Unable to parse changes from the .XML settings file.");
+                    }
+                    else
+                    {
+                        App.TraceWarning("IOException: Unable to parse changes from the .XML settings file.");
+                        App.TraceError(ex);
                     }
                 }
             }

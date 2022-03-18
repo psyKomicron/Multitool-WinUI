@@ -1,7 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-using Multitool.DAL;
+using Multitool.Data;
 
 using MultitoolWinUI.Helpers;
 
@@ -11,8 +11,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Windows.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -71,7 +69,7 @@ namespace MultitoolWinUI.Controls
             }
             else
             {
-                App.TraceError("Drive could not be loaded. '" + driveInfo.Name + "' was not ready");
+                App.TraceWarning("Drive could not be loaded. '" + driveInfo.Name + "' was not ready");
             }
         }
 

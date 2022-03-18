@@ -1,23 +1,28 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 
-using Multitool.DAL;
+using Multitool.BL.Interop;
+using Multitool.Data.Settings;
+using Multitool.Data.Settings.Converters;
 
+using MultitoolWinUI.Controls;
 using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Pages;
 using MultitoolWinUI.Pages.ControlPanels;
 using MultitoolWinUI.Pages.Explorer;
 using MultitoolWinUI.Pages.HashGenerator;
-using MultitoolWinUI.Pages.Power;
+using MultitoolWinUI.Pages.MusicPlayer;
+using MultitoolWinUI.Pages.Settings;
+using MultitoolWinUI.Pages.Widgets;
 
 using System;
 using System.Diagnostics;
-using System.Timers;
-using System.Linq;
-using System.Collections.Generic;
-using MultitoolWinUI.Controls;
-using MultitoolWinUI.Pages.Test;
-using MultitoolWinUI.Pages.Settings;
+
+using Windows.Foundation;
+using Windows.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -29,74 +34,140 @@ namespace MultitoolWinUI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
-        private Type lastPage;
+        private const string fileName = "peepoPoopoo.gif";
+        private static AppWindow thisWindow;
         private bool closed;
+        private bool fullScreen;
 
         public MainWindow()
         {
             InitializeComponent();
-            Title = "Multitool v." + Tool.GetPackageVersion();
+            SetTitleBar();
             SizeChanged += MainWindow_SizeChanged;
-
             try
             {
-                IsPaneOpen = App.Settings.GetSetting<bool>(nameof(MainWindow), nameof(IsPaneOpen));
-            }
-            catch (SettingNotFoundException)
-            {
-                IsPaneOpen = true;
-            }
-
-            try
-            {
-                string lastPageName = App.Settings.GetSetting<string>(nameof(MainWindow), nameof(lastPage));
-                switch (lastPageName)
+                App.UserSettings.Load(this);
+#if DEBUG
+                // 
+                if (LastPage == null)
                 {
-                    case nameof(MainPage):
-                        lastPage = typeof(MainPage);
-                        break;
-                    case nameof(ComputerDevicesPage):
-                        lastPage = typeof(ComputerDevicesPage);
-                        break;
-                    case nameof(ExplorerPage):
-                        lastPage = typeof(ExplorerPage);
-                        break;
-                    case nameof(ExplorerHomePage):
-                        lastPage = typeof(ExplorerHomePage);
-                        break;
-                    case nameof(PowerPage):
-                        lastPage = typeof(PowerPage);
-                        break;
-                    case nameof(ControlPanelsPage):
-                        lastPage = typeof(ControlPanelsPage);
-                        break;
-                    case nameof(HashGeneratorPage):
-                        lastPage = typeof(HashGeneratorPage);
-                        break;
-                    case nameof(TwitchPage):
-                        lastPage = typeof(TwitchPage);
-                        break;
-                    default:
-                        App.TraceWarning("MainWindow:ctor: Unknown page");
-                        break;
+                    LastPage = typeof(MainPage);
                 }
+#endif
+                WindowInteropHelper.SetWindow(this, WindowSize, new(PositionX, PositionY));
             }
-            catch (SettingNotFoundException) { }
+            catch
+            {
+                Trace.TraceWarning("Failed to load main window settings");
+            }
         }
 
+        #region properties
+        //[Setting(ElementTheme.Default)]
+        public ElementTheme CurrentTheme { get; set; }
+
+        [Setting(true)]
         public bool IsPaneOpen { get; set; }
+
+        [Setting(typeof(TypeSettingConverter), HasDefaultValue = true, DefaultValue = typeof(MainPage))]
+        public Type LastPage { get; set; }
+
+        [Setting(0)]
+        public int PositionX { get; set; }
+
+        [Setting(0)]
+        public int PositionY { get; set; }
+
+        public int TitleBarHeight { get; private set; }
+
+        [Setting(typeof(SizeSettingConverter), 1000, 600)]
+        public Size WindowSize { get; set; } 
+        #endregion
+
+        public bool NavigateTo(Type pageType, params object[] navigationParameters)
+        {
+            try
+            {
+                if (pageType == null)
+                {
+                    return false;
+                }
+                return ContentFrame.Navigate(pageType, navigationParameters);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+                return false;
+            }
+        }
+
+        private void NavigateTo(Type pageType, bool save)
+        {
+            try
+            {
+                if (pageType != null)
+                {
+                    if (save)
+                    {
+                        LastPage = pageType;
+                    }
+                    _ = ContentFrame.Navigate(pageType); 
+                }
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex);
+            }
+        }
 
         #region navigation events
         private void NavigationView_Loaded(object sender, RoutedEventArgs e)
         {
-            if (lastPage != null)
+            NavigateTo(LastPage, true);
+            string tag = LastPage != null ? LastPage.Name : string.Empty;
+            /*switch (LastPage.Name)
             {
-                _ = ContentFrame.Navigate(lastPage);
-            }
-            else
+                case nameof(MainPage):
+                    tag = "home";
+                    break;
+                case nameof(ComputerDevicesPage):
+                    tag = "devices";
+                    break;
+                case nameof(ExplorerPage):
+                    tag = "explorer";
+                    break;
+                case nameof(ExplorerHomePage):
+                    tag = "explorerhome";
+                    break;
+                case nameof(PowerPage):
+                    tag = "power";
+                    break;
+                case nameof(ControlPanelsPage):
+                    tag = "controlpanels";
+                    break;
+                case nameof(HashGeneratorPage):
+                    tag = "hashgenerator";
+                    break;
+                case nameof(TwitchPage):
+                    tag = "TwitchChat";
+                    break;
+                case nameof(SettingsPage):
+                    tag = "Settings";
+                    break;
+                case nameof(MusicPlayerPage):
+                    tag = "music";
+                    break;
+                default:
+                    tag = string.Empty;
+                    break;
+            }*/
+            var items = WindowNavigationView.MenuItems;
+            foreach (var item in items)
             {
-                lastPage = typeof(MainPage);
-                _ = ContentFrame.Navigate(typeof(MainPage));
+                if (item is NavigationViewItem itemBase && itemBase.Tag.ToString() == tag)
+                {
+                    WindowNavigationView.SelectedItem = itemBase;
+                }
             }
         }
 
@@ -107,47 +178,42 @@ namespace MultitoolWinUI
                 string tag = args.InvokedItemContainer.Tag.ToString();
                 switch (tag)
                 {
-                    case "home":
-                        lastPage = typeof(MainPage);
-                        _ = ContentFrame.Navigate(typeof(MainPage));
+                    case nameof(MainPage):
+                        NavigateTo(typeof(MainPage), true);
                         break;
-                    case "devices":
-                        lastPage = typeof(ComputerDevicesPage);
-                        _ = ContentFrame.Navigate(typeof(ComputerDevicesPage));
+                    case nameof(ComputerDevicesPage):
+                        NavigateTo(typeof(ComputerDevicesPage), true);
                         break;
-                    case "explorer":
-                        lastPage = typeof(ExplorerPage);
-                        _ = ContentFrame.Navigate(typeof(ExplorerPage));
+                    case nameof(ExplorerPage):
+                        NavigateTo(typeof(ExplorerPage), true);
                         break;
-                    case "explorerhome":
-                        lastPage = typeof(ExplorerHomePage);
-                        _ = ContentFrame.Navigate(typeof(ExplorerHomePage));
+                    case nameof(ExplorerHomePage):
+                        NavigateTo(typeof(ExplorerHomePage), true);
                         break;
-                    case "power":
-                        lastPage = typeof(PowerPage);
-                        _ = ContentFrame.Navigate(typeof(PowerPage));
+                    case nameof(ControlPanelsPage):
+                        NavigateTo(typeof(ControlPanelsPage), true);
                         break;
-                    case "controlpanels":
-                        lastPage = typeof(ControlPanelsPage);
-                        _ = ContentFrame.Navigate(typeof(ControlPanelsPage));
+                    case nameof(HashGeneratorPage):
+                        NavigateTo(typeof(HashGeneratorPage), true);
                         break;
-                    case "hashgenerator":
-                        lastPage = typeof(HashGeneratorPage);
-                        _ = ContentFrame.Navigate(typeof(HashGeneratorPage));
+                    case nameof(TwitchPage):
+                        NavigateTo(typeof(TwitchPage), true);
                         break;
-                    case "irc":
-                        lastPage = typeof(TwitchPage);
-                        _ = ContentFrame.Navigate(typeof(TwitchPage));
+                    case nameof(ChatPage):
+                        NavigateTo(typeof(ChatPage), true);
                         break;
-                    case "test":
-                        lastPage = typeof(TestPage);
-                        _ = ContentFrame.Navigate(typeof(TestPage));
+                    case nameof(WidgetsPage):
+                        NavigateTo(typeof(WidgetsPage), true);
                         break;
+                    case nameof(SettingsPage):
                     case "Settings":
-                        _ = ContentFrame.Navigate(typeof(SettingsPage));
+                        NavigateTo(typeof(SettingsPage), true);
+                        break;
+                    case nameof(MusicPlayerPage):
+                        NavigateTo(typeof(MusicPlayerPage), true);
                         break;
                     default:
-                        App.TraceWarning("Trying to navigate to : " + tag);
+                        App.TraceWarning("Page not found : " + tag);
                         break;
                 }
             }
@@ -162,22 +228,89 @@ namespace MultitoolWinUI
         }
         #endregion
 
+        private void SetTitleBar()
+        {
+            IntPtr windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WindowId windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
+
+            thisWindow = AppWindow.GetFromWindowId(windowId);
+            thisWindow.Changed += AppWindow_Changed;
+
+            if (AppWindowTitleBar.IsCustomizationSupported())
+            {
+                thisWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+
+                thisWindow.TitleBar.ButtonBackgroundColor = Tool.GetAppRessource<Color>("DarkBlack");
+                thisWindow.TitleBar.ButtonForegroundColor = Colors.White;
+                thisWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+                thisWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Gray;
+                //ColorConverter.ConvertFromString("#968677", 122)
+                thisWindow.TitleBar.ButtonHoverBackgroundColor = Tool.GetAppRessource<Color>("AppTitleBarHoverColor");
+                thisWindow.TitleBar.ButtonHoverForegroundColor = Colors.White;
+                thisWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
+                thisWindow.TitleBar.ButtonPressedForegroundColor = Colors.White;
+
+                Uri imageSource = new(@$"ms-appx:///Resources/Images/{fileName}");
+                WindowIcon.Source = new BitmapImage(imageSource); 
+            }
+            else
+            {
+                TitleBarGrid.Visibility = Visibility.Collapsed;
+                var row = ContentGrid.RowDefinitions[0];
+                row.MinHeight = 0;
+                row.Height = new(0);
+            }
+        }
+
+        private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+        {
+            if (thisWindow.Presenter is OverlappedPresenter overlappedPresenter)
+            {
+                fullScreen = overlappedPresenter.State == OverlappedPresenterState.Maximized;
+
+                if (args.DidPositionChange && !fullScreen)
+                {
+                    PositionX = thisWindow.Position.X;
+                    PositionY = thisWindow.Position.Y;
+                }
+            }
+        }
+
         #region window events
+        private void PresenterModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (thisWindow.Presenter.Kind != AppWindowPresenterKind.CompactOverlay)
+            {
+                thisWindow.SetPresenter(AppWindowPresenterKind.CompactOverlay);
+            }
+            else
+            {
+                thisWindow.SetPresenter(AppWindowPresenterKind.Default);
+            }
+        }
+
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
-            _ = DispatcherQueue.TryEnqueue(() => MessageDisplay.Width = args.Size.Width);
+            if (!closed && !fullScreen)
+            {
+                WindowSize = args.Size;
+            }
         }
 
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // save settings
-            MessageDisplay.Silence();
             closed = true;
-            if (lastPage != null)
+            MessageDisplay.Silence();
+            try
             {
-                App.Settings.SaveSetting(nameof(MainWindow), nameof(lastPage), lastPage.Name);
+                App.UserSettings.Save(this);
             }
-            App.Settings.SaveSetting(nameof(MainWindow), nameof(IsPaneOpen), IsPaneOpen);
+            catch (ArgumentException ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
+            catch { }
         }
 
         private void MessageDisplay_VisibilityChanged(AppMessageControl sender, Visibility args)
@@ -187,11 +320,11 @@ namespace MultitoolWinUI
                 ContentPopup.IsOpen = args == Visibility.Visible;
             }
         }
-        #endregion
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
             
         }
+        #endregion
     }
 }

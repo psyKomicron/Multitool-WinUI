@@ -1,15 +1,14 @@
-﻿using Multitool.NTInterop;
+﻿using Multitool.Interop;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Windows.Foundation.Metadata;
 
-namespace Multitool.DAL
+namespace Multitool.Data
 {
     /// <summary>
     /// Calculates the size of a directory.
@@ -22,13 +21,13 @@ namespace Multitool.DAL
         public DirectorySizeCalculator() { }
 
         /// <inheritdoc/>
-        public bool Notify { get; set; }
+        public event TaskProgressEventHandler Progress;
 
         /// <inheritdoc/>
-        public event TaskProgressEventHandler Progress;
-        
-        /// <inheritdoc/>
         public event TaskFailedEventHandler Exception;
+
+        /// <inheritdoc/>
+        public bool Notify { get; set; }
 
         /// <summary>
         /// Calculate the size of a directory asynchronously, updating size in real time through <paramref name="setter"/>.
