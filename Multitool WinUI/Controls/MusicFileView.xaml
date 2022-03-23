@@ -65,13 +65,22 @@
             VerticalAlignment="Center"/>
 
         <Grid.ContextFlyout>
-            <Flyout>
-                <StackPanel Spacing="{StaticResource StackPanelDefaultSpacing}" Orientation="Vertical">
-                    <TextBlock Text="{x:Bind FileName}"/>
-                    <TextBlock Text="{x:Bind FullPath}" IsTextSelectionEnabled="True"/>
-                    <TextBlock Text="{x:Bind Comment}" Visibility="{x:Bind CommentVisibility}"/>
-                </StackPanel>
-            </Flyout>
+            <MenuFlyout>
+                <MenuFlyoutItem Text="{x:Bind FileName}" IsEnabled="False"/>
+                <MenuFlyoutSeparator/>
+
+                <MenuFlyoutItem Text="Play" IsEnabled="False">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xEDB5;"/>
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Open folder" Click="MenuFlyoutOpen_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE8E5;"/>
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Copy as path"/>
+            </MenuFlyout>
         </Grid.ContextFlyout>
     </Grid>
 </UserControl>

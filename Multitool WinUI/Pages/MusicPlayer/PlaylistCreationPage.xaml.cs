@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 using Multitool.Data.FileSystem;
 
+using MultitoolWinUI.Helpers;
 using MultitoolWinUI.Models;
 
 using System;
@@ -52,55 +53,28 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             {
                 FileLoadingProgress.Visibility = Visibility.Visible;
                 FileLoadingProgress.IsIndeterminate = true;
-                if (e.Parameter is List<MusicFileModel> views)
+                
+                Regex regex = new(@"^audio/.*");
+                List<Task> tasks = new();
+                FileSearcher searcher = new()
                 {
-                    FilesListView.Items.Clear();
-                    foreach (MusicFileModel view in views)
-                    {
-                        _ = CreateAddFile(view);
-                    }
-                }
-                else
-                {
-                    StorageFolder folder = KnownFolders.MusicLibrary;
-                    IAsyncOperation<IReadOnlyList<StorageFile>> musicFilesTask = folder.GetFilesAsync();
-                    Regex regex = new(@"^audio/.*");
-                    List<Task> tasks = new();
-                    IReadOnlyList<StorageFile> musicFiles = await musicFilesTask;
-                    foreach (StorageFile musicFile in musicFiles)
-                    {
-                        if (regex.IsMatch(musicFile.ContentType))
-                        {
-                            MusicFileModel model = new()
-                            {
-                                File = musicFile,
-                                Name = musicFile.Name,
-                                Path = musicFile.Path,
-                            };
-                            tasks.Add(CreateAddFile(model));
-                        }
-                    }
-                    await Task.WhenAll(tasks);
+                    ThreadCount = 2
+                };
 
-                    FileSearcher searcher = new()
+                searcher.IgnoreList = new(@"c:\\|Steam|\$RECYCLE.BIN", RegexOptions.IgnoreCase);
+                List<string> files = await searcher.SearchForType(FileType.Audio);
+                foreach (string file in files)
+                {
+                    var musicFile = await StorageFile.GetFileFromPathAsync(file);
+                    MusicFileModel model = new()
                     {
-                        ThreadCount = 2
+                        File = musicFile,
+                        Name = musicFile.Name,
+                        Path = file
                     };
-                    searcher.IgnoreList = new(@"c:\\|Steam|\$RECYCLE.BIN", RegexOptions.IgnoreCase);
-                    List<string> files = await searcher.SearchForType(FileType.Audio);
-                    foreach (string file in files)
-                    {
-                        var musicFile = await StorageFile.GetFileFromPathAsync(file);
-                        MusicFileModel model = new()
-                        {
-                            File = musicFile,
-                            Name = musicFile.Name,
-                            Path = file
-                        };
-                        tasks.Add(CreateAddFile(model));
-                    }
-                    await Task.WhenAll(tasks);
+                    tasks.Add(CreateAddFile(model));
                 }
+                await Task.WhenAll(tasks);
 
                 DispatcherQueue.TryEnqueue(() =>
                 {
@@ -110,7 +84,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             }
             catch (Exception ex)
             {
-                App.TraceError(ex);
+                App.TraceError(ex, "Could not load music files for playlist creation.");
             }
         }
 
@@ -183,34 +157,28 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 
         private async void PictureSelection_Click(object sender, RoutedEventArgs e)
         {
-            IntPtr hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            FileOpenPicker picker = Tool.CreateFolderPicker();
+            picker.ViewMode = PickerViewMode.Thumbnail;
+            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            picker.FileTypeFilter.Add("*");
 
-            if (hwnd != IntPtr.Zero)
+            StorageFile file = await picker.PickSingleFileAsync();
+            if (file != null)
             {
-                FileOpenPicker picker = new();
-                InitializeWithWindow.Initialize(picker, hwnd);
-                picker.ViewMode = PickerViewMode.Thumbnail;
-                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-                picker.FileTypeFilter.Add("*");
-
-                StorageFile file = await picker.PickSingleFileAsync();
-                if (file != null)
+                DispatcherQueue.TryEnqueue(() =>
                 {
-                    DispatcherQueue.TryEnqueue(() =>
+                    try
                     {
-                        try
+                        PlaylistThumbnail.Source = new BitmapImage()
                         {
-                            PlaylistThumbnail.Source = new BitmapImage()
-                            {
-                                UriSource = new(file.Path)
-                            };
-                        }
-                        catch (Exception ex)
-                        {
-                            App.TraceError(ex);
-                        }
-                    });
-                } 
+                            UriSource = new(file.Path)
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        App.TraceError(ex);
+                    }
+                });
             }
         }
         #endregion

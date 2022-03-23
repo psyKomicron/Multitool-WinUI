@@ -46,6 +46,7 @@ namespace MultitoolWinUI.Models
                     Name = name,
                     Description = description
                 });
+
                 if (toRestore.HasChildNodes)
                 {
                     foreach (XmlNode node in toRestore.ChildNodes)
@@ -58,7 +59,6 @@ namespace MultitoolWinUI.Models
                     }
 
                 }
-                PlaylistModel model = new(playlist);
                 return model;
             }
             return null;

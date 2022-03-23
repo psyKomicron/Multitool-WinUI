@@ -71,11 +71,22 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Songs" FontSize="20" Margin="10,3" Grid.Column="0"/>
                     <ProgressRing x:Name="FileLoadingProgress" Visibility="Collapsed" Grid.Column="1"/>
-                    <CheckBox Checked="CheckBox_Checked" Content="Select all" Unchecked="CheckBox_Checked" IsChecked="False" Grid.Column="2" HorizontalAlignment="Right"/>
+                    <CheckBox 
+                        Content="Select all" 
+                        HorizontalAlignment="Right"
+                        IsChecked="False" 
+                        Checked="CheckBox_Checked" 
+                        Unchecked="CheckBox_Checked" 
+                        Grid.Column="2"/>
                 </Grid>
             </ListView.Header>
         </ListView>
-        
-        <Button Content="Create" HorizontalAlignment="Right" Click="ValidateButton_Click" Grid.Column="2" Grid.Row="2"/>
+
+        <Button HorizontalAlignment="Center" Style="{ThemeResource AccentButtonStyle}" Click="ValidateButton_Click" Grid.Column="2" Grid.Row="2">
+            <StackPanel Spacing="{StaticResource StackPanelButtonSpacing}" Orientation="Horizontal">
+                <FontIcon Glyph="&#xE73E;"/>
+                <TextBlock Text="Create"/>
+            </StackPanel>
+        </Button>
     </Grid>
 </Page>

@@ -20,6 +20,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.System;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,7 +29,7 @@ namespace MultitoolWinUI.Pages.MusicPlayer
 {
     public sealed partial class MusicFileView : UserControl, INotifyPropertyChanged
     {
-        private MusicFileModel model;
+        private readonly MusicFileModel model;
 
         public MusicFileView(MusicFileModel model)
         {
@@ -90,9 +91,16 @@ namespace MultitoolWinUI.Pages.MusicPlayer
             PropertyChanged?.Invoke(this, e);
         }
 
-        private void MenuFlyoutItem_Click(object sender, RoutedEventArgs e)
+        private async void MenuFlyoutOpen_Click(object sender, RoutedEventArgs e)
         {
-            
+            try
+            {
+                await Launcher.LaunchFileAsync(model.File);
+            }
+            catch (Exception ex)
+            {
+                App.TraceError(ex, $"Could not open {FileName}");
+            }
         }
     }
 }
