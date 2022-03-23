@@ -58,7 +58,7 @@ namespace MultitoolWinUI.Pages.ControlPanels
             {
                 isPinned = value;
                 pinButton.Text = isPinned ? "Unpin" : "Pin";
-                pinStatusIcon.Glyph = isPinned ? "\uE842" : "\uE840";
+                pinStatusIcon.Glyph = isPinned ? "\uE842" : "\uE718";
             }
         }
         #endregion

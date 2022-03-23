@@ -108,7 +108,7 @@ namespace MultitoolWinUI.Controls
                 }
 
                 // show FilePicker dialog
-                FolderPicker picker = Tool.CreatePicker();
+                FolderPicker picker = Tool.CreateFolderPicker();
                 picker.ViewMode = PickerViewMode.Thumbnail;
                 picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
                 picker.FileTypeFilter.Add("*");

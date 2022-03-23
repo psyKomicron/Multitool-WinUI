@@ -93,7 +93,7 @@ namespace MultitoolWinUI.Helpers
 
         public static bool IsRelativeUrl(string s) => absoluteUriRegex.IsMatch(s);
 
-        public static FolderPicker CreatePicker()
+        public static FolderPicker CreateFolderPicker()
         {
             IntPtr hwnd = WindowNative.GetWindowHandle(App.MainWindow);
             if (hwnd == IntPtr.Zero)
@@ -101,6 +101,19 @@ namespace MultitoolWinUI.Helpers
                 throw new ArgumentNullException(string.Empty, "Window handle was null.");
             }
             FolderPicker picker = new();
+            InitializeWithWindow.Initialize(picker, hwnd);
+
+            return picker;
+        }
+
+        public static FileOpenPicker CreateFilePicker()
+        {
+            IntPtr hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            if (hwnd == IntPtr.Zero)
+            {
+                throw new ArgumentNullException(string.Empty, "Window handle was null.");
+            }
+            FileOpenPicker picker = new();
             InitializeWithWindow.Initialize(picker, hwnd);
 
             return picker;
